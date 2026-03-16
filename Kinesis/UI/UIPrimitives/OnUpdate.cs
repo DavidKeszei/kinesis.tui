@@ -52,5 +52,8 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
         this.m_island = island;
     }
 
-    private void SetCallback(Action<T, PageEntityVisitor> func, T message) => func(message, new PageEntityVisitor(this));
+    private void SetCallback(Action<T, PageEntityVisitor> func, T message) {
+        if (func == null) return;
+        func(message, new PageEntityVisitor(this));
+    }
 }

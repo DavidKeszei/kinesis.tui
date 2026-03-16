@@ -43,15 +43,10 @@ public class UIText: Entity {
     public StyleFlag Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(2)!.AsAttribute = value; }
 
     public UIText() {
-        base.AttachComponent<Transform>(new Transform() { Scale = new Vec2(x: 0, y: 1) }, isUnique: true);
-        base.AttachComponent<TextRenderer>(component: new TextRenderer(), isUnique: true);
-
+        base.InitRenderEntityWith<TextRenderer>();
         base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
+
         base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
-
         base.AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE));
-        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.UP }, isUnique: true);
-
-        base.AttachComponent<RenderHierarchy>(component: new RenderHierarchy(), isUnique: true);
     }
 }

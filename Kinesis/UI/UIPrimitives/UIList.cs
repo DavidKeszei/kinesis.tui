@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Kinesis.UI;
 
-public class ListOf: Entity {
+public class UIList: Entity {
 
     public List<Entity> Children {
         set {
@@ -25,7 +25,7 @@ public class ListOf: Entity {
         }
     }
 
-    public ListOf()
+    public UIList()
         => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
 
     private int LastRenderableIndex(List<Entity> list) {

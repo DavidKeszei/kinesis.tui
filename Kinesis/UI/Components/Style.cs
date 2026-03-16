@@ -12,7 +12,7 @@ namespace Kinesis.UI.Components;
 /// </summary>
 public class Style: Component, IStaticType {
     private const string TYPE_NAME = "Style";
-    private StyleGenericUnion m_union = default;
+    private StyleUnion m_union = default;
 
     /// <summary>
     /// Name of the <see cref="Style"/> component.
@@ -40,22 +40,22 @@ public class Style: Component, IStaticType {
     public StyleFlag AsAttribute { get => m_union.Flag;  set => m_union.Flag = value; }
 
     private Style(StyleTag tag, RGB color): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) {
-        m_union = new StyleGenericUnion(tag);
+        m_union = new StyleUnion(tag);
         m_union.Color = color;
     }
 
     private Style(StyleTag tag, int value): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) {
-        m_union = new StyleGenericUnion(tag);
+        m_union = new StyleUnion(tag);
         m_union.INumber = value;
     }
 
     private Style(StyleTag tag, StyleFlag flag): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) {
-        m_union = new StyleGenericUnion(tag);
+        m_union = new StyleUnion(tag);
         m_union.Flag = flag;
     }
 
     private Style(StyleTag tag, char chr) : base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) {
-        m_union = new StyleGenericUnion(tag);
+        m_union = new StyleUnion(tag);
         m_union.Character = chr;
     }
 
@@ -96,7 +96,7 @@ public class Style: Component, IStaticType {
 /// Simple union for store <see cref="Style"/> values without generic.
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
-internal struct StyleGenericUnion {
+internal struct StyleUnion {
     [FieldOffset(0)] private int m_integer = 0;
     [FieldOffset(0)] private float m_floating = .0f;
 
@@ -107,15 +107,15 @@ internal struct StyleGenericUnion {
     [FieldOffset(8)] private readonly StyleTag m_tag = StyleTag.BACKGROUND;
 
     /// <summary>
-    /// Delimiter tag of the <see cref="StyleGenericUnion"/>.
+    /// Delimiter tag of the <see cref="StyleUnion"/>.
     /// </summary>
     public readonly StyleTag Tag { get => m_tag; }
 
     /// <summary>
-    /// Create a new <see cref="StyleGenericUnion"/>.
+    /// Create a new <see cref="StyleUnion"/>.
     /// </summary>
-    /// <param name="tag">Tag of the <see cref="StyleGenericUnion"/> instance.</param>
-    public StyleGenericUnion(StyleTag tag) => m_tag = tag;
+    /// <param name="tag">Tag of the <see cref="StyleUnion"/> instance.</param>
+    public StyleUnion(StyleTag tag) => m_tag = tag;
 
     public char Character { readonly get => m_char; set => m_char = value; }
 
@@ -131,10 +131,8 @@ internal struct StyleGenericUnion {
 public enum StyleTag: byte {
     BACKGROUND,
     FOREGROUND,
-    BORDER_WIDTH,
     BORDER_COLOR,
     BORDER_CHAR,
-    MARGIN,
     PADDING,
     FONT_ATTR
 }

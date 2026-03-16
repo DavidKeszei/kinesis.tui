@@ -104,6 +104,5 @@ public class TextRenderer: RenderComponent {
         }
 
         m_len = text.Length;
-        m_isDirty = true;
     } 
 }

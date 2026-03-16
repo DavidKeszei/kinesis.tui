@@ -23,19 +23,19 @@ public struct RGB : IEquatable<RGB> {
 
     #region <STATIC VALUES>
 
-    public static RGB White { get => new RGB(r: 255, g: 255, b: 255); }
+    public static RGB White { get => new RGB(r: 255, g: 255, b: 255, a: 255); }
 
-    public static RGB Black { get => new RGB(r: 0, g: 0, b: 0); }
+    public static RGB Black { get => new RGB(r: 0, g: 0, b: 0, a: 255); }
 
-    public static RGB Purple { get => new RGB(r: 128, g: 0, b: 128); }
+    public static RGB Purple { get => new RGB(r: 128, g: 0, b: 128, a: 255); }
 
-    public static RGB Yellow { get => new RGB(r: 255, g: 255, b: 0); }
+    public static RGB Yellow { get => new RGB(r: 255, g: 255, b: 0, a: 255); }
 
-    public static RGB Green { get => new RGB(r: 0, g: 255, b: 0); }
+    public static RGB Green { get => new RGB(r: 0, g: 255, b: 0, a: 255); }
 
-    public static RGB Red { get => new RGB(r: 255, g: 0, b: 0); }
+    public static RGB Red { get => new RGB(r: 255, g: 0, b: 0, a: 255); }
 
-    public static RGB Transparent { get => new RGB(color: 0xFFFFFFFF); }
+    public static RGB Transparent { get => new RGB(color: 0x0); }
 
     #endregion
 
@@ -47,7 +47,7 @@ public struct RGB : IEquatable<RGB> {
 
     public byte A { readonly get => m_alpha; set => m_alpha = value; }
 
-    public RGB(byte r, byte g, byte b, byte a = 255) {
+    public RGB(byte r, byte g, byte b, byte a = 0) {
         m_red = r;
         m_green = g;
 
