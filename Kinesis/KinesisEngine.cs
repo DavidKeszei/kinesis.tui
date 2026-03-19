@@ -38,9 +38,6 @@ public sealed class KinesisEngine: ISystemProvider {
         m_renderer = new Renderer(scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y), sync: m_workSyncState);
         m_customSystems = new List<SystemInvocationInfo>();
 
-        Console.InputEncoding = Encoding.UTF8;
-        Console.OutputEncoding = Encoding.UTF8;
-
         /* Make sure the NavigatorSystem is can be queried */
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();

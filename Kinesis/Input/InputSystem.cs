@@ -1,4 +1,5 @@
 ﻿using Kinesis.Processing;
+using Kinesis.Input.Windows;
 using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
@@ -64,14 +65,14 @@ internal class InputSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "<Thread> Input";
 
     /// <summary>
-    /// Indicates the wait time between two sampling. (5ms)
+    /// Indicates the wait time between two sampling. (1ms)
     /// </summary>
     private const int POOLING_TIME = 5;
 
     /// <summary>
     /// Minimum time, when we think no input was happened and we fire that. (10ms)
     /// </summary>
-    private const int DEAD_ZONE = 10;
+    private const int DEAD_ZONE = 5;
 
     /// <summary>
     /// Minimum time, when we think the press is long-press. (75ms)
@@ -90,6 +91,9 @@ internal class InputSystem: IDynamicSystem {
     /// Listen inputs from standard input.
     /// </summary>
     public void Run() {
+        if (m_backend == IInputBackend.ERR)
+            return;
+
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
         float deadZoneTime = DEAD_ZONE;
@@ -100,7 +104,7 @@ internal class InputSystem: IDynamicSystem {
         while (true) {
             DateTime now = DateTime.UtcNow;
 
-            if (m_backend.HasInput) {
+            if (m_backend.IsPressedOnInput) {
                 (char character, InputModifier modifiers) = m_backend.ReadInput();
 
                 if (character == '\0') {
@@ -108,6 +112,7 @@ internal class InputSystem: IDynamicSystem {
                     continue;
                 }
 
+                /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == character && m_startInputInfo.Modifier == modifiers) {
                     if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
 
@@ -115,6 +120,7 @@ internal class InputSystem: IDynamicSystem {
                         WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD));
                     }
                 }
+                /* 1.1 If not: do fast swap between the new & current keys */
                 else if (m_startInputInfo.Key != character || m_startInputInfo.Modifier != modifiers) {
                     if (m_startInputInfo.When != TimeSpan.Zero) {
 
@@ -130,6 +136,7 @@ internal class InputSystem: IDynamicSystem {
 
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
+            /* 2. Send it after the DEAD_ZONE. (Only, if the action is not HOLD)*/
             if (deadZoneTime <= 0) {
                 if (lastAction != InputAction.HOLD)
                     WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS));

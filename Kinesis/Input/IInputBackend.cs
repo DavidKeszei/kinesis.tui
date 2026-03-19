@@ -17,7 +17,7 @@ internal interface IInputBackend {
     /// <summary>
     /// Indicates has any buffer on the input.
     /// </summary>
-    public bool HasInput { get; }
+    public bool IsPressedOnInput { get; }
 
     /// <summary>
     /// Read the current buffer from the input.
