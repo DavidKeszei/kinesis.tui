@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Kinesis.Processing;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 
-namespace Kinesis.Input;
+namespace Kinesis.Input.Windows;
 
 /// <summary>
 /// Represent a standard input on the Windows platform. 
@@ -20,28 +22,25 @@ internal partial class WindowsInputBackend: IInputBackend {
     private const uint MANUAL_PROCESSING = 0x0001;
 
     private const uint STD_IN = uint.MaxValue - 10 + 1;
-    private const int MAX_CHAR = 1;
-
-    private const string DEDICATED_THREAD_NAME = "<Thread> Input::Native";
+    private const string DEDICATED_THREAD_NAME = "Input::Native Thread";
 
     #endregion
 
+    private readonly CircularBuffer<InputInfo> m_infoBuffer = null!;
     private Task m_rawInputTask = null!;
+
     private nint m_handle = nint.Zero;
+    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
 
-    private (char Key, InputModifier Modifiers) m_message = ('\0', InputModifier.NONE);
-    private int m_canRead = 0;
-
-    public bool HasInput { get => IsKeyDown(character: (short)m_message.Key); }
+    /// <summary>
+    /// Indicates the user pressed/pressing some key currently.
+    /// </summary>
+    public bool HasInput { get => m_infoBuffer.Count > 0; }
 
     #region NATIVE_IMPL
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetStdHandle")]
     private static partial nint GetStandardHandle(uint type);
-
-    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool ReadConsole(nint hnd, ref char buffer, uint length, out uint readCount, nint opt);
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
     [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
@@ -50,10 +49,14 @@ internal partial class WindowsInputBackend: IInputBackend {
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
 
-    [LibraryImport(libraryName: USER32_LIB, EntryPoint = "VkKeyScanW")]
-    private static partial short GetCode(int character);
+    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleInputW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
+    private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
 
     #endregion
+
+    public WindowsInputBackend()
+        => m_infoBuffer = new CircularBuffer<InputInfo>(capacity: 64);
 
     /// <summary>
     /// Create new <see cref="WindowsInputBackend"/> instance.
@@ -71,29 +74,24 @@ internal partial class WindowsInputBackend: IInputBackend {
             Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
             while(true) {
-                if(backend.Read(out char character, out InputModifier modifiers)) {
-                    backend.m_message = (character, modifiers);
-                    Interlocked.Increment(ref backend.m_canRead);
-                }
+                if(backend.Read(out char character, out InputModifier modifiers, out bool isPressed))
+                    backend.m_infoBuffer.Write(value: new InputInfo(character, modifiers, isPressed));
             }
         });
 
         return backend;
     }
 
-    public (char Key, InputModifier Modifiers) ReadInput() {
-        if(m_canRead == 0)
-            return ('\0', InputModifier.NONE);
-
-        Interlocked.Decrement(ref m_canRead);
-        return m_message;
+    public InputInfo ReadInput() {
+        _ = m_infoBuffer.Read(out InputInfo info);
+        return info;
     }
 
     /// <summary>
     /// Read one key from the console input.
     /// </summary>
     /// <returns>If anything in the input, return <see langword="true"/>. Otherwise return <see langword="false"/>.</returns>
-    private bool Read(out char character, out InputModifier modifiers) {
+    private bool Read(out char character, out InputModifier modifiers, out bool isPressed) {
         Span<int> modifiersCodes = stackalloc int[5] {
             0xA0,
             0xA1,
@@ -104,26 +102,20 @@ internal partial class WindowsInputBackend: IInputBackend {
 
         character = '\0';
         modifiers = InputModifier.NONE;
+        isPressed = false;
 
-        bool success = ReadConsole(hnd: m_handle, buffer: ref character, length: MAX_CHAR, out uint _, opt: nint.Zero);
-        for(byte i = 0; i < modifiersCodes.Length; ++i) {
+        bool success = ReadConsole(hnd: m_handle, buffer: ref m_msg, length: (uint)Unsafe.SizeOf<WindowsConsoleEventMsg>(), out uint _) && m_msg.Tag == WindowsConsoleMsgTag.INPUT;
 
-            if(GetKeyState(modifiersCodes[i]) < 0)
-                modifiers |= (InputModifier)modifiersCodes[i];
+        if (success) {
+            character = m_msg.KeyInfo.Value;
+            isPressed = m_msg.KeyInfo.IsPressed;
+
+            for (byte i = 0; i < modifiersCodes.Length; ++i) {
+                if (GetKeyState(modifiersCodes[i]) < 0)
+                    modifiers |= (InputModifier)modifiersCodes[i];
+            }
         }
 
         return success;
-    }
-
-    private bool IsKeyDown(short character) {
-        short code = GetCode(character);
-
-        /* Clean up the flag bits (SHIFT, CTRL, ALT, RESERVED)*/
-        code &= ~(1 << 8);
-        code &= ~(1 << 9);
-        code &= ~(1 << 10);
-        code &= ~(1 << 11);
-
-        return BitConverter.IsLittleEndian ? (GetKeyState(code) & (1 << 15)) != 0 : (GetKeyState(code) & (1 << 0)) != 0;
     }
 }

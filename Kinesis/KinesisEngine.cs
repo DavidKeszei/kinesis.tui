@@ -38,9 +38,6 @@ public sealed class KinesisEngine: ISystemProvider {
         m_renderer = new Renderer(scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y), sync: m_workSyncState);
         m_customSystems = new List<SystemInvocationInfo>();
 
-        Console.InputEncoding = Encoding.UTF8;
-        Console.OutputEncoding = Encoding.UTF8;
-
         /* Make sure the NavigatorSystem is can be queried */
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();
@@ -72,13 +69,13 @@ public sealed class KinesisEngine: ISystemProvider {
         => m_customSystems.Add(item: new SystemInvocationInfo(action, null, when));
 
     /// <summary>
-    /// Register a named route with a <paramref name="pageCreation"/> method.
+    /// Register a named route with a <paramref name="onCreate"/> method.
     /// </summary>
     /// <param name="name">Name of the route.</param>
-    /// <param name="pageCreation">Creation method of the <see cref="Island"/>.</param>
+    /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
     /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
-    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> pageCreation) where T: Island
-        => m_navigator.Register(name, pageCreation);
+    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
+        => m_navigator.Register(name, onCreate);
 
     /// <summary>
     /// Start the <see cref="KinesisEngine"/> instance with the systems.

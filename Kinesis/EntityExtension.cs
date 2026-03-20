@@ -28,7 +28,8 @@ public static class EntityExtension {
         }
 
         public Style? QueryStyle(StyleTag tag) {
-            foreach (Style component in new StyleEnumerator(entity)) {
+            using StyleEnumerator styles = new StyleEnumerator(entity);
+            foreach (Style component in styles) {
                 if (component.Tag == tag) return component;
             }
 

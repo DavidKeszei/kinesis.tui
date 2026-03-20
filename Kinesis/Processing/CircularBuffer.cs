@@ -37,9 +37,9 @@ internal class CircularBuffer<T> {
     /// <summary>
     /// Write a(n) <typeparamref name="T"/> message to the buffer. If the buffer is full, then the message must be rejected.
     /// </summary>
-    /// <param name="message">Target message.</param>
-    public void Write(T? message) {
-        if (message == null || Interlocked.CompareExchange(location1: ref m_interlock, value: TRUE, comparand: TRUE) == TRUE) 
+    /// <param name="value">Target message.</param>
+    public void Write(T? value) {
+        if (value == null || Interlocked.CompareExchange(location1: ref m_interlock, value: TRUE, comparand: TRUE) == TRUE) 
             return;
 
         _ = Interlocked.Exchange(location1: ref m_interlock, TRUE);
@@ -49,7 +49,7 @@ internal class CircularBuffer<T> {
             return;
         }
 
-        m_buffer[m_writePosition] = message;
+        m_buffer[m_writePosition] = value;
         _ = Interlocked.Increment(location: ref m_writePosition);
 
         _ = Interlocked.Increment(location: ref m_count);

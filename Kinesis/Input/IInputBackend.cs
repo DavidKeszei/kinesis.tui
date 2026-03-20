@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kinesis.Input.Windows;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,8 +23,8 @@ internal interface IInputBackend {
     /// <summary>
     /// Read the current buffer from the input.
     /// </summary>
-    /// <returns>Return the key and the modifiers.</returns>
-    public (char Key, InputModifier Modifiers) ReadInput();
+    /// <returns>Return the key and the modifiers as <see cref="InputInfo"/>.</returns>
+    public InputInfo ReadInput();
 
     /// <summary>
     /// Create a new <see cref="IInputBackend"/> instance.

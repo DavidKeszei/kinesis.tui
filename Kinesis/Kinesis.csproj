@@ -15,4 +15,10 @@
     <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Properties\**" />
+  </ItemGroup>
+
 </Project>
