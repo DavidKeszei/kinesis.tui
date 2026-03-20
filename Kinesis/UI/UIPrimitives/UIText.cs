@@ -40,7 +40,7 @@ public class UIText: Entity {
     /// <summary>
     /// Style indicators of the <see cref="UIText"/>.
     /// </summary>
-    public StyleFlag Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(2)!.AsAttribute = value; }
+    public StyleFlag Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(index: 2)!.AsAttribute = value; }
 
     public UIText() {
         base.InitRenderEntityWith<TextRenderer>();

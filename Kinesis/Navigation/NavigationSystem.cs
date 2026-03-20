@@ -70,13 +70,16 @@ public class NavigationSystem: INavigator {
     }
 
     public void NavigateTo(string route) {
-        (Func<ISystemProvider, Island> creation, Island? page) = m_routes[route];
-        page ??= creation(m_provider);
+        (Func<ISystemProvider, Island> creation, Island? island) = m_routes[route];
+        island ??= creation(m_provider);
 
-        page.IsActive = true;
+        if (island is INavigationHandler handler) 
+            handler.OnNavigation(isBack: false);
+
+        island.IsActive = true;
         m_navigationFrame.Peek().IsActive = false;
 
-        m_navigationFrame.Push(page);
+        m_navigationFrame.Push(island);
     }
 
     /// <summary>
@@ -85,6 +88,9 @@ public class NavigationSystem: INavigator {
     public void NavigateBack() {
         Island current = m_navigationFrame.Pop();
         current.IsActive = false;
+
+        if (current is INavigationHandler handler)
+            handler.OnNavigation(isBack: true);
 
         m_navigationFrame.Peek().IsActive = true;
     }

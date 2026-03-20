@@ -22,8 +22,8 @@ public sealed class Padding: Entity {
         set {
             if (value == null) return;
 
-            this.GetComponent<Hierarchy>(index: 1)!.Attached = value;
-            value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;
+            value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
             Transform? transform = value.GetComponent<Transform>();
 

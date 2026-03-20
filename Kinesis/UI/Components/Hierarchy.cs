@@ -12,6 +12,8 @@ public class Hierarchy: Component, IStaticType {
     private const string TYPE_NAME = "ConnectionComponent";
     private const int PARENT_INDEX = 0;
 
+    private const int CHILDREN_START_INDEX = 1;
+
     private Entity m_child = null!;
     private ConnectionDir m_direction = ConnectionDir.DOWN;
 
@@ -24,6 +26,11 @@ public class Hierarchy: Component, IStaticType {
     /// Index of the parent on every <see cref="Entity"/> instance.
     /// </summary>
     public static int Parent { get => PARENT_INDEX; }
+
+    /// <summary>
+    /// Start index of the children on every <see cref="Entity"/> instance.
+    /// </summary>
+    public static int ChildrenStart { get => CHILDREN_START_INDEX; }
 
     /// <summary>
     /// Next <see cref="Entity"/> instance from this <see cref="Entity"/>.

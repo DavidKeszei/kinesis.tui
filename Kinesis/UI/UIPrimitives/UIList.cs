@@ -19,7 +19,7 @@ public class UIList: Entity {
                     Attached = value[i]
                 };
 
-                value[i].GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+                value[i].GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
                 _ = base.AttachComponent<Hierarchy>(conn);
             }
         }
@@ -27,14 +27,4 @@ public class UIList: Entity {
 
     public UIList()
         => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
-
-    private int LastRenderableIndex(List<Entity> list) {
-        int pos = -1;
-        for (int i = 0; i < list.Count; ++i) {
-            if (list[i].GetComponent<RenderComponent>() != null)
-                pos = i;
-        }
-
-        return pos;
-    }
 }

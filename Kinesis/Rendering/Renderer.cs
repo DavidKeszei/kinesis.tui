@@ -56,8 +56,6 @@ public sealed class Renderer {
         m_output.AutoFlush = false;
 
         Console.CursorVisible = false;
-
-        Console.InputEncoding = Encoding.UTF8;
         Console.OutputEncoding = Encoding.UTF8;
     }
 

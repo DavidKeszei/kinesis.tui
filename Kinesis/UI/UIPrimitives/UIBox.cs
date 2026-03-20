@@ -29,8 +29,8 @@ public class UIBox: Entity {
         set {
             if (value == null) return;
 
-            _ = base.GetComponent<Hierarchy>(index: 1)!.Attached = value;
-            _ = value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            _ = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;
+            _ = value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
         } 
     }
 

@@ -91,8 +91,10 @@ internal class InputSystem: IDynamicSystem {
     private readonly IInputBackend m_backend = null!;
     private (char Key, InputModifier Modifier, TimeSpan When, bool isPress) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
-    public InputSystem() 
-        => m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init() : null!;
+    public InputSystem() {
+        Console.InputEncoding = Encoding.UTF8;
+        m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init() : null!;
+    }
 
     /// <summary>
     /// Listen inputs from standard input.

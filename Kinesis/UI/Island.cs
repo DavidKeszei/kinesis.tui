@@ -38,7 +38,7 @@ public abstract class Island {
         => m_renderSet = new List<Entity>(capacity: 32);
 
     /// <summary>
-    /// Build the page as <see cref="Entity"/>.
+    /// Build the island as <see cref="Entity"/>.
     /// </summary>
     /// <returns>Return <see cref="Entity"/> instance from the current <see cref="Island"/>.</returns>
     protected abstract Entity? Build();
@@ -64,7 +64,7 @@ public abstract class Island {
             entity.GetComponent<RenderHierarchy>()!.NextRenderElementIndex = m_currentRenderIndex;
         }
 
-        for (int i = 1; i < childrenCount; ++i) {
+        for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
             Hierarchy child = entity!.GetComponent<Hierarchy>(i)!;
 
             if (child.Attached != null)

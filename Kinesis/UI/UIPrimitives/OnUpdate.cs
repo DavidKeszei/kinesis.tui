@@ -38,7 +38,7 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
     /// </summary>
     public Entity Child {
         set {
-            Hierarchy connection = base.GetComponent<Hierarchy>(index: 1)!;
+            Hierarchy connection = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!;
             connection!.Attached = value;
 
             value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
