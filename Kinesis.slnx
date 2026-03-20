@@ -1,4 +1,3 @@
 <Solution>
   <Project Path="Kinesis/Kinesis.csproj" />
-  <Project Path="KinesisExample/KinesisExample.csproj" />
 </Solution>
