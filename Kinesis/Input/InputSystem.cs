@@ -20,11 +20,12 @@ public readonly record struct InputMessage: IWorkMessage {
     private readonly InputModifier m_modifiers = InputModifier.NONE;
 
     private readonly InputAction m_action = InputAction.PRESS;
+    private readonly bool m_isPressed = false;
 
     /// <summary>
     /// Represent a empty <see cref="InputMessage"/>.
     /// </summary>
-    public static InputMessage Empty { get => new InputMessage('\0', InputModifier.NONE, InputAction.PRESS); }
+    public static InputMessage Empty { get => new InputMessage('\0', InputModifier.NONE, InputAction.PRESS, false); }
 
     /// <summary>
     /// Target key of the input.
@@ -32,7 +33,7 @@ public readonly record struct InputMessage: IWorkMessage {
     public char Key { get => m_key; }
 
     /// <summary>
-    /// Pressed modifiers of the input (SHIFT, ALT, CTR).
+    /// Pressed info.Modifiers of the input (SHIFT, ALT, CTR).
     /// </summary>
     public InputModifier Modifiers { get => m_modifiers; }
 
@@ -42,19 +43,25 @@ public readonly record struct InputMessage: IWorkMessage {
     public InputAction Action { get => m_action; }
 
     /// <summary>
+    /// Indicates the current input was pressed.
+    /// </summary>
+    public bool IsPressed { get => m_isPressed; }
+
+    /// <summary>
     /// Target callback type of the message.
     /// </summary>
     public static WorkTag Target { get => WorkTag.INPUT; }
 
     /// <summary>Create a new <see cref="InputMessage"/>.</summary>
     /// <param name="key">Actual key value as <see cref="char"/>.</param>
-    /// <param name="modifiers">Currently pressed modifiers with the <see cref="Key"/>.</param>
+    /// <param name="info.Modifiers">Currently pressed info.Modifiers with the <see cref="Key"/>.</param>
     /// <param name="action">Current action of the message.</param>
-    internal InputMessage(char key, InputModifier modifiers, InputAction action) {
+    internal InputMessage(char key, InputModifier modifiers, InputAction action, bool isPress) {
         m_key = key;
         m_modifiers = modifiers;
 
         m_action = action;
+        m_isPressed = isPress;
     }
 }
 
@@ -62,17 +69,17 @@ public readonly record struct InputMessage: IWorkMessage {
 /// Represent a unified source of the inputs.
 /// </summary>
 internal class InputSystem: IDynamicSystem {
-    private const string DEDICATED_THREAD_NAME = "<Thread> Input";
+    private const string DEDICATED_THREAD_NAME = "Input Thread";
 
     /// <summary>
-    /// Indicates the wait time between two sampling. (1ms)
+    /// Indicates the wait time between two sampling. (10ms)
     /// </summary>
-    private const int POOLING_TIME = 5;
+    private const int POOLING_TIME = 10;
 
     /// <summary>
     /// Minimum time, when we think no input was happened and we fire that. (10ms)
     /// </summary>
-    private const int DEAD_ZONE = 5;
+    private const int DEAD_ZONE = 10;
 
     /// <summary>
     /// Minimum time, when we think the press is long-press. (75ms)
@@ -82,7 +89,7 @@ internal class InputSystem: IDynamicSystem {
     public SystemBehavior Behavior { get => SystemBehavior.DYNAMIC; }
 
     private readonly IInputBackend m_backend = null!;
-    private (char Key, InputModifier Modifier, TimeSpan When) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero);
+    private (char Key, InputModifier Modifier, TimeSpan When, bool isPress) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
     public InputSystem() 
         => m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init() : null!;
@@ -97,51 +104,50 @@ internal class InputSystem: IDynamicSystem {
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
         float deadZoneTime = DEAD_ZONE;
-
-        InputMessage message = InputMessage.Empty;
         InputAction lastAction = InputAction.PRESS;
 
         while (true) {
             DateTime now = DateTime.UtcNow;
 
-            if (m_backend.IsPressedOnInput) {
-                (char character, InputModifier modifiers) = m_backend.ReadInput();
+            if (m_backend.HasInput) {
+                InputInfo info = m_backend.ReadInput();
 
-                if (character == '\0') {
+                if (info.Key == '\0') {
                     Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                     continue;
                 }
 
                 /* 1. Check if the key same as before */
-                if (m_startInputInfo.Key == character && m_startInputInfo.Modifier == modifiers) {
+                if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
                     if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
 
                         lastAction = InputAction.HOLD;
-                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD));
+                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: m_startInputInfo.isPress));
                     }
                 }
                 /* 1.1 If not: do fast swap between the new & current keys */
-                else if (m_startInputInfo.Key != character || m_startInputInfo.Modifier != modifiers) {
+                else if (m_startInputInfo.Key != info.Key || m_startInputInfo.Modifier != info.Modifiers) {
                     if (m_startInputInfo.When != TimeSpan.Zero) {
 
-                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS));
+                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
                         deadZoneTime = DEAD_ZONE;
                     }
 
-                    m_startInputInfo = (character, modifiers, now.TimeOfDay);
+                    m_startInputInfo = (info.Key, info.Modifiers, now.TimeOfDay, info.IsPress);
                 }
 
                 continue;
             }
 
+            /* This decrease CPU usage */
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
             /* 2. Send it after the DEAD_ZONE. (Only, if the action is not HOLD)*/
             if (deadZoneTime <= 0) {
                 if (lastAction != InputAction.HOLD)
-                    WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS));
+                    WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
 
-                m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero);
+                m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
                 deadZoneTime = DEAD_ZONE;
                 lastAction = InputAction.PRESS;

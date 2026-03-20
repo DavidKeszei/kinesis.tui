@@ -18,7 +18,7 @@ internal ref struct CircularBufferSnapshot<T>: IEnumerator<T> {
 
     public readonly T Current { get => m_buffer[m_current]; }
 
-    readonly object IEnumerator.Current { get => Current; }
+    readonly object? IEnumerator.Current { get => Current; }
 
     public CircularBufferSnapshot(ReadOnlySpan<T> buffer) {
         m_buffer = ArrayPool<T>.Shared.Rent(buffer.Length);

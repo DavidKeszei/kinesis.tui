@@ -69,13 +69,13 @@ public sealed class KinesisEngine: ISystemProvider {
         => m_customSystems.Add(item: new SystemInvocationInfo(action, null, when));
 
     /// <summary>
-    /// Register a named route with a <paramref name="pageCreation"/> method.
+    /// Register a named route with a <paramref name="onCreate"/> method.
     /// </summary>
     /// <param name="name">Name of the route.</param>
-    /// <param name="pageCreation">Creation method of the <see cref="Island"/>.</param>
+    /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
     /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
-    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> pageCreation) where T: Island
-        => m_navigator.Register(name, pageCreation);
+    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
+        => m_navigator.Register(name, onCreate);
 
     /// <summary>
     /// Start the <see cref="KinesisEngine"/> instance with the systems.

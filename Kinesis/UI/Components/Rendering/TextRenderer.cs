@@ -19,7 +19,7 @@ public class TextRenderer: RenderComponent {
     /// </summary>
     public string Value { 
         get => new string(value: m_buffer.AsSpan()[..m_len]);
-        set => SetText(text: value);
+        set => Replace(text: value);
     }
 
     public TextRenderer() { }
@@ -27,6 +27,19 @@ public class TextRenderer: RenderComponent {
     public TextRenderer(string text) {
         m_buffer = text.ToCharArray();
         m_len = text.Length;
+    }
+
+    /// <summary>
+    /// Remove characters from internal buffer.
+    /// </summary>
+    /// <param name="count">Amount of the remove.</param>
+    public void Remove(int count) {
+        if (count > m_len) {
+            m_len = 0;
+            return;
+        }
+
+        m_len -= count;
     }
 
     internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
@@ -92,7 +105,11 @@ public class TextRenderer: RenderComponent {
         }
     }
 
-    private void SetText(ReadOnlySpan<char> text) {
+    /// <summary>
+    /// Replace the internal buffer with a new character sequence.
+    /// </summary>
+    /// <param name="text">Replace text.</param>
+    private void Replace(ReadOnlySpan<char> text) {
         if (m_len < text.Length) {
             m_len = text.Length;
             m_buffer = new char[m_len];
@@ -104,5 +121,5 @@ public class TextRenderer: RenderComponent {
         }
 
         m_len = text.Length;
-    } 
+    }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kinesis.Processing;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -21,29 +22,20 @@ internal partial class WindowsInputBackend: IInputBackend {
     private const uint MANUAL_PROCESSING = 0x0001;
 
     private const uint STD_IN = uint.MaxValue - 10 + 1;
-    private const int MAX_CHAR = 1;
-
-    private const string DEDICATED_THREAD_NAME = "<Thread> Input::Native";
-    private const int TRUE = 1;
-
-    private const int FALSE = 0;
+    private const string DEDICATED_THREAD_NAME = "Input::Native Thread";
 
     #endregion
 
-    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
-
+    private readonly CircularBuffer<InputInfo> m_infoBuffer = null!;
     private Task m_rawInputTask = null!;
+
     private nint m_handle = nint.Zero;
-
-    private (char Key, InputModifier Modifiers) m_message = ('\0', InputModifier.NONE);
-    private int m_canRead = FALSE;
-
-    private bool m_currentlyPressed = false;
+    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
 
     /// <summary>
     /// Indicates the user pressed/pressing some key currently.
     /// </summary>
-    public bool IsPressedOnInput { get => m_currentlyPressed; }
+    public bool HasInput { get => m_infoBuffer.Count > 0; }
 
     #region NATIVE_IMPL
 
@@ -63,6 +55,9 @@ internal partial class WindowsInputBackend: IInputBackend {
 
     #endregion
 
+    public WindowsInputBackend()
+        => m_infoBuffer = new CircularBuffer<InputInfo>(capacity: 64);
+
     /// <summary>
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
@@ -79,25 +74,17 @@ internal partial class WindowsInputBackend: IInputBackend {
             Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
             while(true) {
-                if(backend.Read(out char character, out InputModifier modifiers, out bool isPressed) && backend.m_canRead == FALSE) {
-                    backend.m_message = (character, modifiers);
-                    backend.m_currentlyPressed = isPressed;
-
-                    if(isPressed) 
-                        _ = Interlocked.Exchange(ref backend.m_canRead, TRUE);
-                }
+                if(backend.Read(out char character, out InputModifier modifiers, out bool isPressed))
+                    backend.m_infoBuffer.Write(value: new InputInfo(character, modifiers, isPressed));
             }
         });
 
         return backend;
     }
 
-    public (char Key, InputModifier Modifiers) ReadInput() {
-        if(m_canRead == FALSE)
-            return ('\0', InputModifier.NONE);
-
-        _ = Interlocked.Exchange(ref m_canRead, FALSE);
-        return m_message;
+    public InputInfo ReadInput() {
+        _ = m_infoBuffer.Read(out InputInfo info);
+        return info;
     }
 
     /// <summary>
