@@ -17,6 +17,7 @@ public interface ISystem {
 }
 
 public interface IDynamicSystem<T>: ISystem where T: allows ref struct {
+
     /// <summary>
     /// Run the current <see cref="IDynamicSystem{T}"/> instance.
     /// </summary>

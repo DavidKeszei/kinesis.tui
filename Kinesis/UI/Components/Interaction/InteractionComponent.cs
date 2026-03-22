@@ -30,4 +30,11 @@ public class InteractionComponent: Component, IStaticType {
     /// <param name="onRender">Callback for the end of the frame.</param>
     public InteractionComponent(Action<RenderMessage> onRender, Island island): base(id: ComponentRegistry.QueryComponent(TYPE_NAME))
         => WorkerSystem.Current.AddCallback(work: onRender, island);
+
+    /// <summary>
+    /// Create a new <see cref="InteractionComponent"/>, which fires every layout change
+    /// </summary>
+    /// <param name="onLayoutChange">Handler callback, when the layout change occurs.</param>
+    public InteractionComponent(Action<LayoutMessage> onLayoutChange, Island island): base(id: ComponentRegistry.QueryComponent(TYPE_NAME))
+        => WorkerSystem.Current.AddCallback(work: onLayoutChange, island);
 }

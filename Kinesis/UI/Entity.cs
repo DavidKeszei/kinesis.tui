@@ -8,7 +8,7 @@ using System.Text;
 namespace Kinesis.UI;
 
 /// <summary>
-/// Represent a plain, tagged instance of the library.
+/// Represent base-class for all UI elements on the screen.
 /// </summary>
 public class Entity {
     private readonly Dictionary<int, int> m_uniqueComponents = null!;
@@ -110,7 +110,7 @@ public class Entity {
     /// Initialize the current <see cref="Entity"/> instance with some basic render properties.
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
-    protected void InitRenderEntityWith<T>() where T : RenderComponent, IStaticType, new() {
+    protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, new() {
         _ = this.AttachComponent<Transform>(new Transform(), isUnique: true);
         _ = this.AttachComponent<T>(new T(), isUnique: true);
 

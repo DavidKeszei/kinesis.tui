@@ -26,6 +26,7 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
                 interaction = T.Target switch {
                     WorkTag.RENDERING => new InteractionComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
                     WorkTag.INPUT => new InteractionComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island),
+                    WorkTag.LAYOUT => new InteractionComponent(onLayoutChange: (message) => SetCallback(value, Unsafe.As<LayoutMessage, T>(ref message)), m_island),
                     _ => null!
                 };
                 base.AttachComponent<InteractionComponent>(interaction, isUnique: true);

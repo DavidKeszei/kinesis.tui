@@ -26,17 +26,6 @@ internal partial class WindowsInputBackend: IInputBackend {
 
     #endregion
 
-    private readonly CircularBuffer<InputInfo> m_infoBuffer = null!;
-    private Task m_rawInputTask = null!;
-
-    private nint m_handle = nint.Zero;
-    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
-
-    /// <summary>
-    /// Indicates the user pressed/pressing some key currently.
-    /// </summary>
-    public bool HasInput { get => m_infoBuffer.Count > 0; }
-
     #region NATIVE_IMPL
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetStdHandle")]
@@ -54,6 +43,17 @@ internal partial class WindowsInputBackend: IInputBackend {
     private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
 
     #endregion
+
+    private readonly CircularBuffer<InputInfo> m_infoBuffer = null!;
+    private Task m_rawInputTask = null!;
+
+    private nint m_handle = nint.Zero;
+    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
+
+    /// <summary>
+    /// Indicates the user pressed/pressing some key currently.
+    /// </summary>
+    public bool HasInput { get => m_infoBuffer.Count > 0; }
 
     public WindowsInputBackend()
         => m_infoBuffer = new CircularBuffer<InputInfo>(capacity: 64);

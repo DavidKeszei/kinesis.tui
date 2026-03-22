@@ -1,4 +1,5 @@
-﻿using Kinesis.Processing;
+﻿using Kinesis.Layout;
+using Kinesis.Processing;
 using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
@@ -11,25 +12,25 @@ namespace Kinesis.Rendering;
 /// <summary>
 /// Represent the rendering engine of the library.
 /// </summary>
-public sealed class Renderer {
+internal sealed class Renderer {
+    #region CONSTS
     private const int MAX_STACK_BUFFER_LEN = 16_384;
     private const float MAX_FPS = 8.3f;
 
+    private const int MAX_DIRTY_SEARCH_DEPTH = 1;
+    #endregion
+
     private readonly State<WorkerSystemState> m_sync = null!;
+    private readonly State<LayoutInfo> m_layout = null!;
+
     private readonly StreamWriter m_output = null!;
-
     private ConsoleBuffer m_frontBuffer = default!;
-    private ConsoleBuffer m_backBuffer = default!;
 
+    private ConsoleBuffer m_backBuffer = default!;
     private Vec2 m_scale = Vec2.Zero;
 
     private float m_currentFrameTime = .0f;
     private RGB m_background = RGB.Transparent;
-
-    /// <summary>
-    /// Current scale of the screen.
-    /// </summary>
-    public Vec2 Scale { get => m_scale; }
 
     /// <summary>
     /// Current frame/second value by the engine from the frame time.
@@ -45,17 +46,19 @@ public sealed class Renderer {
     /// Create a new <see cref="Renderer"/> instance with specific <paramref name="scale"/>.
     /// </summary>
     /// <param name="scale">Scale of the console screen.</param>
-    public Renderer(Vec2 scale, State<WorkerSystemState> sync) {
-        m_frontBuffer = new ConsoleBuffer((int)scale.X, (int)scale.Y);
-        m_backBuffer = new ConsoleBuffer((int)scale.X, (int)scale.Y);
-
-        m_scale = scale;
+    public Renderer(State<LayoutInfo> layout, State<WorkerSystemState> sync) {
+        m_scale = layout.Value.Scale;
         m_sync = sync;
 
-        m_output = new StreamWriter(stream: Console.OpenStandardOutput());
-        m_output.AutoFlush = false;
+        m_layout = layout;
+        m_frontBuffer = new ConsoleBuffer((int)m_scale.X, (int)m_scale.Y);
 
+        m_backBuffer = new ConsoleBuffer((int)m_scale.X, (int)m_scale.Y);
+        m_output = new StreamWriter(stream: Console.OpenStandardOutput());
+
+        m_output.AutoFlush = false;
         Console.CursorVisible = false;
+
         Console.OutputEncoding = Encoding.UTF8;
     }
 
@@ -65,9 +68,11 @@ public sealed class Renderer {
     /// <param name="entities">Renderable entities of the <see cref="Renderer"/>.</param>
     public Task Render(IReadOnlyList<Entity> entities) {
         DateTime start = DateTime.Now;
+        HandleLayoutChange(entities);
 
         if (m_sync == WorkerSystemState.WAIT_FOR_RENDERER) {
             for (int i = 0; i < entities.Count; ++i) {
+
                 Transform? transform = entities[i].GetComponent<Transform>();
                 RenderComponent? renderLogic = entities[i].GetComponent<RenderComponent>();
 
@@ -101,6 +106,22 @@ public sealed class Renderer {
         }
 
         return Task.CompletedTask;
+    }
+
+    private void HandleLayoutChange(IReadOnlyList<Entity> entities) {
+        if (m_layout.Value.IsChanged)
+            return;
+
+        m_backBuffer = ConsoleBuffer.Reallocate(m_backBuffer, m_layout.Value.Scale);
+        m_frontBuffer = ConsoleBuffer.Reallocate(m_frontBuffer, m_layout.Value.Scale);
+
+        for (int i = 0; i < entities.Count; ++i) {
+            RenderComponent render = entities[i].GetComponent<RenderComponent>()!;
+            render.IsDirty = true;
+        }
+
+        m_scale = m_layout.Value.Scale;
+        m_layout.Value = new LayoutInfo() with { Scale = m_layout.Value.Scale, IsChanged = false };
     }
 
     /// <summary>
@@ -188,7 +209,7 @@ public sealed class Renderer {
         RenderHierarchy renderHierarchy = current.GetComponent<RenderHierarchy>()!;
         int currentDepth = renderHierarchy.Depth;
 
-        while (renderHierarchy.Depth - currentDepth <= 1 && entities.Count > renderHierarchy.NextRenderElementIndex) {
+        while (renderHierarchy.Depth - currentDepth <= MAX_DIRTY_SEARCH_DEPTH && entities.Count > renderHierarchy.NextRenderElementIndex) {
             RenderComponent render = entities[renderHierarchy.NextRenderElementIndex].GetComponent<RenderComponent>()!;
             render.IsDirty = true;
 
