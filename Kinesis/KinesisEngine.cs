@@ -1,4 +1,5 @@
 ﻿using Kinesis.Input;
+using Kinesis.Layout;
 using Kinesis.Navigation;
 using Kinesis.Processing;
 using Kinesis.Rendering;
@@ -20,25 +21,30 @@ public sealed class KinesisEngine: ISystemProvider {
     private readonly WorkerSystem m_worker = null!;
     private readonly NavigationSystem m_navigator = null!;
 
+    private readonly LayoutSystem m_layoutSystem = null!;
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
+
+    private readonly State<LayoutInfo> m_layoutInfo = null!;
     private readonly State<WorkerSystemState> m_workSyncState = null!;
-    
+
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(title == null ? $"\e]0;KinesisTUI\a" : $"\e]0;{title}\a");
 
+        m_layoutInfo = new ValueState<LayoutInfo>();
         m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
+
+        m_layoutSystem = new LayoutSystem(m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
         m_input = new InputSystem();
 
         m_worker = WorkerSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
 
-        m_renderer = new Renderer(scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y), sync: m_workSyncState);
+        m_renderer = new Renderer(layout: m_layoutInfo, sync: m_workSyncState);
         m_customSystems = new List<SystemInvocationInfo>();
 
-        /* Make sure the NavigatorSystem is can be queried */
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();
     }
@@ -91,11 +97,13 @@ public sealed class KinesisEngine: ISystemProvider {
         _ = Task.Run(action: () => m_worker.Run(), token);
         _ = Task.Run(action: () => m_input.Run(), token);
 
+        _ = Task.Run(action: () => m_layoutSystem.Run(), token);
         while(!token.IsCancellationRequested) {
+
             /* Render the frame to the screen/terminal window. */
             await m_renderer.Render(entities: m_navigator.Current?.Tree ?? []);
 
-            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_renderer.Scale));
+            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
             else firstRun = false;
         }
 

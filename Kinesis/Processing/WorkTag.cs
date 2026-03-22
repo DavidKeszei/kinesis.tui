@@ -6,5 +6,6 @@ namespace Kinesis.Processing;
 
 public enum WorkTag : byte {
     INPUT,
-    RENDERING
+    RENDERING,
+    LAYOUT
 }

@@ -21,8 +21,4 @@
     <None Remove="Properties\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Layout\" />
-  </ItemGroup>
-
 </Project>

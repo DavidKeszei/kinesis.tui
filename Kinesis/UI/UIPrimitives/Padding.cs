@@ -13,7 +13,7 @@ public sealed class Padding: Entity {
     /// <summary>
     /// Value of the spacing.
     /// </summary>
-    public uint Value { get => (uint)this.GetComponent<Style>()!.AsInt; set => this.GetComponent<Style>()!.AsInt = (int)value; }
+    public uint Value { get => (uint)this.GetComponent<Style>()!.AsInt; set => UpdateChildPadding(value); }
 
     /// <summary>
     /// Child of the current <see cref="Padding"/>.
@@ -42,5 +42,15 @@ public sealed class Padding: Entity {
 
         _ = base.AttachComponent<Transform>(new Transform(), isUnique: true);
         _ = base.AttachComponent<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 1), true);
+    }
+
+    private void UpdateChildPadding(uint value) {
+        this.GetComponent<Style>()!.AsInt = (int)value;
+
+        Entity? child = this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached;
+        if (child != null) {
+            Transform e_transform = this.GetComponent<Transform>()!;
+            child.GetComponent<Transform>()?.Position = new Vec2(e_transform.Position.X + Value, e_transform.Position.Y + Value); ;
+        }
     }
 }
