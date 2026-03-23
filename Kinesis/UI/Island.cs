@@ -37,7 +37,6 @@ public abstract class Island: Entity {
     /// </summary>
     /// <param name="context">Current target entity of the call.</param>
     internal void CreateRenderSet(BuildContext context = default) {
-
         /* If the Current is an Island, then build it & switch to the created entity */
         if (context.Current is Island island) {
             Hierarchy parent = island.GetComponent<Hierarchy>(Hierarchy.Parent)!;
