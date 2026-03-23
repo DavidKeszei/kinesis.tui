@@ -13,7 +13,7 @@ namespace Kinesis.Layout;
 /// </summary>
 internal partial class LayoutSystem: IDynamicSystem {
     #region CONSTS
-    private const int POOLING_TIME = 8;
+    private const int POOLING_TIME = 1;
     #endregion
 
     #region NATIVE_IMPL_WIN32
