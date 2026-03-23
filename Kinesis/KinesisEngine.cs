@@ -7,7 +7,6 @@ using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis;
@@ -15,20 +14,7 @@ namespace Kinesis;
 /// <summary>
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
-public sealed partial class KinesisEngine: ISystemProvider {
-    #region CONSTS
-    private const string WIN32_KERNEL32 = "kernel32.dll";
-    private const uint STD_IN = uint.MaxValue - 10 + 1;
-
-    #endregion
-
-    #region NATIVE_IMPL_WIN32
-
-    [LibraryImport(libraryName: WIN32_KERNEL32, EntryPoint = "GetStdHandle")]
-    private static partial nint GetStandartHandle(uint type);
-
-    #endregion
-
+public sealed class KinesisEngine: ISystemProvider {
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
@@ -41,20 +27,17 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private readonly State<LayoutInfo> m_layoutInfo = null!;
     private readonly State<WorkerSystemState> m_workSyncState = null!;
 
-    private readonly nint m_stdHandle = nint.Zero;
-
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(title == null ? $"\e]0;KinesisTUI\a" : $"\e]0;{title}\a");
-        m_stdHandle = Init();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
         m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
 
-        m_layoutSystem = new LayoutSystem(handle: m_stdHandle, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
-        m_input = new InputSystem(handle: m_stdHandle);
+        m_layoutSystem = new LayoutSystem(m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
+        m_input = new InputSystem();
 
         m_worker = WorkerSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
@@ -151,10 +134,5 @@ public sealed partial class KinesisEngine: ISystemProvider {
         this.RegisterComponent<InteractionComponent>();
 
         this.RegisterComponent<RenderHierarchy>();
-    }
-
-    private nint Init() {
-        if (RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows)) return GetStandartHandle(STD_IN);
-        else throw new PlatformNotSupportedException(message: "The current OS version not supported.");
     }
 }
