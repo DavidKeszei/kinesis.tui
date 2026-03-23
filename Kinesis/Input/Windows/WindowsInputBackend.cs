@@ -18,18 +18,12 @@ internal partial class WindowsInputBackend: IInputBackend {
     private const string KERNEL32_LIB = "kernel32.dll";
     private const string USER32_LIB = "user32.dll";
 
-    private const nint INVALID_HND = -1;
     private const uint MANUAL_PROCESSING = 0x0001;
-
-    private const uint STD_IN = uint.MaxValue - 10 + 1;
     private const string DEDICATED_THREAD_NAME = "Input::Native Thread";
 
     #endregion
 
     #region NATIVE_IMPL
-
-    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetStdHandle")]
-    private static partial nint GetStandardHandle(uint type);
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
     [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
@@ -62,11 +56,10 @@ internal partial class WindowsInputBackend: IInputBackend {
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
-    public static IInputBackend Init() {
+    public static IInputBackend Init(nint consoleStdInHandle) {
         WindowsInputBackend backend = new WindowsInputBackend();
-        backend.m_handle = GetStandardHandle(STD_IN);
+        backend.m_handle = consoleStdInHandle;
 
-        if(backend.m_handle == INVALID_HND) return IInputBackend.ERR;
         if(!SetMode(handle: backend.m_handle, flags: MANUAL_PROCESSING))
             return IInputBackend.ERR;
 
