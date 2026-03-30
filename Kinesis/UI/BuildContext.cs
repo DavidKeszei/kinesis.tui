@@ -9,11 +9,12 @@ namespace Kinesis.UI;
 /// Gives information from the building process in an <see cref="Island"/>
 /// </summary>
 public record struct BuildContext {
+    private readonly Island m_root = null!;
+
     private Entity? m_current = null!;
     private readonly State<int> m_incrementRenderId = null!;
 
     private readonly int m_depth = 0;
-    private readonly bool m_isTop = true;
 
     /// <summary>
     /// Current target of the building.
@@ -31,10 +32,12 @@ public record struct BuildContext {
     public readonly int Depth { get => m_depth; internal init => m_depth = value; }
 
     /// <summary>
-    /// Indicates the building is working on the "first floor".
+    /// Root of the build.
     /// </summary>
-    public readonly bool IsTop { get => m_isTop; internal init => m_isTop = value; }
+    public readonly Island Root { get => m_root; }
 
-    public BuildContext()
-        => m_incrementRenderId = new ValueState<int>(@default: 0);
+    public BuildContext(Island root) {
+        m_incrementRenderId = new ValueState<int>(@default: 0);
+        m_root = root;
+    }
 }

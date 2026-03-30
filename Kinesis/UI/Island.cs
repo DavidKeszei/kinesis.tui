@@ -29,21 +29,21 @@ public abstract class Island: Entity {
         base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
         base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.DOWN });
 
-        m_renderSet = new List<Entity>(32);
+        m_renderSet = new List<Entity>(capacity: 32);
     }
 
     /// <summary>
     /// Move through the tree and create list from it.
     /// </summary>
     /// <param name="context">Current target entity of the call.</param>
-    internal void CreateRenderSet(BuildContext context = default) {
-        /* If the Current is an Island, then build it & switch to the created entity */
+    internal void CreateRenderSet(BuildContext context) {
         if (context.Current is Island island) {
-            Hierarchy parent = island.GetComponent<Hierarchy>(Hierarchy.Parent)!;
-            context.Current = (context.IsTop ? this.Build(context) : island.Build(context));
 
-            if (context.Current == null) return;
-            context.Current.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = parent.Attached;
+            Entity? created = island.Build(context);
+            if (created == null) return;
+
+            context.Current.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = created;
+            created.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
         }
 
         int childrenCount = context.Current.CountComponent<Hierarchy>();

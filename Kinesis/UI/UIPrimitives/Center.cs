@@ -7,11 +7,13 @@ using System.Text;
 namespace Kinesis.UI;
 
 public sealed class Center: Island {
-    private Vec2 m_previosusScale = Vec2.Zero;
+    private const string CONTANIER_ID = "__box__";
+    private readonly Entity? m_child = null!;
 
     public Entity Child {
-        set {
+        init {
             if (value == null) return;
+            m_child = value;
 
             this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = value;
             value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
@@ -19,15 +21,14 @@ public sealed class Center: Island {
     }
 
     protected override Entity? Build(BuildContext context) {
-        return new OnUpdate<LayoutMessage>(this) {
+        return new OnUpdate<LayoutMessage>(island: context.Root) {
             On = (msg, _) => {
-                Entity? child = this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached;
-                if (m_previosusScale == msg.Scale || child == null) return;
-
-                Vec2 scale = child.GetComponent<Transform>()!.Scale;
-                Vec2 center = new Vec2(x: (msg.Scale.X / 2) - scale.X, (msg.Scale.Y / 2) - scale.Y);
+                
             },
-            Child = this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached
+            Child = new UIBox {
+                Name = CONTANIER_ID,
+                Child = m_child ?? null!
+            }
         };
     }
 }
