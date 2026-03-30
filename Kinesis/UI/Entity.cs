@@ -3,6 +3,7 @@ using Kinesis.UI.Components;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace Kinesis.UI;
@@ -12,9 +13,11 @@ namespace Kinesis.UI;
 /// </summary>
 public class Entity {
     private readonly Dictionary<int, int> m_uniqueComponents = null!;
-    private readonly List<Component> m_components = null!;
+    private readonly Queue<int> m_emptySpaces = null!;
 
+    private readonly List<Component> m_components = null!;
     private readonly string m_name = string.Empty;
+
     private int m_version = 0;
 
     /// <summary>
@@ -32,8 +35,9 @@ public class Entity {
     /// </summary>
     public Entity() {
         m_version = 0;
-
         m_components = new List<Component>(capacity: 16);
+
+        m_emptySpaces = new Queue<int>(capacity: 16);
         m_uniqueComponents = new Dictionary<int, int>();
     }
 
@@ -51,9 +55,10 @@ public class Entity {
                 return false;
         }
 
-        this.m_components.Add(component);
-        ++m_version;
+        if (m_emptySpaces.Count == 0) this.m_components.Add(component);
+        else this.m_components[m_emptySpaces.Dequeue()] = component;
 
+        ++m_version;
         return true;
     }
 
@@ -85,18 +90,20 @@ public class Entity {
     /// <param name="index">Indicates where we want delete the component.</param>
     public void RemoveComponent<T>(int index = 0) where T: Component, IStaticType {
         if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.Name), out int i)) {
-            m_components.RemoveAt(i);
+            m_components[i] = null!;
             m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.Name));
 
+            m_emptySpaces.Enqueue(i);
             ++m_version;
             return;
         }
 
         int indexOf = 0;
+        for (; i < m_components.Count; ++i) {
+            if (m_components[i].TypeOf(type: T.Name) && indexOf++ == index) {
+                m_components[i] = null!;
 
-        foreach (Component component in m_components) {
-            if (component.TypeOf(type: T.Name) && ++indexOf == index) {
-                m_components.RemoveAt(index);
+                m_emptySpaces.Enqueue(i);
                 ++m_version;
                 return;
             }
