@@ -14,8 +14,6 @@ public class UIList: Entity {
                 return;
 
             for (int i = 0; i < value.Count; ++i) {
-                if (value[i] == null) continue;
-
                 Hierarchy conn = new Hierarchy() {
                     Direction = ConnectionDir.DOWN,
                     Attached = value[i]

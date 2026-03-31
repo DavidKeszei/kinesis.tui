@@ -36,20 +36,15 @@ public static class EntityExtension {
             return null!;
         }
 
-        public int CountComponent<T>(Func<T, bool>? comparand = null) where T : Component, IStaticType {
+        public int CountComponent<T>(Func<T, bool>? comparand = null) where T: Component, IStaticType {
             int count = 0;
-            comparand ??= static (_) => true;
+            comparand ??= static(_) => true;
 
             foreach (Component comp in entity)
                 if (comp.TypeOf(T.Name) && comparand((T)comp))
                     ++count;
 
             return count;
-        }
-
-        public void CreateHierarchyConnection(Entity other, int offset = 0) {
-            other.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = entity;
-            entity.GetComponent<Hierarchy>(Hierarchy.ChildrenStart + 1)!.Attached = other;
         }
     }
 }
