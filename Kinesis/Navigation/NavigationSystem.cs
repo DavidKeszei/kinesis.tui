@@ -26,7 +26,7 @@ public class NavigationSystem: INavigator {
                 return null!;
 
             if (!page.Tree.Any())
-                page.CreateRenderSet();
+                page.CreateRenderSet(context: new BuildContext(current: page) { Root = page });
 
             return page;
         } 
