@@ -22,13 +22,10 @@ internal partial class LayoutSystem: IDynamicSystem {
     [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
     private static partial bool GetWindowScale(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
 
-    [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "GetStdHandle")]
-    private static partial nint GetStandardHandle(uint type);
-
     #endregion
 
     private readonly State<LayoutInfo> m_info = null!;
-    private nint m_stdHandle = nint.Zero;
+    private readonly nint m_stdHandle = nint.Zero;
 
     /// <summary>
     /// Behavior of the <see cref="LayoutSystem"/>.
@@ -39,8 +36,10 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Create a new <see cref="LayoutSystem"/> with <paramref name="scale"/>.
     /// </summary>
     /// <param name="scale">Start scale of the application. This is going be the pivot point of the observing.</param>
-    public LayoutSystem(State<LayoutInfo> state, Vec2 scale) {
+    public LayoutSystem(nint handle, State<LayoutInfo> state, Vec2 scale) {
         m_info = state;
+        m_stdHandle = handle;
+
         m_info.Value = new LayoutInfo(scale, IsChanged: false);
     }
 
@@ -53,8 +52,6 @@ internal partial class LayoutSystem: IDynamicSystem {
     }
 
     private void RunOnWindows() {
-        m_stdHandle = GetStandardHandle(uint.MaxValue - 10 + 1);
-
         while (true) {
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
