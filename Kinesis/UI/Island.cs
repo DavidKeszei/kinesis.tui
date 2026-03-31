@@ -34,23 +34,21 @@ public abstract class Island {
     /// <param name="island">Current <see cref="Island"/> instance.</param>
     public static implicit operator Entity(Island island) => island.Build() ?? null!;
 
-    public Island()
-        => m_renderSet = new List<Entity>(capacity: 32);
+        m_renderSet = new List<Entity>(capacity: 32);
+    }
 
     /// <summary>
     /// Build the island as <see cref="Entity"/>.
     /// </summary>
-    /// <returns>Return <see cref="Entity"/> instance from the current <see cref="Island"/>.</returns>
-    protected abstract Entity? Build();
+    /// <param name="context">Current target entity of the call.</param>
+    internal void CreateRenderSet(BuildContext context) {
+        if (context.Current is Island island) {
 
-    /// <summary>
-    /// Move through the tree and create list from it.
-    /// </summary>
-    /// <param name="entity">Current target entity of the call.</param>
-    internal void CreateRenderSet(Entity? entity = null!, int depth = 0) {
-        if (m_isTopOfTheTree) {
-            entity ??= Build();
-            m_isTopOfTheTree = false;
+            Entity? created = island.Build(context);
+            if (created == null) return;
+
+            context.Current.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = created;
+            created.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
         }
 
         if(entity == null) return;
