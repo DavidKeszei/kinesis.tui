@@ -8,7 +8,7 @@ namespace Kinesis.Processing;
 /// Represent a circular buffer for <typeparamref name="T"/> instances.
 /// </summary>
 internal class CircularBuffer<T> {
-    #region <CONSTANTS>
+    #region CONSTS
 
     private const byte TRUE = 1;
     private const byte FALSE = 0;
@@ -29,6 +29,11 @@ internal class CircularBuffer<T> {
     /// </summary>
     public int Count { get => m_count; }
 
+    /// <summary>
+    /// Capacity of the current buffer.
+    /// </summary>
+    public int Capacity { get => m_limit; }
+
     public CircularBuffer(int capacity) {
         m_buffer = new T[capacity];
         m_limit = capacity;
@@ -39,10 +44,8 @@ internal class CircularBuffer<T> {
     /// </summary>
     /// <param name="value">Target message.</param>
     public void Write(T? value) {
-        if (value == null || Interlocked.CompareExchange(location1: ref m_interlock, value: TRUE, comparand: TRUE) == TRUE) 
+        if (value == null || Interlocked.CompareExchange(location1: ref m_interlock, value: TRUE, comparand: FALSE) != FALSE) 
             return;
-
-        _ = Interlocked.Exchange(location1: ref m_interlock, TRUE);
 
         if (m_count == m_limit) {
             _ = Interlocked.Exchange(ref m_interlock, FALSE);
@@ -64,12 +67,10 @@ internal class CircularBuffer<T> {
     /// <param name="message">Output message.</param>
     /// <returns>If the buffer has any unread message, then return <see langword="true"/>. Otherwise return <see langword="false"/>.</returns>
     public bool Read(out T? message) {
-        if (m_count == 0 || Interlocked.CompareExchange(ref m_interlock, TRUE, TRUE) == TRUE) {
+        if (m_count == 0 || Interlocked.CompareExchange(ref m_interlock, value: TRUE, comparand: FALSE) != FALSE) {
             message = default;
             return false;
         }
-
-        _ = Interlocked.Exchange(location1: ref m_interlock, TRUE);
 
         message = m_buffer[m_readPosition];
         _ = Interlocked.Increment(location: ref m_readPosition);

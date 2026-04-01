@@ -74,7 +74,7 @@ internal class InputSystem: IDynamicSystem {
     /// <summary>
     /// Indicates the wait time between two sampling. (10ms)
     /// </summary>
-    private const int POOLING_TIME = 10;
+    private const int POOLING_TIME = 5;
 
     /// <summary>
     /// Minimum time, when we think no input was happened and we fire that. (10ms)
@@ -118,6 +118,12 @@ internal class InputSystem: IDynamicSystem {
                     Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                     continue;
                 }
+
+                /*
+                 [TODO]
+                 Bottleneck inside the input logic: not in the input system (this is register the input), check the CircularBuffer<T> class for it.
+                 */
+                Debug.WriteLine("Input was tracked!");
 
                 /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {

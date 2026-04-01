@@ -23,8 +23,11 @@ internal class WorkerSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "<Thread> Worker";
     private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
 
-    private const int MAX_MSG_COUNT = 120;
+    private const int MAX_MSG_COUNT = 128;
+    private const int MAX_MSG_RND = 2;
+
     private const int MAX_INTERACTION_COUNT = 1024;
+    private const int POOLING_TIME = 5;
 
     private static WorkerSystem m_instance = null!;
     private readonly CircularBuffer<WorkTarget> m_targets = null!;
@@ -48,8 +51,8 @@ internal class WorkerSystem: IDynamicSystem {
     public WorkerSystem() {
         m_targets = new CircularBuffer<WorkTarget>(capacity: MAX_INTERACTION_COUNT);
 
+        m_renderMessages = new CircularBuffer<RenderMessage>(capacity: MAX_MSG_RND);
         m_inputMessages = new CircularBuffer<InputMessage>(capacity: MAX_MSG_COUNT);
-        m_renderMessages = new CircularBuffer<RenderMessage>(capacity: MAX_MSG_COUNT);
 
         m_layoutMessages = new CircularBuffer<LayoutMessage>(capacity: MAX_MSG_COUNT);
     }
@@ -65,19 +68,28 @@ internal class WorkerSystem: IDynamicSystem {
     /// Add new <see cref="InputMessage"/> to the workers.
     /// </summary>
     /// <param name="message">The message itself.</param>
-    public void AddInputMessage(InputMessage message) => m_inputMessages.Write(message);
+    public void AddInputMessage(InputMessage message) {
+        if(m_inputMessages.Count < m_inputMessages.Capacity)
+            m_inputMessages.Write(message);
+    }
 
     /// <summary>
     /// Add new <see cref="RenderMessage"/> to the workers.
     /// </summary>
     /// <param name="message">The message itself.</param>
-    public void AddRenderMessage(RenderMessage message) => m_renderMessages.Write(message);
+    public void AddRenderMessage(RenderMessage message) {
+        if(m_renderMessages.Count < m_renderMessages.Capacity)
+            m_renderMessages.Write(message);
+    }
 
     /// <summary>
     /// Add new <see cref="LayoutMessage"/> to the workers.
     /// </summary>
     /// <param name="message">The message itself.</param>
-    public void AddLayoutMessage(LayoutMessage message) => m_layoutMessages.Write(message);
+    public void AddLayoutMessage(LayoutMessage message) {
+        if(m_layoutMessages.Count < m_layoutMessages.Capacity)
+            m_layoutMessages.Write(message);
+    }
 
     /// <summary>
     /// Add <paramref name="work"/> to the queue.
@@ -94,7 +106,7 @@ internal class WorkerSystem: IDynamicSystem {
 
         while(true) {
             if (m_workSync != WorkerSystemState.OPEN_FOR_PROCESSING) {
-                Thread.Sleep(millisecondsTimeout: 5);
+                Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
 
@@ -130,9 +142,5 @@ public enum WorkerSystemState: byte {
     /// <summary>
     /// Indicates for the <see cref="WorkerSystem"/> wait to the <see cref="Renderer"/>.
     /// </summary>
-    WAIT_FOR_RENDERER,
-    /// <summary>
-    /// Indicates something was changes in the <see cref="LayoutSystem"/>. (Mostly new scale info)
-    /// </summary>
-    WAIT_FOR_NEW_LAYOUT_INFO
+    WAIT_FOR_RENDERER
 }
