@@ -13,7 +13,7 @@ namespace Kinesis.Input.Windows;
 internal readonly struct WindowsConsoleEventMsg {
     [MarshalAs(unmanagedType: UnmanagedType.U2), FieldOffset(0)] readonly WindowsConsoleMsgTag m_tag = WindowsConsoleMsgTag.INPUT;
     [FieldOffset(4)] readonly InputKeyEventInfo m_inputInfo = default;
-    [FieldOffset(4)] readonly COORD m_windowScale = default;
+    [FieldOffset(4)] readonly ConsoleScaleInfo m_windowScale = default;
 
     /// <summary>
     /// Delimiter
@@ -28,15 +28,15 @@ internal readonly struct WindowsConsoleEventMsg {
     /// <summary>
     /// Current scale of the console window.
     /// </summary>
-    public COORD ConsoleWindowScale { get => m_windowScale; }
+    public ConsoleScaleInfo ConsoleWindowScale { get => m_windowScale; }
 
     public WindowsConsoleEventMsg(WindowsConsoleMsgTag tag) {
         switch (tag) {
             case WindowsConsoleMsgTag.INPUT:
                 m_inputInfo = new InputKeyEventInfo();
                 break;
-            case WindowsConsoleMsgTag.RESIZE:
-                m_windowScale = new COORD(x: 0, y: 0);
+            case WindowsConsoleMsgTag.LAYOUT:
+                m_windowScale = new ConsoleScaleInfo(x: 0, y: 0);
                 break;
         }
     }

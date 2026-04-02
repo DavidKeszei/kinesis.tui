@@ -91,18 +91,16 @@ internal class InputSystem: IDynamicSystem {
     private readonly IInputBackend m_backend = null!;
     private (char Key, InputModifier Modifier, TimeSpan When, bool isPress) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
-    public InputSystem(nint handle) {
+    public InputSystem(ConsoleSourceInfo provider) {
+        m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init(source: provider.Windows) : null!;
         Console.InputEncoding = Encoding.UTF8;
-        m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init(handle) : null!;
     }
 
     /// <summary>
     /// Listen inputs from standard input.
     /// </summary>
     public void Run() {
-        if (m_backend == IInputBackend.ERR)
-            return;
-
+        if (m_backend == IInputBackend.ERR) return;
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
         float deadZoneTime = DEAD_ZONE;
@@ -111,20 +109,7 @@ internal class InputSystem: IDynamicSystem {
         while (true) {
             DateTime now = DateTime.UtcNow;
 
-            if (m_backend.HasInput) {
-                InputInfo info = m_backend.ReadInput();
-
-                if (info.Key == '\0') {
-                    Thread.Sleep(millisecondsTimeout: POOLING_TIME);
-                    continue;
-                }
-
-                /*
-                 [TODO]
-                 Bottleneck inside the input logic: not in the input system (this is register the input), check the CircularBuffer<T> class for it.
-                 */
-                Debug.WriteLine("Input was tracked!");
-
+            if (m_backend.ReadInput(out InputInfo info)) {
                 /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
                     if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
@@ -144,6 +129,7 @@ internal class InputSystem: IDynamicSystem {
                     m_startInputInfo = (info.Key, info.Modifiers, now.TimeOfDay, info.IsPress);
                 }
 
+                Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
 

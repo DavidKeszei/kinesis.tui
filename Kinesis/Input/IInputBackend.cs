@@ -24,11 +24,5 @@ internal interface IInputBackend {
     /// Read the current buffer from the input.
     /// </summary>
     /// <returns>Return the key and the modifiers as <see cref="InputInfo"/>.</returns>
-    public InputInfo ReadInput();
-
-    /// <summary>
-    /// Create a new <see cref="IInputBackend"/> instance.
-    /// </summary>
-    /// <returns>Return a initialized <see cref="IInputBackend"/> instance.</returns>
-    public abstract static IInputBackend Init(nint consoleStdInHandle);
+    public bool ReadInput(out InputInfo input);
 }

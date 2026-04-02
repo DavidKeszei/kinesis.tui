@@ -9,7 +9,7 @@ namespace Kinesis.Layout;
 /// Represent a COORD structure in the Win32 API.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Sequential)]
-internal readonly struct COORD {
+internal readonly struct ConsoleScaleInfo {
     private readonly short m_x = 0;
     private readonly short m_y = 0;
 
@@ -17,7 +17,7 @@ internal readonly struct COORD {
 
     public short Y { get => m_y; }
 
-    public COORD(short x, short y) {
+    public ConsoleScaleInfo(short x, short y) {
         m_x = x;
         m_y = y;
     }

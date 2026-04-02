@@ -13,17 +13,16 @@ namespace Kinesis.Input.Windows;
 /// Represent a standard input on the Windows platform. 
 /// </summary>
 internal partial class WindowsInputBackend: IInputBackend {
-    #region CONSTANTS
+    #region DEFINES
 
     private const string KERNEL32_LIB = "kernel32.dll";
     private const string USER32_LIB = "user32.dll";
 
     private const uint MANUAL_PROCESSING = 0x0001;
-    private const string DEDICATED_THREAD_NAME = "Input::Native Thread";
+    private const string DEDICATED_THREAD_NAME = "Input->Native";
 
     #endregion
-
-    #region NATIVE_IMPL
+    #region P/INVOKE
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
     [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
@@ -32,16 +31,15 @@ internal partial class WindowsInputBackend: IInputBackend {
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
 
-    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleInputW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
+    //[LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleInputW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    //[return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
+    //private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
 
     #endregion
 
     private readonly CircularBuffer<InputInfo> m_infoBuffer = null!;
-    private Task m_rawInputTask = null!;
+    private IConsoleSource<InputKeyEventInfo> m_source = null!;
 
-    private nint m_handle = nint.Zero;
     private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
 
     /// <summary>
@@ -56,35 +54,17 @@ internal partial class WindowsInputBackend: IInputBackend {
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
-    public static IInputBackend Init(nint consoleStdInHandle) {
+    public static WindowsInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
         WindowsInputBackend backend = new WindowsInputBackend();
-        backend.m_handle = consoleStdInHandle;
+        if(!SetMode(handle: StdHandle.Input, flags: MANUAL_PROCESSING))
+            return null!;
 
-        if(!SetMode(handle: backend.m_handle, flags: MANUAL_PROCESSING))
-            return IInputBackend.ERR;
-
-        backend.m_rawInputTask = Task.Run(() => {
-            Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
-
-            while(true) {
-                if(backend.Read(out char character, out InputModifier modifiers, out bool isPressed))
-                    backend.m_infoBuffer.Write(value: new InputInfo(character, modifiers, isPressed));
-            }
-        });
-
+        backend.m_source = source;
         return backend;
     }
 
-    public InputInfo ReadInput() {
-        _ = m_infoBuffer.Read(out InputInfo info);
-        return info;
-    }
-
-    /// <summary>
-    /// Read one key from the console input.
-    /// </summary>
-    /// <returns>If anything in the input, return <see langword="true"/>. Otherwise return <see langword="false"/>.</returns>
-    private bool Read(out char character, out InputModifier modifiers, out bool isPressed) {
+    public bool ReadInput(out InputInfo input) {
+        input = default;
         Span<int> modifiersCodes = stackalloc int[5] {
             0xA0,
             0xA1,
@@ -93,22 +73,24 @@ internal partial class WindowsInputBackend: IInputBackend {
             0x12,
         };
 
-        character = '\0';
-        modifiers = InputModifier.NONE;
-        isPressed = false;
+        char character = '\0';
+        InputModifier modifiers = InputModifier.NONE;
+        bool isPressed = false;
 
-        bool success = ReadConsole(hnd: m_handle, buffer: ref m_msg, length: (uint)Unsafe.SizeOf<WindowsConsoleEventMsg>(), out uint _) && m_msg.Tag == WindowsConsoleMsgTag.INPUT;
-
-        if (success) {
-            character = m_msg.KeyInfo.Value;
-            isPressed = m_msg.KeyInfo.IsPressed;
+        InputKeyEventInfo info = default!;
+        if (m_source.Read(out info)) {
+            character = info.Value;
+            isPressed = info.IsPressed;
 
             for (byte i = 0; i < modifiersCodes.Length; ++i) {
                 if (GetKeyState(modifiersCodes[i]) < 0)
                     modifiers |= (InputModifier)modifiersCodes[i];
             }
+
+            input = new InputInfo(character, modifiers, isPressed);
+            return true;
         }
 
-        return success;
+        return false;
     }
 }
