@@ -1,10 +1,11 @@
-﻿using Kinesis.UI;
+﻿using Kinesis.Core;
+using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Kinesis.Rendering;
+namespace Kinesis.Core.Rendering;
 
 /// <summary>
 /// Represent a helper component in the rendering.

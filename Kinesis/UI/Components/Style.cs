@@ -1,4 +1,5 @@
-﻿using Kinesis.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;

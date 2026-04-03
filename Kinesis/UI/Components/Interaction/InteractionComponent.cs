@@ -1,5 +1,5 @@
-﻿using Kinesis.Input;
-using Kinesis.Processing;
+﻿using Kinesis.Core;
+using Kinesis.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
