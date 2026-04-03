@@ -1,4 +1,4 @@
-﻿using Kinesis.Rendering;
+﻿using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;

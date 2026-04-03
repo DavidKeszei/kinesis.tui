@@ -1,8 +1,6 @@
-﻿using Kinesis.Input;
-using Kinesis.Layout;
-using Kinesis.Navigation;
-using Kinesis.Processing;
-using Kinesis.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Native;
+using Kinesis.Core.Rendering;
 using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
