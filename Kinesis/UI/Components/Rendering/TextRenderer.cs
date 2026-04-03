@@ -1,4 +1,4 @@
-﻿using Kinesis.Rendering;
+﻿using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -19,7 +19,7 @@ public class TextRenderer: RenderComponent {
     /// </summary>
     public string Value { 
         get => new string(value: m_buffer.AsSpan()[..m_len]);
-        set => SetText(text: value);
+        set => Replace(text: value);
     }
 
     public TextRenderer() { }
@@ -29,6 +29,19 @@ public class TextRenderer: RenderComponent {
         m_len = text.Length;
     }
 
+    /// <summary>
+    /// Remove characters from internal buffer.
+    /// </summary>
+    /// <param name="count">Amount of the remove.</param>
+    public void Remove(int count) {
+        if (count > m_len) {
+            m_len = 0;
+            return;
+        }
+
+        m_len -= count;
+    }
+
     internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
         if (buffer.Scale.Y == 0 || buffer.Scale.X == 0)
             return;
@@ -36,9 +49,9 @@ public class TextRenderer: RenderComponent {
         if(m_entityVersion != version)
             CacheStyles(styles);
 
-        IStyleComponent? bg = null!;
-        IStyleComponent? fg = null!;
-        IStyleComponent? attr = null!;
+        Style? bg = null!;
+        Style? fg = null!;
+        Style? attr = null!;
 
         bool isMissing = (!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out bg) && !bg!.TypeOf(Style.Name)) ||
                          (!m_cache.TryGetValue(key: StyleTag.FOREGROUND, out fg) && !fg!.TypeOf(Style.Name));
@@ -74,7 +87,7 @@ public class TextRenderer: RenderComponent {
 
     protected override void CacheStyles(StyleEnumerator styles) {
         m_cache.Clear();
-        foreach(IStyleComponent style in styles) {
+        foreach(Style style in styles) {
             
             switch(style.Tag) {
                 case StyleTag.FOREGROUND:
@@ -92,7 +105,11 @@ public class TextRenderer: RenderComponent {
         }
     }
 
-    private void SetText(ReadOnlySpan<char> text) {
+    /// <summary>
+    /// Replace the internal buffer with a new character sequence.
+    /// </summary>
+    /// <param name="text">Replace text.</param>
+    private void Replace(ReadOnlySpan<char> text) {
         if (m_len < text.Length) {
             m_len = text.Length;
             m_buffer = new char[m_len];
@@ -104,6 +121,5 @@ public class TextRenderer: RenderComponent {
         }
 
         m_len = text.Length;
-        m_isDirty = true;
-    } 
+    }
 }

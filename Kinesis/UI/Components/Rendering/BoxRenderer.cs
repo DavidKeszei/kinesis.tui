@@ -1,4 +1,4 @@
-﻿using Kinesis.Rendering;
+﻿using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,12 +21,11 @@ public class BoxRenderer: RenderComponent {
         }
 
         for (int x = 0; x < buffer.Scale.X; ++x) {
-
             for (int y = 0; y < buffer.Scale.Y; ++y) {
                 ref vtchar_t ch = ref buffer[x, y];
 
                 /* Source-like visual debug, if the background as visual effect not exists or just wrong type/typo. */
-                if(!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out IStyleComponent? bg) || bg is not Style) {
+                if(!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out Style? bg) || bg is not Style) {
                     if(y % 2 != 0) ch.Background = x % 2 != 0 ? RGB.Purple : new RGB(r: 0, g: 0, b: 0);
                     else ch.Background = x % 2 == 0 ? RGB.Purple : new RGB(r: 0, g: 0, b: 0);
 
@@ -43,10 +42,19 @@ public class BoxRenderer: RenderComponent {
     protected override void CacheStyles(StyleEnumerator styles) {
         m_cache.Clear();
 
-        foreach(IStyleComponent style in styles) {
-            if(style.Tag == StyleTag.BACKGROUND) {
-                m_cache.Add(style.Tag, style);
-                return;
+        foreach(Style style in styles) {
+            switch (style.Tag) {
+                case StyleTag.BACKGROUND:
+                    m_cache.Add(style.Tag, style);
+                    break;
+                case StyleTag.BORDER_CHAR:
+                    m_cache.Add(style.Tag, style);
+                    break;
+                case StyleTag.BORDER_COLOR:
+                    m_cache.Add(style.Tag, style);
+                    break;
+                default:
+                    break;
             }
         }
     }

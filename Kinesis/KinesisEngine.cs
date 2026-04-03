@@ -1,11 +1,11 @@
-﻿using Kinesis.Input;
-using Kinesis.Navigation;
-using Kinesis.Processing;
-using Kinesis.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Native;
+using Kinesis.Core.Rendering;
 using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis;
@@ -13,33 +13,43 @@ namespace Kinesis;
 /// <summary>
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
-public sealed class KinesisEngine: ISystemProvider {
+public sealed partial class KinesisEngine: ISystemProvider {
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
     private readonly WorkerSystem m_worker = null!;
     private readonly NavigationSystem m_navigator = null!;
 
+    private readonly LayoutSystem m_layoutSystem = null!;
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
-    
+
+    private readonly State<LayoutInfo> m_layoutInfo = null!;
+    private readonly State<WorkerSystemState> m_workSyncState = null!;
+
+    private readonly ConsoleSourceInfo m_consoleSourceInfoProvider = default!;
+
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
-    public KinesisEngine() {
-        m_renderer = new Renderer(scale: new Vec2(x: Console.BufferWidth, y: Console.BufferHeight));
-        m_input = new InputSystem();
+    /// <exception cref="PlatformNotSupportedException"/>
+    public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
+        Console.Out.Write(title == null ? $"\e]0;KinesisTUI\a" : $"\e]0;{title}\a");
+        m_consoleSourceInfoProvider = new ConsoleSourceInfo();
+
+        m_layoutInfo = new ValueState<LayoutInfo>();
+        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
+
+        m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
+        m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
 
         m_worker = WorkerSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
 
+        m_renderer = new Renderer(layout: m_layoutInfo, sync: m_workSyncState);
         m_customSystems = new List<SystemInvocationInfo>();
-        RegisterBuiltInComponents();
 
-        Console.InputEncoding = Encoding.UTF8;
-        Console.OutputEncoding = Encoding.UTF8;
-
-        /* Make sure the NavigatorSystem is can be queried */
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
+        RegisterBuiltInComponents();
     }
 
     public T? GetSystem<T>() where T: class, ISystem {
@@ -56,8 +66,8 @@ public sealed class KinesisEngine: ISystemProvider {
         return default!;
     }
 
-    public bool RegisterComponent<T>() where T: class, IComponent, IStaticType
-        => ComponentTypeProvider.RegisterComponent<T>(name: T.Name);
+    public bool RegisterComponent<T>() where T: Component, IStaticType
+        => ComponentRegistry.RegisterComponent<T>(name: T.Name);
 
     /// <summary>
     /// Add a system to the engine.
@@ -68,40 +78,43 @@ public sealed class KinesisEngine: ISystemProvider {
         => m_customSystems.Add(item: new SystemInvocationInfo(action, null, when));
 
     /// <summary>
-    /// Register a named route with a <paramref name="pageCreation"/> method.
+    /// Register a named route with a <paramref name="onCreate"/> method.
     /// </summary>
     /// <param name="name">Name of the route.</param>
-    /// <param name="pageCreation">Creation method of the <see cref="Island"/>.</param>
+    /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
     /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
-    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> pageCreation) where T: Island
-        => m_navigator.Register(name, pageCreation);
+    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
+        => m_navigator.Register(name, onCreate);
 
     /// <summary>
     /// Start the <see cref="KinesisEngine"/> instance with the systems.
     /// </summary>
-    public void Start(CancellationToken token = default) {
+    public async Task Start(CancellationToken token = default) {
         bool firstRun = true;
 
         /* Run the starter systems. */
-        Run(invocation: SystemInvocationTime.ON_BEGIN);
+        await Run(invocation: SystemInvocationTime.ON_BEGIN);
+        WorkerSystem.Current.AddSyncState(sync: m_workSyncState);
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
         _ = Task.Run(action: () => m_input.Run(), token);
 
+        _ = Task.Run(action: () => m_layoutSystem.Run(), token);
         while(!token.IsCancellationRequested) {
-            /* Render the frame to the screen/terminal window. */
-            m_renderer.Render(entities: m_navigator.Current?.Tree ?? []);
 
-            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_renderer.Scale));
+            /* Render the frame to the screen/terminal window. */
+            await m_renderer.Render(entities: m_navigator.Current?.Tree ?? []);
+
+            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
             else firstRun = false;
         }
 
         /* Run the shutdown systems. */
-        Run(invocation: SystemInvocationTime.ON_END);
+        await Run(invocation: SystemInvocationTime.ON_END);
     }
 
-    private void Run(SystemInvocationTime invocation) {
+    private Task Run(SystemInvocationTime invocation) {
         ISystem system = null!;
 
         foreach (SystemInvocationInfo systemInfo in m_customSystems.Where(x => x.When == invocation)) {
@@ -110,16 +123,19 @@ public sealed class KinesisEngine: ISystemProvider {
             if (system.Behavior == SystemBehavior.DYNAMIC && systemInfo.System is IDynamicSystem dynamic)
                 dynamic.Run();
         }
+
+        return Task.CompletedTask;
     }
 
     private void RegisterBuiltInComponents() {
-        this.RegisterComponent<BoxRenderer>();
-        this.RegisterComponent<TextRenderer>();
+        this.RegisterComponent<RenderComponent>();
 
         this.RegisterComponent<Transform>();
-        this.RegisterComponent<ConnectionComponent>();
+        this.RegisterComponent<Hierarchy>();
 
         this.RegisterComponent<Style>();
         this.RegisterComponent<InteractionComponent>();
+
+        this.RegisterComponent<RenderHierarchy>();
     }
 }
