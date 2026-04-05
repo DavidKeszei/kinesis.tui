@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -17,19 +18,27 @@ internal ref struct VT100StringBuilder {
     private const string ESC_FG = "\e[38;2;";
 
     private const string ESC_BG_DEFAULT = "\e[49m";
+    private const string ESC_FG_DEFAULT = "\e[39m";
 
     /// <summary>
-    /// Maximum length of the command, which contains all of the commands.
+    /// Barrier region of the <see cref="VT100StringBuilder"/>, where the flushing can be done.
     /// </summary>
-    public const int MAX_COMMAND_LEN = 128;
+    public const int FLUSH_BARRIER = 128;
 
-    private readonly Span<char> m_stack = default!;
     private int m_position = 0;
+    private RGB m_background = RGB.Black;
 
-    private RGB m_background = RGB.Transparent;
     private RGB m_foreground = RGB.Transparent;
+    private readonly Span<char> m_stack = default!;
 
-    public VT100StringBuilder(Span<char> buffer) => m_stack = buffer;
+    public int Position { readonly get => m_position; set => m_position = value; }
+
+    public readonly bool BarrierReached { get => m_stack.Length - m_position <= FLUSH_BARRIER; }
+
+    public VT100StringBuilder(Span<char> buffer) {
+        m_stack = buffer;
+        m_stack.Clear();
+    }
 
     /// <summary>
     /// Write the position to the screen.
@@ -38,6 +47,7 @@ internal ref struct VT100StringBuilder {
     /// <param name="y">Y axis value of the position.</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
     public VT100StringBuilder WritePosition(int x, int y) {
+        /* VT100 indexes starting from 1..n */
         ++x;
         ++y;
 
@@ -62,30 +72,35 @@ internal ref struct VT100StringBuilder {
     /// <param name="color">The color itself.</param>
     /// <param name="isBackground">The color is background color or not?</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
-    public VT100StringBuilder WriteColor(RGB color, bool isBackground) {
-        if ((m_background.Equals(rgb: color) && isBackground) || (m_foreground.Equals(rgb: color) && !isBackground))
+    public VT100StringBuilder WriteColor(RGB? color, bool isBackground) {
+        if (color == null) {
+            (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).TryCopyTo(m_stack[m_position..]);
+            m_position += (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).Length;
+            return this;
+        }
+
+        if ((m_background.Equals(rgb: color.Value) && isBackground) || (m_foreground.Equals(rgb: color.Value) && !isBackground))
             return this;
 
-        m_stack[m_position++] = '\e';
         (isBackground ? ESC_BG : ESC_FG).CopyTo(m_stack[m_position..]);
 
         m_position += (isBackground ? ESC_BG : ESC_FG).Length;
-        float alpha = color.A / 255f;
+        float alpha = color.Value.A / 255f;
 
-        ((byte)(color.R * alpha)).TryFormat(m_stack[m_position..], out int written);
+        ((byte)(color.Value.R * alpha)).TryFormat(m_stack[m_position..], out int written);
         m_position += written;
         m_stack[m_position++] = ';';
 
-        ((byte)(color.G * alpha)).TryFormat(m_stack[m_position..], out written);
+        ((byte)(color.Value.G * alpha)).TryFormat(m_stack[m_position..], out written);
         m_position += written;
         m_stack[m_position++] = ';';
 
-        ((byte)(color.B * alpha)).TryFormat(m_stack[m_position..], out written);
+        ((byte)(color.Value.B * alpha)).TryFormat(m_stack[m_position..], out written);
         m_position += written;
         m_stack[m_position++] = 'm';
 
-        if (isBackground) m_background = color;
-        else m_foreground = color;
+        if (isBackground) m_background = color.Value;
+        else m_foreground = color.Value;
 
         return this;
     }
@@ -158,11 +173,8 @@ internal ref struct VT100StringBuilder {
         for(int i = 0; i < m_position; ++i)
             destination.Write(value: m_stack[i]);
 
-        destination.Write(ESC_CLEAR);
-        return m_position + ESC_CLEAR.Length;
+        return m_position;
     }
 
-    public void Clear() {
-        m_position = 0;
-    }
+    public void Clear() => m_position = 0;
 }

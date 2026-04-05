@@ -32,7 +32,7 @@ public class BoxRenderer: RenderComponent {
                     ch.Character = ' ';
                 }
                 else {
-                    ch.Background = ((Style)bg).AsRGB;
+                    ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
                     ch.Character = ' ';
                 }
             }

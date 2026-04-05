@@ -36,11 +36,7 @@ internal readonly struct ConsoleBuffer {
         m_startScale = new Vec2(x, y);
 
         m_buffer = new vtchar_t[x, y];
-
-        for (int _x = 0; _x < x; ++_x) {
-            for (int _y = 0; _y < y; ++_y)
-                m_buffer[_x, _y] = new vtchar_t(' ', RGB.Transparent);
-        }
+        Clear();
     }
 
     private ConsoleBuffer(vtchar_t[,] buffer, Vec2 scale) {
@@ -58,6 +54,15 @@ internal readonly struct ConsoleBuffer {
         for (int x = 0; x < m_scale.X; ++x) {
             for (int y = 0; y < m_scale.Y; ++y) {
                 this[x, y] = from[x, y];
+            }
+        }
+    }
+
+    public void Clear() {
+        for (int x = 0; x < m_scale.X; ++x) {
+            for (int y = 0; y < m_scale.Y; ++y) {
+                ref vtchar_t ch = ref m_buffer[x, y];
+                ch.Clear();
             }
         }
     }

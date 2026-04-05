@@ -33,7 +33,7 @@ internal partial class LayoutSystem: IDynamicSystem {
         m_info = state;
         m_source = provider.Windows;
 
-        m_info.Value = new LayoutInfo(scale, IsChanged: false);
+        m_info.Value = new LayoutInfo(scale, State: LayoutState.NONE);
     }
 
     /// <summary>
@@ -45,15 +45,32 @@ internal partial class LayoutSystem: IDynamicSystem {
     }
 
     private void RunOnWindows() {
+        ConsoleScaleInfo info = default;
+
         while (true) {
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
-            if (m_source.Read(out ConsoleScaleInfo info) && (m_info.Value.Scale.X != info.X || m_info.Value.Scale.Y != info.Y)) {
+            if (m_source.Read(out ConsoleScaleInfo current) && (m_info.Value.Scale.X != info.X || m_info.Value.Scale.Y != info.Y)) {
+                info = current;
+                m_info.Value = m_info.Value with { State = LayoutState.CHANGING };
+                continue;
+            }
 
-                m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), true);
+            Thread.Sleep(millisecondsTimeout: 10);
+
+            if (!info.Equals(default)) {
+                m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), LayoutState.CHANGED);
                 WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+
+                info = default;
             }
         }
     }
 }
 
-internal record struct LayoutInfo(Vec2 Scale, bool IsChanged);
+internal enum LayoutState: byte {
+    NONE,
+    CHANGING,
+    CHANGED
+}
+
+internal record struct LayoutInfo(Vec2 Scale, LayoutState State);

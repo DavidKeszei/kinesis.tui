@@ -72,9 +72,8 @@ public class TextRenderer: RenderComponent {
                 }
                 else {
                     ch.Character = m_buffer[x];
-                    ch.Background = ((Style)bg!).AsRGB;
-
-                    ch.Foreground = ((Style)fg!).AsRGB;
+                    ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
+                    ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
 
                     if (attr == null) ch.Styles = StyleFlag.NONE;
                     else ch.Styles = ((Style)attr).AsAttribute;

@@ -9,8 +9,14 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a local visitor on the entity-tree to the bottom.
 /// </summary>
-public readonly ref struct PageEntityVisitor {
+public ref struct PageEntityVisitor {
     private readonly Entity? m_pivot = null!;
+    private bool m_isChanged = false;
+
+    /// <summary>
+    /// Indicates the user changed something on the entities.
+    /// </summary>
+    internal readonly bool IsChanged { get => m_isChanged; }
 
     internal PageEntityVisitor(Entity? pivot) => m_pivot = pivot;
 
@@ -26,11 +32,8 @@ public readonly ref struct PageEntityVisitor {
         else if (IsSequenceEqual(m_pivot.Name, name) && m_pivot is T ret) return ret;
 
         Entity? result = RecursiveVisit(current: m_pivot, name);
-
-        if (result != null && track) {
-            RenderComponent? render = result.GetComponent<RenderComponent>();
-            render?.IsDirty = true;
-        }
+        if(!m_isChanged) 
+            m_isChanged = result != null && track;
 
         return (T?)result;
     }

@@ -121,8 +121,6 @@ public class Entity {
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, new() {
         _ = this.AttachComponent<Transform>(new Transform(), isUnique: true);
         _ = this.AttachComponent<T>(new T(), isUnique: true);
-
-        _ = this.AttachComponent<RenderHierarchy>(new RenderHierarchy(), isUnique: true);
         _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
     }
 }

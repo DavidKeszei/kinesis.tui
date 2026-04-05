@@ -14,9 +14,7 @@ public abstract class RenderComponent: Component, IStaticType {
     private const string TYPE_NAME = "RenderComponent";
 
     protected readonly Dictionary<StyleTag, Style> m_cache = null!;
-
     protected int m_entityVersion = 0;
-    protected bool m_isDirty = true;
 
     /// <summary>
     /// Name of the <see cref="RenderComponent"/>.
@@ -27,11 +25,6 @@ public abstract class RenderComponent: Component, IStaticType {
     /// Version of the entity, which targeting the current <see cref="RenderComponent"/>.
     /// </summary>
     internal int EntityVersion { get => m_entityVersion; set => m_entityVersion = value; }
-
-    /// <summary>
-    /// Indicates the component is "dirty".
-    /// </summary>
-    internal bool IsDirty { get => m_isDirty; set => m_isDirty = value; }
 
     protected RenderComponent(): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) 
         => m_cache = new Dictionary<StyleTag, Style>(capacity: 8);

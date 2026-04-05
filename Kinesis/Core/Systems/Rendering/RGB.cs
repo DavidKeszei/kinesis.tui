@@ -21,7 +21,7 @@ public struct RGB : IEquatable<RGB> {
 
     public static implicit operator RGB(uint color) => new RGB(color);
 
-    #region <STATIC VALUES>
+    #region STATICS
 
     public static RGB White { get => new RGB(r: 255, g: 255, b: 255, a: 255); }
 
@@ -82,5 +82,18 @@ public struct RGB : IEquatable<RGB> {
         float a = left.A + (right.A - left.A) * time;
 
         return new RGB((byte)r, (byte)g, (byte)b, (byte)a);
+    }
+
+    public static RGB Blend(RGB top, RGB bottom) {
+        if (top.A == byte.MaxValue) return top;
+        if (top.A == byte.MinValue) return bottom;
+
+        float ratio = 1f - (top.m_alpha / 255f);
+
+        byte r = (byte)float.Clamp((top.m_red * ratio) + (bottom.m_red * (1f - ratio)), byte.MinValue, byte.MaxValue);
+        byte g = (byte)float.Clamp((top.m_green * ratio) + (bottom.m_green * (1f - ratio)), byte.MinValue, byte.MaxValue);
+        byte b = (byte)float.Clamp((top.m_blue * ratio) + (bottom.m_blue * (1f - ratio)), byte.MinValue, byte.MaxValue);
+
+        return new RGB(r, g, b, a: 255);
     }
 }

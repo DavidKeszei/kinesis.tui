@@ -14,7 +14,12 @@ namespace Kinesis;
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
-    private readonly Renderer m_renderer = null!;
+    #region CONSTS
+    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h\e[?7l";
+    private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
+    #endregion
+
+    private readonly ImmediateRenderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
     private readonly WorkerSystem m_worker = null!;
@@ -24,7 +29,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<WorkerSystemState> m_workSyncState = null!;
+    private readonly State<WorkStateInfo> m_workSyncState = null!;
 
     private readonly ConsoleSourceInfo m_consoleSourceInfoProvider = default!;
 
@@ -33,11 +38,13 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
-        Console.Out.Write(title == null ? $"\e]0;KinesisTUI\a" : $"\e]0;{title}\a");
+        Console.Out.Write(title == null ? $"\e]0;Untitled\a" : $"\e]0;{title}\a");
+        Console.Out.Write(value: USE_ALTERNATE_BUFFER);
+
         m_consoleSourceInfoProvider = new ConsoleSourceInfo();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
+        m_workSyncState = new RefState<WorkStateInfo>(@default: new WorkStateInfo() { State = WorkerSystemState.WAIT_FOR_RENDERER, IsWorked = true });
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -45,7 +52,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
         m_worker = WorkerSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
 
-        m_renderer = new Renderer(layout: m_layoutInfo, sync: m_workSyncState);
+        m_renderer = new ImmediateRenderer(workState: m_workSyncState, layoutState: m_layoutInfo);
         m_customSystems = new List<SystemInvocationInfo>();
 
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
@@ -104,14 +111,15 @@ public sealed partial class KinesisEngine: ISystemProvider {
         while(!token.IsCancellationRequested) {
 
             /* Render the frame to the screen/terminal window. */
-            await m_renderer.Render(entities: m_navigator.Current?.Tree ?? []);
+            m_renderer.Run(list: m_navigator.Current?.Tree ?? []);
 
-            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
+            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
             else firstRun = false;
         }
 
         /* Run the shutdown systems. */
         await Run(invocation: SystemInvocationTime.ON_END);
+        Console.Out.Write(UNUSE_ALTERNATE_BUFFER);
     }
 
     private Task Run(SystemInvocationTime invocation) {
@@ -135,7 +143,5 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
         this.RegisterComponent<Style>();
         this.RegisterComponent<InteractionComponent>();
-
-        this.RegisterComponent<RenderHierarchy>();
     }
 }

@@ -31,7 +31,7 @@ internal class WorkerSystem: IDynamicSystem {
     private readonly RingBuffer<RenderMessage> m_renderMessages = null!;
 
     private readonly RingBuffer<LayoutMessage> m_layoutMessages = null!;
-    private State<WorkerSystemState> m_workSync = null!;
+    private State<WorkStateInfo> m_workState = null!;
 
     /// <summary>
     /// Indicates behavior of the <see cref="WorkerSystem"/>.
@@ -57,7 +57,7 @@ internal class WorkerSystem: IDynamicSystem {
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
     /// <remarks>Remarks: If the state wasn't set, then the <see cref="WorkerSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
-    public void AddSyncState(State<WorkerSystemState> sync) => m_workSync ??= sync;
+    public void AddSyncState(State<WorkStateInfo> sync) => m_workState ??= sync;
 
     /// <summary>
     /// Add new <see cref="InputMessage"/> to the workers.
@@ -90,17 +90,17 @@ internal class WorkerSystem: IDynamicSystem {
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
-    public void AddCallback<T>(Action<T> work, Island island) where T: IWorkMessage
+    public void AddCallback<T>(Func<T, bool> work, Island island) where T: IWorkMessage
         => m_targets.Write(new WorkTarget(work, island, T.Target));
 
     public void Run() {
-        if (m_workSync == null)
+        if (m_workState == null)
             throw new InvalidOperationException(message: ERR_SYNC_NOT_FOUND);
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
         while(true) {
-            if (m_workSync != WorkerSystemState.OPEN_FOR_PROCESSING) {
+            if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
@@ -109,7 +109,7 @@ internal class WorkerSystem: IDynamicSystem {
             Send<LayoutMessage>(messages: m_layoutMessages);
             Send<RenderMessage>(messages: m_renderMessages);
 
-            m_workSync.Value = WorkerSystemState.WAIT_FOR_RENDERER;
+            m_workState.Value.State = WorkerSystemState.WAIT_FOR_RENDERER;
         }
     }
 
@@ -120,8 +120,12 @@ internal class WorkerSystem: IDynamicSystem {
             if (!target.Island.IsActive)
                 continue;
 
-            if (target.Tag == T.Target && target.Action is Action<T> action)
-                action(message);
+            if (target.Tag == T.Target && target.Action is Func<T, bool> action) {
+                bool changed = action(message);
+
+                if (changed && !m_workState.Value.IsWorked)
+                    m_workState.Value.IsWorked = changed;
+            }
         }
     }
 }
@@ -138,4 +142,13 @@ public enum WorkerSystemState: byte {
     /// Indicates for the <see cref="WorkerSystem"/> wait to the <see cref="Renderer"/>.
     /// </summary>
     WAIT_FOR_RENDERER
+}
+
+internal class WorkStateInfo {
+    private WorkerSystemState m_state = WorkerSystemState.WAIT_FOR_RENDERER;
+    private bool m_someWorkHappened = false;
+
+    public required WorkerSystemState State { get => m_state; set => m_state = value; }
+
+    public bool IsWorked { get => m_someWorkHappened; set => m_someWorkHappened = value; }
 }

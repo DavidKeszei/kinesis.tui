@@ -9,6 +9,8 @@ using System.Text;
 
 namespace Kinesis.UI;
 
+public delegate void OnUpdateCallback<T>(T message, ref PageEntityVisitor visitor) where T: IWorkMessage;
+
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
@@ -18,7 +20,7 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
     /// <summary>
     /// Callback, when a frame was rendered.
     /// </summary>
-    public Action<T, PageEntityVisitor> On {
+    public OnUpdateCallback<T> On {
         set {
             InteractionComponent? interaction = base.GetComponent<InteractionComponent>();
 
@@ -53,8 +55,11 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
         this.m_island = island;
     }
 
-    private void SetCallback(Action<T, PageEntityVisitor> func, T message) {
-        if (func == null) return;
-        func(message, new PageEntityVisitor(this));
+    private bool SetCallback(OnUpdateCallback<T> func, T message) {
+        if (func == null) return false;
+        PageEntityVisitor visitor = new PageEntityVisitor(pivot: this);
+        func(message, ref visitor);
+
+        return visitor.IsChanged;
     }
 }

@@ -25,6 +25,15 @@ public interface IDynamicSystem<T>: ISystem where T: allows ref struct {
     public T Run();
 }
 
+public interface IDynamicSystem<TReturn, TParameter> : ISystem where TReturn : allows ref struct where TParameter : allows ref struct {
+
+    /// <summary>
+    /// Run the current <see cref="IDynamicSystem{T}"/> instance.
+    /// </summary>
+    /// <returns>Return a(n) <typeparamref name="T"/> value.</returns>
+    public TReturn Run(TParameter parameter);
+}
+
 public interface IDynamicSystem: ISystem {
     /// <summary>
     /// Run the current <see cref="IDynamicSystem"/> instance.

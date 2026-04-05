@@ -1,4 +1,4 @@
 <Solution>
   <Project Path="Kinesis/Kinesis.csproj" />
-  <Project Path="KinesisExample/KinesisExample.csproj" Id="d574a86e-264f-4f43-becd-4df35a09a422" />
+  <Project Path="Playground/Playground.csproj" Id="581998ba-ca30-40ec-85f4-64db98f80f17" />
 </Solution>

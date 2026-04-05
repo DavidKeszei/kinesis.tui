@@ -51,4 +51,4 @@ public class ValueState<T>(StateUpdate<T> update = default!, T @default = defaul
 /// </summary>
 /// <typeparam name="T">Reference-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
-public class RefState<T>(StateUpdate<T> update, T @default = null!): State<T>(update, @default) where T: class;
+public class RefState<T>(StateUpdate<T> update = default!, T @default = null!): State<T>(update ?? (static (ref from, to) => from = to), @default) where T: class;

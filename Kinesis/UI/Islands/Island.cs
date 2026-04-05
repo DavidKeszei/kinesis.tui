@@ -50,21 +50,15 @@ public abstract class Island: Entity {
         if(context.Current == null) return;
         int childrenCount = context.Current.CountComponent<Hierarchy>();
 
-        if (context.Current.GetComponent<RenderComponent>() != null) {
-            ++context.RenderId;
+        if (context.Current.GetComponent<RenderComponent>() != null)
             m_renderSet.Add(context.Current!);
-
-            context.Current.GetComponent<RenderHierarchy>()!.Depth = context.Depth;
-            context.Current.GetComponent<RenderHierarchy>()!.NextRenderElementIndex = context.RenderId;
-        }
 
         for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
             Hierarchy child = context.Current!.GetComponent<Hierarchy>(i)!;
 
             if (child.Attached != null) {
                 CreateRenderSet(context: context with {
-                    Current = child.Attached,
-                    Depth = child.Attached.GetComponent<RenderComponent>() == null ? context.Depth + 1 : context.Depth
+                    Current = child.Attached
                 });
             }
         }
