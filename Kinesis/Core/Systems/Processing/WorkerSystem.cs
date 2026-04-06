@@ -15,14 +15,16 @@ internal record WorkTarget(Delegate Action, Island Island, WorkTag Tag);
 /// Represent a bunch of workers for different tasks.
 /// </summary>
 internal class WorkerSystem: IDynamicSystem {
-    private const string DEDICATED_THREAD_NAME = "<Thread> Worker";
+    #region PREDEFINES
+    private const string DEDICATED_THREAD_NAME = ".NET::Worker";
     private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
 
     private const int MAX_MSG_COUNT = 128;
-    private const int MAX_MSG_RND = 1;
+    private const int MAX_MSG_RND = 2;
 
     private const int MAX_INTERACTION_COUNT = 1024;
-    private const int POOLING_TIME = 2;
+    private const int POOLING_TIME = 8;
+    #endregion
 
     private static WorkerSystem m_instance = null!;
     private readonly RingBuffer<WorkTarget> m_targets = null!;
@@ -53,11 +55,11 @@ internal class WorkerSystem: IDynamicSystem {
     }
 
     /// <summary>
-    /// Add synchronization context/state to the <see cref="WorkerSystem"/>.
+    /// Add synchronization context/state to the <see cref="WorkerSystem"/> from the <see cref="ImmediateRenderer"/>.
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
     /// <remarks>Remarks: If the state wasn't set, then the <see cref="WorkerSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
-    public void AddSyncState(State<WorkStateInfo> sync) => m_workState ??= sync;
+    public void AddRenderSync(State<WorkStateInfo> sync) => m_workState ??= sync;
 
     /// <summary>
     /// Add new <see cref="InputMessage"/> to the workers.
@@ -121,7 +123,7 @@ internal class WorkerSystem: IDynamicSystem {
                 continue;
 
             if (target.Tag == T.Target && target.Action is Func<T, bool> action) {
-                bool changed = action(message);
+                bool changed = action(message); 
 
                 if (changed && !m_workState.Value.IsWorked)
                     m_workState.Value.IsWorked = changed;
@@ -131,7 +133,7 @@ internal class WorkerSystem: IDynamicSystem {
 }
 
 /// <summary>
-/// Simple state representation between the <see cref="Renderer"/> and <see cref="WorkerSystem"/>.
+/// Simple state representation between the <see cref="ImmediateRenderer"/> and <see cref="WorkerSystem"/>.
 /// </summary>
 public enum WorkerSystemState: byte {
     /// <summary>
@@ -139,7 +141,7 @@ public enum WorkerSystemState: byte {
     /// </summary>
     OPEN_FOR_PROCESSING,
     /// <summary>
-    /// Indicates for the <see cref="WorkerSystem"/> wait to the <see cref="Renderer"/>.
+    /// Indicates for the <see cref="WorkerSystem"/> wait to the <see cref="ImmediateRenderer"/>.
     /// </summary>
     WAIT_FOR_RENDERER
 }

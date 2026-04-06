@@ -18,6 +18,9 @@ internal sealed class ImmediateRenderer {
 
     private const float FPS_CONVERT = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
+
+    private const string ANSII_CLEAR = "\e[2J";
+    private const string ANSII_RESETALL = "\e[0m";
     #endregion
 
     private ConsoleBuffer m_backbuffer = default;
@@ -50,6 +53,7 @@ internal sealed class ImmediateRenderer {
             AutoFlush = false
         };
 
+        Console.OutputEncoding = Encoding.UTF8;
         Console.CursorVisible = false;
     }
         
@@ -57,6 +61,8 @@ internal sealed class ImmediateRenderer {
         long start = DateTime.Now.Ticks;
 
         if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER && m_workState.Value.IsWorked) {
+            OnLayoutChange();
+
             for (int i = 0; i < list.Count; ++i) {
 
                 Transform transform = list[i].GetComponent<Transform>()!;
@@ -85,7 +91,6 @@ internal sealed class ImmediateRenderer {
 
     public void Diffing() {
         VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
-        int count = 0;
 
         for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
             for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
@@ -94,7 +99,7 @@ internal sealed class ImmediateRenderer {
                 ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
                 if (!frontChar.Equals(backChar)) {
-                    count = builder.WritePosition(x, y)
+                    builder.WritePosition(x, y)
                                     .WriteFontStyles(backChar.Styles)
                                         .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, true)
                                         .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, false)
@@ -102,20 +107,29 @@ internal sealed class ImmediateRenderer {
                                     .Build(destination: m_out);
 
                     frontChar = backChar;
-                    builder.Position = count;
                 }
 
-                if (STRING_BUILDER_STACK_SPACE - count <= VT100StringBuilder.FLUSH_BARRIER) {
-                    m_out.Flush();
+                if (builder.BarrierReached) {
                     builder.Clear();
-
-                    count = 0;
+                    m_out.Flush();
                 }
             }
         }
 
         m_out.Flush();
         m_backbuffer.Clear();
+
+        Console.Out.Write(ANSII_RESETALL);
+    }
+
+    private void OnLayoutChange() {
+        if (m_layoutState.Value.State != LayoutState.CHANGED)
+            return;
+
+        m_backbuffer = ConsoleBuffer.Reallocate(buffer: m_backbuffer, scale: m_layoutState.Value.Scale);
+        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: m_frontbuffer, scale: m_layoutState.Value.Scale);
+
+        m_layoutState.Value = m_layoutState.Value with { State = LayoutState.NONE };
     }
 
     private bool InBuffer(Vec2 position) {

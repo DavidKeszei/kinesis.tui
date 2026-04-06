@@ -10,7 +10,7 @@ namespace Kinesis.Core.Rendering;
 /// Represent a <see cref="RGB"/> color on the screen.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-public struct RGB : IEquatable<RGB> {
+public struct RGB: IEquatable<RGB> {
     [FieldOffset(offset: 0)] private readonly uint m_color = 0x00;
     [FieldOffset(offset: 0)] private byte m_red = 0x0;
 
@@ -90,9 +90,9 @@ public struct RGB : IEquatable<RGB> {
 
         float ratio = 1f - (top.m_alpha / 255f);
 
-        byte r = (byte)float.Clamp((top.m_red * ratio) + (bottom.m_red * (1f - ratio)), byte.MinValue, byte.MaxValue);
-        byte g = (byte)float.Clamp((top.m_green * ratio) + (bottom.m_green * (1f - ratio)), byte.MinValue, byte.MaxValue);
-        byte b = (byte)float.Clamp((top.m_blue * ratio) + (bottom.m_blue * (1f - ratio)), byte.MinValue, byte.MaxValue);
+        byte r = (byte)float.Clamp((top.m_red * (top.m_alpha / 255f)) + (bottom.m_red * ratio), byte.MinValue, byte.MaxValue);
+        byte g = (byte)float.Clamp((top.m_green * (top.m_alpha / 255f)) + (bottom.m_green * ratio), byte.MinValue, byte.MaxValue);
+        byte b = (byte)float.Clamp((top.m_blue * (top.m_alpha / 255f)) + (bottom.m_blue * ratio), byte.MinValue, byte.MaxValue);
 
         return new RGB(r, g, b, a: 255);
     }

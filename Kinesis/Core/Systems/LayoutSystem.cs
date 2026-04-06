@@ -13,7 +13,7 @@ namespace Kinesis.Core;
 /// This class observes changes in the current console windows dimension.
 /// </summary>
 internal partial class LayoutSystem: IDynamicSystem {
-    #region CONSTS
+    #region PREDEFINES
     private const int POOLING_TIME = 8;
     #endregion
 
@@ -40,11 +40,14 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Start watching of changes of the console window.
     /// </summary>
     public void Run() {
+        WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             RunOnWindows();
     }
 
     private void RunOnWindows() {
+        bool isFirst = true;
         ConsoleScaleInfo info = default;
 
         while (true) {
@@ -58,9 +61,12 @@ internal partial class LayoutSystem: IDynamicSystem {
             Thread.Sleep(millisecondsTimeout: 10);
 
             if (!info.Equals(default)) {
-                m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), LayoutState.CHANGED);
-                WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+                if (!isFirst) {
+                    m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), LayoutState.CHANGED);
+                    WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+                }
 
+                isFirst = false;
                 info = default;
             }
         }

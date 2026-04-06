@@ -8,7 +8,7 @@ namespace Kinesis.Utils;
 /// Represent a circular buffer for <typeparamref name="T"/> instances.
 /// </summary>
 internal class RingBuffer<T> {
-    #region CONSTS
+    #region PREDEFINES
 
     private const byte TRUE = 1;
     private const byte FALSE = 0;
@@ -83,7 +83,7 @@ internal class RingBuffer<T> {
     }
 
     public RingBufferSnapshot<T> GetEnumerator() {
-        while(Interlocked.CompareExchange(ref m_interlock, TRUE, TRUE) == TRUE);
+        while(Interlocked.CompareExchange(ref m_interlock, TRUE, FALSE) != FALSE);
 
         _ = Interlocked.Exchange(ref m_interlock, TRUE);
         RingBufferSnapshot<T> snapshot = new RingBufferSnapshot<T>(buffer: m_buffer.AsSpan()[..m_count]);

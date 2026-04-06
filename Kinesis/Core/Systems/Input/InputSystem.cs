@@ -20,19 +20,19 @@ internal class InputSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "Input Thread";
 
     /// <summary>
-    /// Indicates the wait time between two sampling. (10ms)
+    /// Indicates the wait time between two sampling. (3ms)
     /// </summary>
-    private const int POOLING_TIME = 5;
+    private const int POOLING_TIME = 3;
 
     /// <summary>
-    /// Minimum time, when we think no input was happened and we fire that. (10ms)
+    /// Minimum time, when we think no input was happened and we fire that. (5ms)
     /// </summary>
-    private const int DEAD_ZONE = 10;
+    private const int DEAD_ZONE = 5;
 
     /// <summary>
-    /// Minimum time, when we think the press is long-press. (75ms)
+    /// Minimum time, when we think the press is long-press. (50ms)
     /// </summary>
-    private const int HOLD_THRESHHOLD = 75;
+    private const int HOLD_THRESHHOLD = 50;
 
     public SystemBehavior Behavior { get => SystemBehavior.DYNAMIC; }
 
@@ -58,6 +58,9 @@ internal class InputSystem: IDynamicSystem {
             DateTime now = DateTime.UtcNow;
 
             if (m_backend.ReadInput(out InputInfo info)) {
+                if (info.Key == '\0')
+                    continue;
+
                 /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
                     if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {

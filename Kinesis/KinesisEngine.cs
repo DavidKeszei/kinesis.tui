@@ -14,7 +14,7 @@ namespace Kinesis;
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
-    #region CONSTS
+    #region PREDEFINES
     private const string USE_ALTERNATE_BUFFER = $"\e[?1049h\e[?7l";
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
     #endregion
@@ -101,7 +101,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
         /* Run the starter systems. */
         await Run(invocation: SystemInvocationTime.ON_BEGIN);
-        WorkerSystem.Current.AddSyncState(sync: m_workSyncState);
+        WorkerSystem.Current.AddRenderSync(sync: m_workSyncState);
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
@@ -113,7 +113,8 @@ public sealed partial class KinesisEngine: ISystemProvider {
             /* Render the frame to the screen/terminal window. */
             m_renderer.Run(list: m_navigator.Current?.Tree ?? []);
 
-            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
+            if (!firstRun) 
+                m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
             else firstRun = false;
         }
 

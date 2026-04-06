@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -26,12 +27,12 @@ internal ref struct VT100StringBuilder {
     public const int FLUSH_BARRIER = 128;
 
     private int m_position = 0;
-    private RGB m_background = RGB.Black;
+    private RGB m_background = RGB.Transparent;
 
     private RGB m_foreground = RGB.Transparent;
     private readonly Span<char> m_stack = default!;
 
-    public int Position { readonly get => m_position; set => m_position = value; }
+    public readonly int Position { get => m_position; }
 
     public readonly bool BarrierReached { get => m_stack.Length - m_position <= FLUSH_BARRIER; }
 
@@ -46,7 +47,8 @@ internal ref struct VT100StringBuilder {
     /// <param name="x">X axis value of the position.</param>
     /// <param name="y">Y axis value of the position.</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
-    public VT100StringBuilder WritePosition(int x, int y) {
+    [UnscopedRef]
+    public ref VT100StringBuilder WritePosition(int x, int y) {
         /* VT100 indexes starting from 1..n */
         ++x;
         ++y;
@@ -63,7 +65,7 @@ internal ref struct VT100StringBuilder {
         m_position += written;
 
         m_stack[m_position++] = 'f';
-        return this;
+        return ref this;
     }
 
     /// <summary>
@@ -72,15 +74,20 @@ internal ref struct VT100StringBuilder {
     /// <param name="color">The color itself.</param>
     /// <param name="isBackground">The color is background color or not?</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
-    public VT100StringBuilder WriteColor(RGB? color, bool isBackground) {
+    [UnscopedRef]
+    public ref VT100StringBuilder WriteColor(RGB? color, bool isBackground) {
         if (color == null) {
             (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).TryCopyTo(m_stack[m_position..]);
             m_position += (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).Length;
-            return this;
+
+            if (isBackground) m_background = RGB.Transparent;
+            else m_foreground = RGB.Transparent;
+
+            return ref this;
         }
 
         if ((m_background.Equals(rgb: color.Value) && isBackground) || (m_foreground.Equals(rgb: color.Value) && !isBackground))
-            return this;
+            return ref this;
 
         (isBackground ? ESC_BG : ESC_FG).CopyTo(m_stack[m_position..]);
 
@@ -102,11 +109,12 @@ internal ref struct VT100StringBuilder {
         if (isBackground) m_background = color.Value;
         else m_foreground = color.Value;
 
-        return this;
+        return ref this;
     }
 
-    public VT100StringBuilder WriteFontStyles(StyleFlag flags) {
-        if(flags == StyleFlag.NONE || flags == 0) return this;
+    [UnscopedRef]
+    public ref VT100StringBuilder WriteFontStyles(StyleFlag flags) {
+        if(flags == StyleFlag.NONE || flags == 0) return ref this;
 
         /* Static stack allocated flags, which give us information about the supported flags. */
         Span<StyleFlag> supportedFlags = stackalloc StyleFlag[] {
@@ -151,7 +159,7 @@ internal ref struct VT100StringBuilder {
         }
 
         m_stack[m_position - 1] = 'm';
-        return this;
+        return ref this;
     }
 
     /// <summary>
@@ -159,9 +167,10 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     /// <param name="value">Value of the character.</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
-    public VT100StringBuilder WriteCharacter(char value) {
+    [UnscopedRef]
+    public ref VT100StringBuilder WriteCharacter(char value) {
         m_stack[m_position++] = value;
-        return this;
+        return ref this;
     }
 
     /// <summary>
@@ -169,7 +178,7 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     /// <param name="destination">Destination of console screen.</param>
     /// <returns>Return the command length as <see cref="int"/>.</returns>
-    public readonly int Build(StreamWriter destination) {
+    public int Build(StreamWriter destination) {
         for(int i = 0; i < m_position; ++i)
             destination.Write(value: m_stack[i]);
 

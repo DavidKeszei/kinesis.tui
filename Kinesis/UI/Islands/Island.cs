@@ -17,7 +17,7 @@ public abstract class Island: Entity {
     internal IReadOnlyList<Entity> Tree { get => m_renderSet; }
 
     /// <summary>
-    /// Indicates the <see cref="Island"/> is active by the <see cref="Renderer"/> and the <see cref="INavigator"/>.
+    /// Indicates the <see cref="Island"/> is active by the <see cref="ImmediateRenderer"/> and the <see cref="INavigator"/>.
     /// </summary>
     internal bool IsActive { get => m_isActive; set => m_isActive = value; }
 

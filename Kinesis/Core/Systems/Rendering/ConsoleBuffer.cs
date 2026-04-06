@@ -39,11 +39,11 @@ internal readonly struct ConsoleBuffer {
         Clear();
     }
 
-    private ConsoleBuffer(vtchar_t[,] buffer, Vec2 scale) {
+    private ConsoleBuffer(vtchar_t[,] buffer, Vec2 scale, Vec2 startScale) {
         m_buffer = buffer;
         m_scale = scale;
 
-        m_startScale = scale;
+        m_startScale = startScale;
     }
 
     /// <summary>
@@ -51,8 +51,11 @@ internal readonly struct ConsoleBuffer {
     /// </summary>
     /// <param name="from">Source from.</param>
     public void Copy(in ConsoleBuffer from) {
-        for (int x = 0; x < m_scale.X; ++x) {
-            for (int y = 0; y < m_scale.Y; ++y) {
+        int rangeX = (int)(from.Scale.X < m_scale.X ? from.Scale.X : m_scale.X);
+        int rangeY = (int)(from.Scale.Y < m_scale.Y ? from.Scale.Y : m_scale.Y);
+
+        for (int x = 0; x < rangeX; ++x) {
+            for (int y = 0; y < rangeY; ++y) {
                 this[x, y] = from[x, y];
             }
         }
@@ -89,10 +92,13 @@ internal readonly struct ConsoleBuffer {
 
     public static ConsoleBuffer Reallocate(ConsoleBuffer buffer, Vec2 scale) {
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
-            vtchar_t[,] _new = new vtchar_t[(int)scale.X, (int)scale.Y];
-            return new ConsoleBuffer(_new, scale);
+            ConsoleBuffer _buff = new ConsoleBuffer(buffer: new vtchar_t[(int)scale.X, (int)scale.Y], scale, scale);
+
+            _buff.Clear();
+            _buff.Copy(buffer);
+            return _buff;
         }
 
-        return new ConsoleBuffer(buffer.m_buffer, scale);
+        return new ConsoleBuffer(buffer.m_buffer, scale, buffer.m_startScale);
     }
 }
