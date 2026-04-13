@@ -81,7 +81,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <param name="action">The system itself.</param>
     /// <param name="when">Time of the invocation of the system.</param>
-    public void AddSystem(SystemInvocationTime when, Func<ISystemProvider, ISystem> action)
+    public void RegisterSystem(SystemInvocationTime when, Func<ISystemProvider, ISystem> action)
         => m_customSystems.Add(item: new SystemInvocationInfo(action, null, when));
 
     /// <summary>
@@ -139,10 +139,12 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private void RegisterBuiltInComponents() {
         this.RegisterComponent<RenderComponent>();
 
-        this.RegisterComponent<Transform>();
-        this.RegisterComponent<Hierarchy>();
+        this.RegisterComponent<Position>();
+        this.RegisterComponent<Scale>();
 
+        this.RegisterComponent<Hierarchy>();
         this.RegisterComponent<Style>();
+
         this.RegisterComponent<InteractionComponent>();
     }
 }

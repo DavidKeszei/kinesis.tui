@@ -119,7 +119,9 @@ public class Entity {
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, new() {
-        _ = this.AttachComponent<Transform>(new Transform(), isUnique: true);
+        _ = this.AttachComponent<Position>(new Position(origin: Vec2.Zero), isUnique: true);
+        _ = this.AttachComponent<Scale>(new Scale(scale: Vec2.Zero), isUnique: true);
+
         _ = this.AttachComponent<T>(new T(), isUnique: true);
         _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
     }

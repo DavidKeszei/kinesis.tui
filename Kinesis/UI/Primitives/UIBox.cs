@@ -15,7 +15,7 @@ public class UIBox: Entity {
     /// <summary>
     /// Size of the <see cref="UIBox"/>.
     /// </summary>
-    public Vec2 Scale { get => base.GetComponent<Transform>()!.Scale; set => base.GetComponent<Transform>()!.Scale = value; }
+    public Vec2 Scale { get => base.GetComponent<Scale>()!.Value; set => base.GetComponent<Scale>()!.Value = value; }
 
     /// <summary>
     /// Background color of the <see cref="UIBox"/>.

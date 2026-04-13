@@ -14,27 +14,12 @@ public static class EntityExtension {
         /// <summary>
         /// Move the current <see cref="Entity"/> with <paramref name="x"/> and <paramref name="y"/> by the <paramref name="anchor"/>.
         /// </summary>
-        /// <param name="x">Move adjustment on the X axis.</param>
-        /// <param name="y">Move adjustment on the Y axis.</param>
-        /// <param name="anchor">Pivot/Anchor of the movement.</param>
-        public void Move(float x, float y, MoveAnchor anchor = MoveAnchor.ABSOLUTE) {
-            Transform? transform = entity?.GetComponent<Transform>();
-            if (transform == null) return;
+        public void Move(Vec2 origin, Vec2 offset) {
+            Position? position = entity?.GetComponent<Position>();
+            if (position == null) return;
 
-            transform.Position = anchor switch {
-                MoveAnchor.RELATIVE => new Vec2(x: transform.Position.X + x, y: transform.Position.Y + y),
-                MoveAnchor.ABSOLUTE => new Vec2(x, y),
-                _ => transform.Position
-            };
-        }
-
-        public Style? QueryStyle(StyleTag tag) {
-            using StyleEnumerator styles = new StyleEnumerator(entity);
-            foreach (Style component in styles) {
-                if (component.Tag == tag) return component;
-            }
-
-            return null!;
+            position.Origin = origin;
+            position.Offset = offset;
         }
 
         public int CountComponent<T>(Func<T, bool>? comparand = null) where T: Component, IStaticType {
@@ -48,9 +33,4 @@ public static class EntityExtension {
             return count;
         }
     }
-}
-
-public enum MoveAnchor: byte {
-    ABSOLUTE,
-    RELATIVE
 }

@@ -23,7 +23,7 @@ public class UIText: Entity {
                 return;
 
             base.GetComponent<TextRenderer>()!.Value = value;
-            base.GetComponent<Transform>()!.Scale = new Vec2(x: value.Length, y: 1);
+            base.GetComponent<Scale>()!.Value = new Vec2(x: value.Length, y: 1);
         }
     }
 

@@ -25,13 +25,13 @@ public sealed class Padding: Entity {
             this.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;
             value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
-            Transform? transform = value.GetComponent<Transform>();
+            Position? position = value.GetComponent<Position>();
 
-            if (transform != null) {
-                Transform e_transform = this.GetComponent<Transform>()!;
-                e_transform.Position = transform.Position;
+            if (position != null) {
+                Position ePosition = this.GetComponent<Position>()!;
 
-                transform.Position = new Vec2(e_transform.Position.X + Value, e_transform.Position.Y + Value);
+                position.Origin = ePosition.Origin;
+                position.Offset = new Vec2(x: Value, y: Value);
             }
         }
     }
@@ -40,7 +40,7 @@ public sealed class Padding: Entity {
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.DOWN });
 
-        _ = base.AttachComponent<Transform>(new Transform(), isUnique: true);
+        _ = base.AttachComponent<Position>(new Position(origin: Vec2.Zero), isUnique: true);
         _ = base.AttachComponent<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 1), true);
     }
 
@@ -49,8 +49,13 @@ public sealed class Padding: Entity {
 
         Entity? child = this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached;
         if (child != null) {
-            Transform e_transform = this.GetComponent<Transform>()!;
-            child.GetComponent<Transform>()?.Position = new Vec2(e_transform.Position.X + Value, e_transform.Position.Y + Value); ;
+            Position position = this.GetComponent<Position>()!;
+            Position? childPosition = child.GetComponent<Position>();
+
+            if (childPosition != null) {
+                childPosition.Origin = position.Origin;
+                childPosition.Offset = position.Offset;
+            }
         }
     }
 }
