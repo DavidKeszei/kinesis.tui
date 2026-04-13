@@ -68,10 +68,10 @@ internal sealed class ImmediateRenderer {
                 Scale scale = list[i].GetComponent<Scale>()!;
                 Position position = list[i].GetComponent<Position>()!;
 
-                if (!InBuffer(position: position.Origin + position.Offset)) continue;
+                if (!InBuffer(position: position.Absolute)) continue;
 
                 RenderComponent renderLogic = list[i].GetComponent<RenderComponent>()!;
-                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position.Origin + position.Offset, scale: scale.Value);
+                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position.Absolute, scale: scale.Value);
 
                 using StyleEnumerator style = new StyleEnumerator(entity: list[i]);
                 renderLogic.Render(buffer: canvas, version: list[i].Version, style);

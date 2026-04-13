@@ -11,7 +11,7 @@ namespace Kinesis.UI.Components;
 public sealed class Position: Component, IStaticType {
     private static readonly string s_type = nameof(Position);
 
-    private Vec2 m_origin = Vec2.Zero;
+    private Position m_origin = null!;
     private Vec2 m_offset = Vec2.Zero;
 
     public static string Name { get => s_type; }
@@ -19,15 +19,20 @@ public sealed class Position: Component, IStaticType {
     /// <summary>
     /// Relative distance from a point in the 2D space.
     /// </summary>
-    public Vec2 Offset { get => m_offset; set => m_offset = value; }
+    public Vec2 Relative { get => m_offset; set => m_offset = value; }
 
     /// <summary>
-    /// Pivot point of the <see cref="Position"/>.
+    /// Absolute distance from the (0;0) point.
     /// </summary>
-    public Vec2 Origin { get => m_origin; set => m_origin = value; }
+    public Vec2 Absolute { get => (m_origin == null ? Vec2.Zero : m_origin.m_offset) + m_offset; }
 
-    public Position(Vec2 origin) : base(id: ComponentRegistry.QueryComponent(s_type)) {
-        m_origin = origin;
+    /// <summary>
+    /// Pivot point of the current <see cref="Position"/>.
+    /// </summary>
+    public Position Origin { get => m_origin; set => m_origin = value; }
+
+    public Position(Position? origin) : base(id: ComponentRegistry.QueryComponent(s_type)) {
+        m_origin = null!;
         m_offset = Vec2.Zero;
     }
 }

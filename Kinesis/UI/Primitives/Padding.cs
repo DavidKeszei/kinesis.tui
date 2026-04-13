@@ -31,17 +31,17 @@ public sealed class Padding: Entity {
                 Position ePosition = this.GetComponent<Position>()!;
 
                 position.Origin = ePosition.Origin;
-                position.Offset = new Vec2(x: Value, y: Value);
+                position.Relative = new Vec2(x: Value, y: Value);
             }
         }
     }
 
     public Padding() {
+        _ = base.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
+        _ = base.AttachComponent<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 0), true);
+
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.DOWN });
-
-        _ = base.AttachComponent<Position>(new Position(origin: Vec2.Zero), isUnique: true);
-        _ = base.AttachComponent<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 1), true);
     }
 
     private void UpdateChildPadding(uint value) {
@@ -54,7 +54,7 @@ public sealed class Padding: Entity {
 
             if (childPosition != null) {
                 childPosition.Origin = position.Origin;
-                childPosition.Offset = position.Offset;
+                childPosition.Relative = position.Relative;
             }
         }
     }
