@@ -1,7 +1,11 @@
-﻿using System;
+﻿using Kinesis.Core;
+using Kinesis.UI.Components;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Kinesis.Core;
 
 namespace Kinesis.UI;
 
@@ -9,8 +13,21 @@ namespace Kinesis.UI;
 /// Represent a state in the Ui building process.
 /// </summary>
 public ref struct BuildContext {
+    #region PREDEFINES
+    private const int POSITION = 0;
+    private const int SCALE = 1;
+
+    private const int BACKGROUND = 2;
+    private const int FOREGROUND = 3;
+
+    private const int FONT_STYLE = 4;
+    private const int PADDING = 5;
+    #endregion
+
     private readonly Island m_root = null!;
     private readonly Entity m_current = null!;
+
+    private readonly Component[] m_inheritanceTargets = null!;
 
     /// <summary>
     /// Current target entity of the building.
@@ -22,5 +39,49 @@ public ref struct BuildContext {
     /// </summary>
     public readonly Island Root { get => m_root; internal init => m_root = value; }
 
-    internal BuildContext(Entity current) => m_current = current;
+    internal BuildContext(Entity current) {
+        m_current = current;
+        m_inheritanceTargets = new Component[PADDING]; /* Padding is largest index -> Count of inheritable components */
+    }
+
+    /// <summary>
+    /// Set a inheritable component, if that equals with <see cref="IEmpty{TSelf}.Empty"/>.
+    /// </summary>
+    /// <typeparam name="T">Type of the component.</typeparam>
+    /// <param name="target">Target of the Set{T}().</param>
+    /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
+    /// <param name="index">Index of the component.</param>
+    public readonly void Set<T>(Entity target, T @default, int index = 0) where T : Component, IStaticType, IDefault<T>, ICopyable<T> {
+        if (target == null || @default == null) return;
+
+        T? component = target.GetComponent<T>(index);
+        if (component == null) return;
+
+        int type = MatchId(@default);
+        if (type == -1) return;
+
+        if (T.IsDefault(component)) {
+            component.Copy(m_inheritanceTargets[type] != null ? ((T)m_inheritanceTargets[type]) : @default);
+
+            if (component is Position position)
+                position.Origin = ((Position)m_inheritanceTargets[type]);
+        }
+
+        m_inheritanceTargets[type] = component;
+    }
+
+    private readonly int MatchId(Component component) {
+        return component switch {
+            Position => POSITION,
+            Scale => SCALE,
+            Style => Unsafe.As<Component, Style>(ref component).Tag switch {
+                StyleTag.BACKGROUND => BACKGROUND,
+                StyleTag.FOREGROUND => FOREGROUND,
+                StyleTag.FONT_ATTR => FONT_STYLE,
+                StyleTag.PADDING => PADDING,
+                _ => -1
+            },
+            _ => -1,
+        };
+    }
 }
