@@ -1,4 +1,5 @@
-﻿using Kinesis.Core.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple text on the screen.
 /// </summary>
-public class UIText: Entity {
+public class UIText: Entity, ICopyable<BuildContext> {
 
     /// <summary>
     /// Underlying text value of the <see cref="UIText"/>.
@@ -46,7 +47,17 @@ public class UIText: Entity {
         base.InitRenderEntityWith<TextRenderer>();
         base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
 
-        base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.Transparent));
         base.AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE));
+    }
+
+    public void Copy(BuildContext from) {
+        from.Set<Position>(this, @default: new Position());
+        from.Set<Scale>(this, @default: new Scale(scale: Vec2.Zero));
+
+        from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
+        from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White), index: 1);
+
+        from.Set<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE), index: 2);
     }
 }

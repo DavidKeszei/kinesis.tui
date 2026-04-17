@@ -6,9 +6,9 @@ using System.Text;
 namespace Kinesis.UI.Components;
 
 /// <summary>
-/// Represent a position in the 2D space.
+/// Represent a point in the 2D space.
 /// </summary>
-public sealed class Position: Component, IStaticType {
+public sealed class Position : Component, IStaticType, ICopyable<Position>, IDefault<Position> {
     private static readonly string s_type = nameof(Position);
 
     private Position m_origin = null!;
@@ -24,15 +24,27 @@ public sealed class Position: Component, IStaticType {
     /// <summary>
     /// Absolute distance from the (0;0) point.
     /// </summary>
-    public Vec2 Absolute { get => (m_origin == null ? Vec2.Zero : m_origin.m_offset) + m_offset; }
+    public Vec2 Absolute { get => (m_origin == null ? Vec2.Zero : m_origin.Absolute) + m_offset; }
 
     /// <summary>
     /// Pivot point of the current <see cref="Position"/>.
     /// </summary>
     public Position Origin { get => m_origin; set => m_origin = value; }
 
-    public Position(Position? origin) : base(id: ComponentRegistry.QueryComponent(s_type)) {
-        m_origin = null!;
+    public Position(Position? origin = null!) : base(id: ComponentRegistry.QueryComponent(s_type)) {
+        m_origin = origin!;
         m_offset = Vec2.Zero;
+    }
+
+    public void Copy(Position? position) {
+        if (position == null) return;
+
+        m_offset = position.m_offset;
+        m_origin = position.m_origin;
+    }
+
+    public static bool IsDefault(Position instance) {
+        if (instance == null) return false;
+        return instance.m_offset == new Vec2(x: float.MinValue, y: float.MinValue) && instance.m_origin == null!;
     }
 }

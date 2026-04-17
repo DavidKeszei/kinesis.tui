@@ -1,4 +1,5 @@
-﻿using Kinesis.UI;
+﻿using Kinesis.Core.Utils;
+using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
@@ -14,13 +15,10 @@ namespace Kinesis.Core.Rendering;
 internal sealed class ImmediateRenderer {
     #region PREDEFINES
     private const float NS_TO_MS = 1000f;
-    private const float _120FPS_ = 8.3f;
+    private const float LIMIT = 1.0f;
 
     private const float FPS_CONVERT = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
-
-    private const string ANSII_CLEAR = "\e[2J";
-    private const string ANSII_RESETALL = "\e[0m";
     #endregion
 
     private ConsoleBuffer m_backbuffer = default;
@@ -54,13 +52,13 @@ internal sealed class ImmediateRenderer {
         };
 
         Console.OutputEncoding = Encoding.UTF8;
-        Console.CursorVisible = false;
+        Console.CursorVisible = true;
     }
         
     public void Run(IReadOnlyList<Entity> list) {
         long start = DateTime.Now.Ticks;
 
-        if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER && m_workState.Value.IsWorked) {
+        if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
             OnLayoutChange();
 
             for (int i = 0; i < list.Count; ++i) {
@@ -84,10 +82,10 @@ internal sealed class ImmediateRenderer {
         m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
         m_delta = (DateTime.Now.Ticks - start) / NS_TO_MS;
 
-        if (m_delta <= _120FPS_) {
+        if (m_delta <= LIMIT) {
 
-            Thread.Sleep(millisecondsTimeout: (int)(_120FPS_ - m_delta));
-            m_delta = _120FPS_;
+            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - m_delta));
+            m_delta = LIMIT;
         }
     }
 
@@ -102,11 +100,11 @@ internal sealed class ImmediateRenderer {
 
                 if (!frontChar.Equals(backChar)) {
                     builder.WritePosition(x, y)
-                                    .WriteFontStyles(backChar.Styles)
-                                        .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, true)
-                                        .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, false)
-                                    .WriteCharacter(backChar.Character)
-                                    .Build(destination: m_out);
+                           .WriteFontStyles(backChar.Styles)
+                                .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, true)
+                                .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, false)
+                           .WriteCharacter(backChar.Character)
+                           .Build(destination: m_out);
 
                     frontChar = backChar;
                 }
@@ -121,28 +119,23 @@ internal sealed class ImmediateRenderer {
         m_out.Flush();
         m_backbuffer.Clear();
 
-        Console.Out.Write(ANSII_RESETALL);
+        Console.Out.Write(value: AnsiCommand.RESET_STYLES);
+        Console.Out.Write(value: AnsiCommand.HOME);
+        Console.Out.Write(value: AnsiCommand.CLEAR_SAVED_LINES);
     }
 
     private void OnLayoutChange() {
-        if (m_layoutState.Value.State != LayoutState.CHANGED)
+        if (m_layoutState.Value.IsChanged)
             return;
 
         m_backbuffer = ConsoleBuffer.Reallocate(buffer: m_backbuffer, scale: m_layoutState.Value.Scale);
         m_frontbuffer = ConsoleBuffer.Reallocate(buffer: m_frontbuffer, scale: m_layoutState.Value.Scale);
 
-        m_layoutState.Value = m_layoutState.Value with { State = LayoutState.NONE };
+        m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
     }
 
     private bool InBuffer(Vec2 position) {
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
                (position.X >= 0 && position.Y >= 0);
-    }
-
-    private RGB? ExtractColor(RGB first, RGB second) {
-        if (first.A != 0) return first;
-        if (second.A != 0) return second;
-
-        return null;
     }
 }

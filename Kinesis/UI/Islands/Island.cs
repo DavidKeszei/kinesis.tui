@@ -7,7 +7,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a segment on the screen.
 /// </summary>
-public abstract class Island: Entity {
+public abstract class Island : Entity {
     private readonly List<Entity> m_renderSet = null!;
     private bool m_isActive = false;
 
@@ -38,7 +38,7 @@ public abstract class Island: Entity {
     /// Move through the tree and create list from it.
     /// </summary>
     /// <param name="context">Context of the current build period.</param>
-    internal void CreateRenderSet(BuildContext context) {
+    internal void BuildTree(BuildContext context) {
         if (context.Current is Island island) {
             Entity? created = island.Build(context);
             if (created == null) return;
@@ -47,17 +47,20 @@ public abstract class Island: Entity {
             created.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
         }
 
-        if(context.Current == null) return;
+        if (context.Current == null) return;
         int childrenCount = context.Current.CountComponent<Hierarchy>();
 
         if (context.Current.GetComponent<RenderComponent>() != null)
             m_renderSet.Add(context.Current!);
 
+        if (context.Current is ICopyable<BuildContext> copyable)
+            copyable.Copy(from: context);
+
         for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
             Hierarchy child = context.Current!.GetComponent<Hierarchy>(i)!;
 
             if (child.Attached != null) {
-                CreateRenderSet(context: context with {
+                BuildTree(context: context with {
                     Current = child.Attached
                 });
             }
