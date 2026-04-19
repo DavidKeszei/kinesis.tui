@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kinesis.Core.Utils;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -178,7 +179,7 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     /// <param name="destination">Destination of console screen.</param>
     /// <returns>Return the command length as <see cref="int"/>.</returns>
-    public int Build(StreamWriter destination) {
+    public readonly int Build(StreamWriter destination) {
         for(int i = 0; i < m_position; ++i)
             destination.Write(value: m_stack[i]);
 

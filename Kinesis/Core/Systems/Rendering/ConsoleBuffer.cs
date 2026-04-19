@@ -53,7 +53,7 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     /// Copy <paramref name="from"/> to this from.
     /// </summary>
     /// <param name="from">Source from.</param>
-    public void Copy(in ConsoleBuffer from) {
+    public void Copy(in Canvas from) {
         int rangeX = (int)(from.Scale.X < m_scale.X ? from.Scale.X : m_scale.X);
         int rangeY = (int)(from.Scale.Y < m_scale.Y ? from.Scale.Y : m_scale.Y);
 
@@ -96,20 +96,27 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         return new Canvas(ref buffer, scale, from);
     }
 
-    public static ConsoleBuffer Reallocate(in ConsoleBuffer buffer, Vec2 scale) {
+    public static ConsoleBuffer Reallocate(ref ConsoleBuffer buffer, Vec2 scale) {
+        ConsoleBuffer temp = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, startScale: scale);
+        temp.Clear();
+        temp.Copy(from: Slice(ref buffer, from: Vec2.Zero, scale));
+
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
-            ConsoleBuffer allocated = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, scale);
-
-            allocated.Clear();
-            allocated.Copy(buffer);
-
             NativeMemory.Free(ptr: buffer.m_buffer);
-
             Debug.WriteLine(value: $"Memory was freed up & reallocated... (Scale: {scale.X:f0} x {scale.Y:f0})");
-            return allocated;
+            return temp;
         }
 
-        return new ConsoleBuffer(buffer.m_buffer, scale, buffer.m_startScale);
+        /* 
+         * Force clear & copy; This forcing the diff for check the new/old cells.
+         * If we not do this, then we just cut it out, but if resize back, then the diff
+         * was not see any differences (because the not saw cells not changed), but we on the screen see the not rendered objects.
+         */
+        buffer.Clear();
+        buffer.Copy(Slice(ref temp, from: Vec2.Zero, scale));
+
+        temp.Dispose();
+        return new ConsoleBuffer(buffer.m_buffer, scale, startScale: buffer.m_startScale);
     }
 
     private static vtchar_t* Alloc(int x, int y) 

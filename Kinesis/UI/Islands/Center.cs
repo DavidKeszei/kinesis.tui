@@ -21,11 +21,15 @@ public sealed class Center: Island, ICopyable<BuildContext> {
         }
     }
 
-    public Center()
-        => _ = this.AttachComponent<Position>(component: new Position() { Relative = new Vec2(x: float.MinValue, y: float.MinValue) });
+    public Center() {
+        _ = this.AttachComponent<Position>(component: new Position() { Relative = new Vec2(x: float.MinValue, y: float.MinValue) },isUnique: true);
+        _ = this.AttachComponent<Scale>(component: new Scale(new Vec2(x: float.MinValue, y: float.MinValue)), isUnique: true);
+    }
 
-    public void Copy(BuildContext context)
-        => context.Set<Position>(this, @default: new Position());
+    public void Copy(BuildContext context) {
+        context.Set<Position>(this, @default: new Position());
+        context.Set<Scale>(this, @default: new Scale(scale: new Vec2(x: float.MinValue, y: float.MinValue)));
+    }
 
     protected override Entity? Build(BuildContext context) {
         if ((m_childScale = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached.GetComponent<Scale>()) == null) {
@@ -36,18 +40,25 @@ public sealed class Center: Island, ICopyable<BuildContext> {
 
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref visitor) => {
+                if (Scale.IsDefault(instance: GetComponent<Scale>()!))
+                    GetComponent<Scale>()!.Value = message.Scale;
+
                 UIBox box = visitor.Visit<UIBox>(name: s_box)!;
+                Position pos = GetComponent<Position>()!;
 
-                Position pos = this.GetComponent<Position>()!;
-                Scale scale = box.GetComponent<Scale>()!;
+                Vec2 pivot = GetComponent<Scale>()!.Value;
 
-                Vec2 center = new Vec2(x: (message.Scale.X / 2) - (m_childScale.Value.X / 2), y: (message.Scale.Y / 2) - (m_childScale.Value.Y / 2));
+                if (pivot.X > message.Scale.X) pivot.X = message.Scale.X;
+                if (pivot.Y > message.Scale.Y) pivot.Y = message.Scale.Y;
+
+                Vec2 center = new Vec2(x: (pivot.X / 2) - (m_childScale.Value.X / 2), y: (pivot.Y / 2) - (m_childScale.Value.Y / 2));
+
                 pos.Relative = center;
             },
             Child = new UIBox() {
                 Name = s_box,
 
-                Scale = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached.GetComponent<Scale>()?.Value ?? Vec2.Zero,
+                Scale = m_childScale?.Value ?? Vec2.Zero,
                 Child = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
             }
         };

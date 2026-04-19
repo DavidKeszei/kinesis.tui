@@ -27,7 +27,7 @@ public sealed class Scale : Component, IStaticType, ICopyable<Scale>, IDefault<S
         m_scale = from.m_scale;
     }
 
-    public static bool IsDefault(Scale instance) {
+    public static bool IsDefault(Scale? instance) {
         if (instance == null) return false;
         return instance.m_scale == new Vec2(x: float.MinValue, y: float.MinValue);
     }

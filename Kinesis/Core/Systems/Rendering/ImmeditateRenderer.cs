@@ -133,11 +133,10 @@ internal sealed class ImmediateRenderer {
 
         Vec2 scale = m_layoutState.Value.Scale;
 
-        m_backbuffer = ConsoleBuffer.Reallocate(buffer: in m_backbuffer, scale);
-        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: in m_frontbuffer, scale);
+        m_backbuffer = ConsoleBuffer.Reallocate(buffer: ref m_backbuffer, scale);
+        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: ref m_frontbuffer, scale);
 
         m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
-        Console.Out.Write(value: AnsiCommand.ResetStyles);
     }
 
     private bool InBuffer(Vec2 position) {
