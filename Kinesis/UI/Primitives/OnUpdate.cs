@@ -48,11 +48,11 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
         }
     }
 
-    public OnUpdate(Island island) {
+    public OnUpdate(BuildContext context) {
         base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.UP });
         base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.DOWN });
 
-        this.m_island = island;
+        this.m_island = context.Root;
     }
 
     private bool SetCallback(OnUpdateCallback<T> func, T message) {

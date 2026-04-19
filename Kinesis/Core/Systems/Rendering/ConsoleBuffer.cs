@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis.Core.Rendering;
@@ -7,8 +10,8 @@ namespace Kinesis.Core.Rendering;
 /// <summary>
 /// Represent a <see cref="ConsoleBuffer"/> on the screen.
 /// </summary>
-internal readonly struct ConsoleBuffer {
-    private readonly vtchar_t[,] m_buffer = null!;
+internal readonly unsafe struct ConsoleBuffer: IDisposable {
+    private readonly vtchar_t* m_buffer = null!;
     private readonly Vec2 m_scale = new Vec2(-1, -1);
 
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
@@ -24,7 +27,7 @@ internal readonly struct ConsoleBuffer {
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
     /// <returns>Return a <see cref="vtchar_t"/> reference.</returns>
-    public ref vtchar_t this[int x, int y] => ref m_buffer[x, y];
+    public ref vtchar_t this[int x, int y] => ref m_buffer[x + (int)m_startScale.X * y];
 
     /// <summary>
     /// Create new <see cref="ConsoleBuffer"/> with specific dimension.
@@ -35,11 +38,11 @@ internal readonly struct ConsoleBuffer {
         m_scale = new Vec2(x, y);
         m_startScale = new Vec2(x, y);
 
-        m_buffer = new vtchar_t[x, y];
+        m_buffer = Alloc(x, y);
         Clear();
     }
 
-    private ConsoleBuffer(vtchar_t[,] buffer, Vec2 scale, Vec2 startScale) {
+    private ConsoleBuffer(vtchar_t* buffer, Vec2 scale, Vec2 startScale) {
         m_buffer = buffer;
         m_scale = scale;
 
@@ -64,11 +67,14 @@ internal readonly struct ConsoleBuffer {
     public void Clear() {
         for (int x = 0; x < m_scale.X; ++x) {
             for (int y = 0; y < m_scale.Y; ++y) {
-                ref vtchar_t ch = ref m_buffer[x, y];
+                ref vtchar_t ch = ref this[x, y];
                 ch.Clear();
             }
         }
     }
+
+    public void Dispose()
+        => NativeMemory.Free(ptr: m_buffer);
 
     /// <summary>
     /// Create a slice from the current <see cref="ConsoleBuffer"/>.
@@ -90,15 +96,22 @@ internal readonly struct ConsoleBuffer {
         return new Canvas(ref buffer, scale, from);
     }
 
-    public static ConsoleBuffer Reallocate(ConsoleBuffer buffer, Vec2 scale) {
+    public static ConsoleBuffer Reallocate(in ConsoleBuffer buffer, Vec2 scale) {
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
-            ConsoleBuffer _buff = new ConsoleBuffer(buffer: new vtchar_t[(int)scale.X, (int)scale.Y], scale, scale);
+            ConsoleBuffer allocated = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, scale);
 
-            _buff.Clear();
-            _buff.Copy(buffer);
-            return _buff;
+            allocated.Clear();
+            allocated.Copy(buffer);
+
+            NativeMemory.Free(ptr: buffer.m_buffer);
+
+            Debug.WriteLine(value: $"Memory was freed up & reallocated... (Scale: {scale.X:f0} x {scale.Y:f0})");
+            return allocated;
         }
 
         return new ConsoleBuffer(buffer.m_buffer, scale, buffer.m_startScale);
     }
+
+    private static vtchar_t* Alloc(int x, int y) 
+        => (vtchar_t*)NativeMemory.Alloc(byteCount: (nuint)(Unsafe.SizeOf<vtchar_t>() * (x * y)));
 }
