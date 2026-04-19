@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Kinesis.Core.Utils;
 
 namespace Kinesis;
 
@@ -15,7 +16,7 @@ namespace Kinesis;
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
     #region PREDEFINES
-    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h\e[?7l";
+    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h";
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
     #endregion
 
@@ -39,7 +40,9 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(title == null ? $"\e]0;Untitled\a" : $"\e]0;{title}\a");
-        Console.Out.Write(value: USE_ALTERNATE_BUFFER);
+
+        Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
+        Console.Out.Write(value: AnsiCommand.WrapDisable);
 
         m_consoleSourceInfoProvider = new ConsoleSourceInfo();
 

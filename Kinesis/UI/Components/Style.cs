@@ -40,7 +40,7 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
     /// </summary>
     public StyleFlag AsAttribute { get => m_union.Flag; set => m_union.Flag = value; }
 
-    private Style(StyleTag tag, RGB color) : base(id: ComponentRegistry.QueryComponent(s_type)) {
+    private Style(StyleTag tag, RGB? color) : base(id: ComponentRegistry.QueryComponent(s_type)) {
         m_union = new StyleUnion(tag);
         m_union.Color = color;
     }
@@ -66,7 +66,7 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
     /// <param name="tag">Tag of the other.</param>
     /// <param name="color">The color value itself.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromRGB(StyleTag tag, RGB color) => new Style(tag, color);
+    public static Style CreateFromRGB(StyleTag tag, RGB? color) => new Style(tag, color);
 
     /// <summary>
     /// Create a new <see cref="Style"/> with <see cref="RGB"/> value.

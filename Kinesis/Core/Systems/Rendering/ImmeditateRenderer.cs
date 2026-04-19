@@ -52,7 +52,7 @@ internal sealed class ImmediateRenderer {
         };
 
         Console.OutputEncoding = Encoding.UTF8;
-        Console.CursorVisible = true;
+        Console.CursorVisible = false;
     }
         
     public void Run(IReadOnlyList<Entity> list) {
@@ -90,6 +90,7 @@ internal sealed class ImmediateRenderer {
     }
 
     public void Diffing() {
+        Console.Out.Write(value: AnsiCommand.StartBufferLoad);
         VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
         for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
@@ -119,19 +120,24 @@ internal sealed class ImmediateRenderer {
         m_out.Flush();
         m_backbuffer.Clear();
 
-        Console.Out.Write(value: AnsiCommand.RESET_STYLES);
-        Console.Out.Write(value: AnsiCommand.HOME);
-        Console.Out.Write(value: AnsiCommand.CLEAR_SAVED_LINES);
+        Console.Out.Write(value: AnsiCommand.EndBufferLoad);
+        Console.Out.Write(value: AnsiCommand.ResetStyles);
+
+        Console.Out.Write(value: AnsiCommand.Home);
+        Console.Out.Write(value: AnsiCommand.ClearSavedLines);
     }
 
     private void OnLayoutChange() {
-        if (m_layoutState.Value.IsChanged)
+        if (!m_layoutState.Value.IsChanged)
             return;
 
-        m_backbuffer = ConsoleBuffer.Reallocate(buffer: m_backbuffer, scale: m_layoutState.Value.Scale);
-        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: m_frontbuffer, scale: m_layoutState.Value.Scale);
+        Vec2 scale = m_layoutState.Value.Scale;
+
+        m_backbuffer = ConsoleBuffer.Reallocate(buffer: in m_backbuffer, scale);
+        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: in m_frontbuffer, scale);
 
         m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
+        Console.Out.Write(value: AnsiCommand.ResetStyles);
     }
 
     private bool InBuffer(Vec2 position) {
