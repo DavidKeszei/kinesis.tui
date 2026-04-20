@@ -174,16 +174,24 @@ internal ref struct VT100StringBuilder {
         return ref this;
     }
 
+    [UnscopedRef]
+    public ref VT100StringBuilder WriteRaw(ReadOnlySpan<char> sequence) {
+        sequence.TryCopyTo(m_stack[m_position..]);
+        m_position += sequence.Length;
+
+        return ref this;
+    }
+
     /// <summary>
     /// Build the underlying buffer and send to the <paramref name="destination"/>.
     /// </summary>
     /// <param name="destination">Destination of console screen.</param>
     /// <returns>Return the command length as <see cref="int"/>.</returns>
-    public readonly int Build(StreamWriter destination) {
-        for(int i = 0; i < m_position; ++i)
+    public void Build(StreamWriter destination) {
+        for (int i = 0; i < m_position; ++i)
             destination.Write(value: m_stack[i]);
 
-        return m_position;
+        m_position = 0;
     }
 
     public void Clear() => m_position = 0;

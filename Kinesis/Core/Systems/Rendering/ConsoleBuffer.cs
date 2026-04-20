@@ -17,7 +17,7 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
 
     /// <summary>
-    /// Dimension of the from.
+    /// Current scale of the <see cref="ConsoleBuffer"/>.
     /// </summary>
     public Vec2 Scale { get => m_scale; }
 
@@ -64,6 +64,9 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         }
     }
 
+    /// <summary>
+    /// Clear the buffer with default values.
+    /// </summary>
     public void Clear() {
         for (int x = 0; x < m_scale.X; ++x) {
             for (int y = 0; y < m_scale.Y; ++y) {
@@ -96,6 +99,12 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         return new Canvas(ref buffer, scale, from);
     }
 
+    /// <summary>
+    /// Reallocate the <paramref name="buffer"/> with new <paramref name="scale"/>.
+    /// </summary>
+    /// <param name="buffer">Target/Old buffer of the reallocation.</param>
+    /// <param name="scale">New scale of the buffer.</param>
+    /// <returns>Returns a <see cref="ConsoleBuffer"/> instance.</returns>
     public static ConsoleBuffer Reallocate(ref ConsoleBuffer buffer, Vec2 scale) {
         ConsoleBuffer temp = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, startScale: scale);
         temp.Clear();

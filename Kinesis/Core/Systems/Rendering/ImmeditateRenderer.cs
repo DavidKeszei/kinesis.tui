@@ -47,7 +47,7 @@ internal sealed class ImmediateRenderer {
         m_backbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
         m_frontbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
 
-        m_out = new StreamWriter(stream: Console.OpenStandardOutput(), encoding: Encoding.UTF8) {
+        m_out = new StreamWriter(stream: Console.OpenStandardOutput()) {
             AutoFlush = false
         };
 
@@ -93,37 +93,43 @@ internal sealed class ImmediateRenderer {
         Console.Out.Write(value: AnsiCommand.StartBufferLoad);
         VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
-        for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-            for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
+        for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
+            for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
 
                 ref vtchar_t backChar = ref m_backbuffer[x, y];
                 ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
+                /* This defend the renderer from color bleeding on the sides (BCE) */
+                if (x == m_backbuffer.Scale.X - 1 || y == m_backbuffer.Scale.Y - 1)
+                    backChar.Background = RGB.Transparent;
+
                 if (!frontChar.Equals(backChar)) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
-                                .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, true)
-                                .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, false)
-                           .WriteCharacter(backChar.Character)
-                           .Build(destination: m_out);
+                                .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)
+                                .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, isBackground: false)
+                           .WriteCharacter(backChar.Character);
 
                     frontChar = backChar;
                 }
 
                 if (builder.BarrierReached) {
-                    builder.Clear();
+                    builder.Build(destination: m_out);
                     m_out.Flush();
-                }
+                };
             }
+
         }
+
+        builder.Build(destination: m_out);
 
         m_out.Flush();
         m_backbuffer.Clear();
 
-        Console.Out.Write(value: AnsiCommand.EndBufferLoad);
         Console.Out.Write(value: AnsiCommand.ResetStyles);
-
         Console.Out.Write(value: AnsiCommand.Home);
+
+        Console.Out.Write(value: AnsiCommand.EndBufferLoad);
         Console.Out.Write(value: AnsiCommand.ClearSavedLines);
     }
 
@@ -132,15 +138,28 @@ internal sealed class ImmediateRenderer {
             return;
 
         Vec2 scale = m_layoutState.Value.Scale;
+        Vec2 old = m_frontbuffer.Scale;
 
         m_backbuffer = ConsoleBuffer.Reallocate(buffer: ref m_backbuffer, scale);
         m_frontbuffer = ConsoleBuffer.Reallocate(buffer: ref m_frontbuffer, scale);
 
+        //BCEGuardFill(old);
         m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
     }
 
     private bool InBuffer(Vec2 position) {
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
                (position.X >= 0 && position.Y >= 0);
+    }
+
+    private void BCEGuardFill(Vec2 old) {
+        if (old.X >= m_frontbuffer.Scale.X)
+            return;
+
+        for (int x = (int)old.X; x < m_frontbuffer.Scale.X; ++x) {
+            for (int y = 0; y < m_frontbuffer.Scale.Y; ++y) {
+                m_frontbuffer[x, y] = m_frontbuffer[(int)old.X - 1, y];
+            }
+        }
     }
 }
