@@ -138,28 +138,15 @@ internal sealed class ImmediateRenderer {
             return;
 
         Vec2 scale = m_layoutState.Value.Scale;
-        Vec2 old = m_frontbuffer.Scale;
 
         m_backbuffer = ConsoleBuffer.Reallocate(buffer: ref m_backbuffer, scale);
         m_frontbuffer = ConsoleBuffer.Reallocate(buffer: ref m_frontbuffer, scale);
 
-        //BCEGuardFill(old);
         m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
     }
 
     private bool InBuffer(Vec2 position) {
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
                (position.X >= 0 && position.Y >= 0);
-    }
-
-    private void BCEGuardFill(Vec2 old) {
-        if (old.X >= m_frontbuffer.Scale.X)
-            return;
-
-        for (int x = (int)old.X; x < m_frontbuffer.Scale.X; ++x) {
-            for (int y = 0; y < m_frontbuffer.Scale.Y; ++y) {
-                m_frontbuffer[x, y] = m_frontbuffer[(int)old.X - 1, y];
-            }
-        }
     }
 }

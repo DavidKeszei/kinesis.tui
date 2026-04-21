@@ -10,7 +10,9 @@ namespace Kinesis.UI;
 
 public sealed class Center: Island, ICopyable<BuildContext> {
     private readonly static string s_box = "__center__";
+
     private Scale? m_childScale = null!;
+    private bool m_scaleNotDefined = false;
 
     public Entity Child {
         init {
@@ -29,18 +31,20 @@ public sealed class Center: Island, ICopyable<BuildContext> {
     public void Copy(BuildContext context) {
         context.Set<Position>(this, @default: new Position());
         context.Set<Scale>(this, @default: new Scale(scale: new Vec2(x: float.MinValue, y: float.MinValue)));
+
+        m_scaleNotDefined = Scale.IsDefault(instance: GetComponent<Scale>());
     }
 
     protected override Entity? Build(BuildContext context) {
         if ((m_childScale = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached.GetComponent<Scale>()) == null) {
             Trace.Fail(
-                message: $"[UI::Warning] Given child not has Scale component; this can be lead to miscalculation. ({context.Current.Name} as {context.Current.Name.GetType().Name})"
+                message: $"[UI::Fail] Given child not has Scale component; this can be lead to miscalculation. ({context.Current.Name} as {context.Current.Name.GetType().Name})"
             );
         }
 
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref visitor) => {
-                if (Scale.IsDefault(instance: GetComponent<Scale>()!))
+                if (m_scaleNotDefined)
                     GetComponent<Scale>()!.Value = message.Scale;
 
                 UIBox box = visitor.Visit<UIBox>(name: s_box)!;
@@ -52,7 +56,6 @@ public sealed class Center: Island, ICopyable<BuildContext> {
                 if (pivot.Y > message.Scale.Y) pivot.Y = message.Scale.Y;
 
                 Vec2 center = new Vec2(x: (pivot.X / 2) - (m_childScale.Value.X / 2), y: (pivot.Y / 2) - (m_childScale.Value.Y / 2));
-
                 pos.Relative = center;
             },
             Child = new UIBox() {
