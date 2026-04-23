@@ -1,6 +1,7 @@
 ﻿using Kinesis.Core.Rendering;
 using Kinesis.UI.Components;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 

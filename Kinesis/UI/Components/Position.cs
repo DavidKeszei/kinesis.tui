@@ -8,7 +8,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a point in the 2D space.
 /// </summary>
-public sealed class Position : Component, IStaticType, ICopyable<Position>, IDefault<Position> {
+public sealed class Position: Component, IStaticType, ICopyable<Position>, IDefault<Position> {
     private static readonly string s_type = nameof(Position);
 
     private Position m_origin = null!;
@@ -36,7 +36,7 @@ public sealed class Position : Component, IStaticType, ICopyable<Position>, IDef
         m_offset = Vec2.Zero;
     }
 
-    public void Copy(Position? position) {
+    public void Copy(ref Position position) {
         if (position == null) return;
 
         m_offset = position.m_offset;

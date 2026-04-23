@@ -16,7 +16,7 @@ namespace Kinesis.Core;
 /// </summary>
 internal partial class LayoutSystem: IDynamicSystem {
     #region PREDEFINES
-    private const int POOLING_TIME = 8;
+    private const int POOLING_TIME = 1;
     #endregion
 
     private readonly State<LayoutInfo> m_info = null!;
@@ -58,7 +58,6 @@ internal partial class LayoutSystem: IDynamicSystem {
                 continue;
             }
 
-            
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
             if (!info.Equals(default)) {

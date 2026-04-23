@@ -3,6 +3,7 @@ using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -27,7 +28,8 @@ public ref struct BuildContext {
     private readonly Island m_root = null!;
     private readonly Entity m_current = null!;
 
-    private readonly Component[] m_inheritanceTargets = null!;
+    private readonly Stack<Component>[] m_inheritanceTargets = null!;
+    private byte m_flags = 0;
 
     /// <summary>
     /// Current target entity of the building.
@@ -39,9 +41,14 @@ public ref struct BuildContext {
     /// </summary>
     public readonly Island Root { get => m_root; internal init => m_root = value; }
 
+    internal byte ChangeStyleFlag { init => m_flags = value; }
+
     internal BuildContext(Entity current) {
         m_current = current;
-        m_inheritanceTargets = new Component[PADDING]; /* Padding is largest index -> Count of inheritable components */
+        m_inheritanceTargets = new Stack<Component>[PADDING]; /* Padding is largest index -> Count of inheritable components */
+
+        for (int i = 0; i < m_inheritanceTargets.Length; ++i)
+            m_inheritanceTargets[i] = new Stack<Component>(capacity: 16);
     }
 
     /// <summary>
@@ -51,7 +58,7 @@ public ref struct BuildContext {
     /// <param name="target">Target of the Set{T}().</param>
     /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
     /// <param name="index">Index of the component.</param>
-    public readonly void Set<T>(Entity target, T @default, int index = 0) where T : Component, IStaticType, IDefault<T>, ICopyable<T> {
+    public void Set<T>(Entity target, T @default, int index = 0) where T : Component, IStaticType, IDefault<T>, ICopyable<T> {
         if (target == null || @default == null) return;
 
         T? component = target.GetComponent<T>(index);
@@ -61,13 +68,25 @@ public ref struct BuildContext {
         if (type == -1) return;
 
         if (T.IsDefault(component)) {
-            component.Copy(m_inheritanceTargets[type] != null ? ((T)m_inheritanceTargets[type]) : @default);
+            Component copy = m_inheritanceTargets[type].TryPeek(out Component? result) ? ((T)m_inheritanceTargets[type].Peek()) : @default;
+            component.Copy(ref Unsafe.As<Component, T>(ref copy));
 
-            if (component is Position position)
-                position.Origin = ((Position)m_inheritanceTargets[type]);
+            if (component is Position position && result != null)
+                position.Origin = ((Position)result);
         }
 
-        m_inheritanceTargets[type] = component;
+        if (component is Scale scale && m_inheritanceTargets[type].TryPeek(out Component? peek))
+            scale.Maximum = ((Scale)peek);
+
+        m_inheritanceTargets[type].Push(component);
+        m_flags |= (byte)(1 << type);
+    }
+
+    internal readonly void DropCurrentLevelStyles() {
+        for (int i = 0; i < m_inheritanceTargets.Length; ++i) {
+            if((m_flags & (1 << i)) == (1 << i))
+                _ = m_inheritanceTargets[i].TryPop(out _);
+        }
     }
 
     private readonly int MatchId(Component component) {

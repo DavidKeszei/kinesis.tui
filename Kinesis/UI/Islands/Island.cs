@@ -54,16 +54,19 @@ public abstract class Island : Entity {
             m_renderSet.Add(context.Current!);
 
         if (context.Current is ICopyable<BuildContext> copyable)
-            copyable.Copy(from: context);
+            copyable.Copy(from: ref context);
 
         for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
             Hierarchy child = context.Current!.GetComponent<Hierarchy>(i)!;
 
             if (child.Attached != null) {
                 BuildTree(context: context with {
-                    Current = child.Attached
+                    Current = child.Attached,
+                    ChangeStyleFlag = 0
                 });
             }
         }
+
+        context.DropCurrentLevelStyles();
     }
 }

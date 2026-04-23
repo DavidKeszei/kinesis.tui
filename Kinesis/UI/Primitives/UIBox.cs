@@ -11,7 +11,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple, plain box on the screen with background.
 /// </summary>
-public class UIBox : Entity, ICopyable<BuildContext> {
+public class UIBox: Entity, ICopyable<BuildContext> {
 
     /// <summary>
     /// Size of the <see cref="UIBox"/>.
@@ -42,9 +42,9 @@ public class UIBox : Entity, ICopyable<BuildContext> {
         _ = base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent), isUnique: true);
     }
 
-    public void Copy(BuildContext from) {
+    public void Copy(ref BuildContext from) {
         from.Set<Position>(this, @default: new Position());
-        from.Set<Scale>(this, @default: new Components.Scale(scale: Vec2.Zero));
+        from.Set<Scale>(this, @default: new Components.Scale(scale: Vec2.One * float.MinValue));
 
         from.Set<Style>(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
     }

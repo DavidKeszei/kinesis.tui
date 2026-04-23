@@ -33,7 +33,6 @@ public class BoxRenderer: RenderComponent {
                 }
                 else {
                     ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
-                    ch.Character = ' ';
                 }
             }
         }
@@ -45,12 +44,6 @@ public class BoxRenderer: RenderComponent {
         foreach(Style style in styles) {
             switch (style.Tag) {
                 case StyleTag.BACKGROUND:
-                    m_cache.Add(style.Tag, style);
-                    break;
-                case StyleTag.BORDER_CHAR:
-                    m_cache.Add(style.Tag, style);
-                    break;
-                case StyleTag.BORDER_COLOR:
                     m_cache.Add(style.Tag, style);
                     break;
                 default:

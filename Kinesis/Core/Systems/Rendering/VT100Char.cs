@@ -48,7 +48,7 @@ public struct VT100Char: IEquatable<vtchar_t> {
 
     public void Clear() {
         m_bg = RGB.Transparent;
-        m_fg = RGB.White;
+        m_fg = RGB.Transparent;
 
         m_styles = StyleFlag.NONE;
         m_character = ' ';

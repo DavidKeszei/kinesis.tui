@@ -160,6 +160,7 @@ internal ref struct VT100StringBuilder {
         }
 
         m_stack[m_position - 1] = 'm';
+
         return ref this;
     }
 

@@ -1,0 +1,61 @@
+﻿using Kinesis.UI;
+using Kinesis.UI.Components;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
+
+namespace Kinesis.Core.Rendering;
+
+/// <summary>
+/// Represent a renderer for the <see cref="Border"/> UI element.
+/// </summary>
+internal sealed class BorderRenderer: RenderComponent {
+    private static readonly string IS_MISSING_STYLE = "[UI::Warning] Some border style is missing, no border rendering occurs..";
+    private bool m_isMissing = true;
+
+    internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+        if (m_entityVersion != version)
+            CacheStyles(styles);
+
+        if (m_isMissing) {
+            Trace.Assert(condition: !m_isMissing, message: IS_MISSING_STYLE);
+            return;
+        }
+
+
+        for (int y = 0; y < buffer.Scale.Y; ++y) {
+            for(int x = 0; x < buffer.Scale.X; ++x) {
+                ref vtchar_t cell = ref buffer[x, y];
+
+                if (y == 0 && x == 0) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_LEFT].AsCharacter;
+                else if (y == 0 && x == buffer.Scale.X - 1) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_RIGHT].AsCharacter;
+                else if (y == buffer.Scale.Y - 1 && x == 0) cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_LEFT].AsCharacter;
+                else if (y == buffer.Scale.Y - 1 && x == buffer.Scale.X - 1) cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_RIGHT].AsCharacter;
+
+                if (y >= 1 && y < buffer.Scale.Y - 1 && (x == 0 || x == buffer.Scale.X - 1)) cell.Character = m_cache[StyleTag.BORDER_CHAR_VERTICAL].AsCharacter;
+                else if (x >= 1 && x < buffer.Scale.X - 1 && (y == 0 || y == buffer.Scale.Y - 1)) cell.Character = m_cache[StyleTag.BORDER_CHAR_HORIZONTAL].AsCharacter;
+
+                cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+            }
+        }
+    }
+
+    protected override void CacheStyles(StyleEnumerator styles) {
+        m_cache.Clear();
+
+        foreach (Style style in styles) {
+            bool isBorderStyle = style.Tag switch {
+                StyleTag.BORDER_CHAR_TOP_RIGHT or StyleTag.BORDER_CHAR_TOP_LEFT or
+                StyleTag.BORDER_CHAR_BOTTOM_RIGHT or StyleTag.BORDER_CHAR_BOTTOM_LEFT or
+                StyleTag.BORDER_CHAR_HORIZONTAL or StyleTag.BORDER_CHAR_VERTICAL or StyleTag.FOREGROUND => true,
+                _ => false!
+            };
+
+            if (!isBorderStyle) continue;
+
+            m_isMissing = false;
+            m_cache.Add(style.Tag, style);
+        }
+    }
+}

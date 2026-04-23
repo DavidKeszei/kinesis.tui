@@ -49,6 +49,6 @@ public class ValueState<T>(StateUpdate<T> update = default!, T @default = defaul
 /// <summary>
 /// Represent a state holder, which only allows class/reference-type.
 /// </summary>
-/// <typeparam name="T">Reference-type of the state.</typeparam>
+/// <typeparam name="T">Maximum-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
 public class RefState<T>(StateUpdate<T> update = default!, T @default = null!): State<T>(update ?? (static (ref from, to) => from = to), @default) where T: class;

@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Kinesis.Core;
 
+/// <summary>
+/// Provides default checking for a object.
+/// </summary>
+/// <typeparam name="TSelf">The class itself.</typeparam>
 public interface IDefault<TSelf> {
 
     /// <summary>

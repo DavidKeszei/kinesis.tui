@@ -117,7 +117,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
             m_renderer.Run(list: m_navigator.Current?.Tree ?? []);
 
             if (!firstRun) {
-                Vec2 safeArea = m_layoutInfo.Value.Scale with { X = m_layoutInfo.Value.Scale.X - 1, Y = m_layoutInfo.Value.Scale.Y - 1};
+                Vec2 safeArea = m_layoutInfo.Value.Scale - 1;
                 m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else firstRun = false;

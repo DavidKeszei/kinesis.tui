@@ -51,7 +51,7 @@ public class UIText: Entity, ICopyable<BuildContext> {
         base.AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE));
     }
 
-    public void Copy(BuildContext from) {
+    public void Copy(ref BuildContext from) {
         from.Set<Position>(this, @default: new Position());
         from.Set<Scale>(this, @default: new Scale(scale: Vec2.Zero));
 

@@ -59,23 +59,24 @@ internal sealed class ImmediateRenderer {
         long start = DateTime.Now.Ticks;
 
         if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
-            OnLayoutChange();
+            bool fullRedrawRequested = OnLayoutChange();
 
             for (int i = 0; i < list.Count; ++i) {
 
                 Scale scale = list[i].GetComponent<Scale>()!;
                 Position position = list[i].GetComponent<Position>()!;
 
-                if (!InBuffer(position: position.Absolute)) continue;
+                if (!InBuffer(position: position.Absolute, scale: scale.Value)) 
+                    continue;
 
                 RenderComponent renderLogic = list[i].GetComponent<RenderComponent>()!;
-                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position.Absolute, scale: scale.Value);
+                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position.Absolute, scale: SetSafeArea(scale.Value, position.Absolute));
 
                 using StyleEnumerator style = new StyleEnumerator(entity: list[i]);
                 renderLogic.Render(buffer: canvas, version: list[i].Version, style);
             }
 
-            Diffing();
+            Diffing(fullRedrawRequested);
             m_workState.Value.IsWorked = false;
         }
 
@@ -89,26 +90,24 @@ internal sealed class ImmediateRenderer {
         }
     }
 
-    public void Diffing() {
+    public void Diffing(bool full) {
+        Debug.WriteLineIf(condition: full, $"Full redraw: {full}");
+
         Console.Out.Write(value: AnsiCommand.StartBufferLoad);
         VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
             for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-
                 ref vtchar_t backChar = ref m_backbuffer[x, y];
                 ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
-                /* This defend the renderer from color bleeding on the sides (BCE) */
-                if (x == m_backbuffer.Scale.X - 1 || y == m_backbuffer.Scale.Y - 1)
-                    backChar.Background = RGB.Transparent;
-
-                if (!frontChar.Equals(backChar)) {
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new vtchar_t()))) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)
                                 .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, isBackground: false)
-                           .WriteCharacter(backChar.Character);
+                           .WriteCharacter(backChar.Character)
+                           .WriteRaw(sequence: AnsiCommand.ResetFontStyles);
 
                     frontChar = backChar;
                 }
@@ -133,9 +132,9 @@ internal sealed class ImmediateRenderer {
         Console.Out.Write(value: AnsiCommand.ClearSavedLines);
     }
 
-    private void OnLayoutChange() {
+    private bool OnLayoutChange() {
         if (!m_layoutState.Value.IsChanged)
-            return;
+            return false;
 
         Vec2 scale = m_layoutState.Value.Scale;
 
@@ -143,10 +142,17 @@ internal sealed class ImmediateRenderer {
         m_frontbuffer = ConsoleBuffer.Reallocate(buffer: ref m_frontbuffer, scale);
 
         m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
+        return true;
     }
 
-    private bool InBuffer(Vec2 position) {
+    private bool InBuffer(Vec2 position, Vec2 scale) {
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
-               (position.X >= 0 && position.Y >= 0);
+               (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
+    }
+
+    private Vec2 SetSafeArea(Vec2 scale, Vec2 position) {
+        if ((scale.X + position.X) >= m_backbuffer.Scale.X) scale.X -= 1;
+        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) scale.Y -= 1;
+        return scale;
     }
 }
