@@ -25,7 +25,7 @@ internal sealed class ImmediateRenderer {
     private ConsoleBuffer m_frontbuffer = default;
 
     private readonly State<LayoutInfo> m_layoutState = null!;
-    private readonly State<WorkStateInfo> m_workState = null!;
+    private readonly State<JobSystemStateInfo> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
     private float m_delta = .0f;
@@ -40,7 +40,7 @@ internal sealed class ImmediateRenderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public ImmediateRenderer(State<WorkStateInfo> workState, State<LayoutInfo> layoutState) {
+    public ImmediateRenderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -55,8 +55,8 @@ internal sealed class ImmediateRenderer {
         Console.CursorVisible = false;
     }
         
-    public void Run(IReadOnlyList<Entity> list) {
-        long start = DateTime.Now.Ticks;
+    public void Run(List<Entity> list) {
+        long start = Stopwatch.GetTimestamp();
 
         if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
             bool fullRedrawRequested = OnLayoutChange();
@@ -77,22 +77,18 @@ internal sealed class ImmediateRenderer {
             }
 
             Diffing(fullRedrawRequested);
-            m_workState.Value.IsWorked = false;
         }
 
         m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
-        m_delta = (DateTime.Now.Ticks - start) / NS_TO_MS;
+        float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
 
-        if (m_delta <= LIMIT) {
+        if (delta <= LIMIT)
+            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - delta));
 
-            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - m_delta));
-            m_delta = LIMIT;
-        }
+        m_delta = float.Lerp(m_delta, delta, .1f);
     }
 
     public void Diffing(bool full) {
-        Debug.WriteLineIf(condition: full, $"Full redraw: {full}");
-
         Console.Out.Write(value: AnsiCommand.StartBufferLoad);
         VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
@@ -106,8 +102,7 @@ internal sealed class ImmediateRenderer {
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)
                                 .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, isBackground: false)
-                           .WriteCharacter(backChar.Character)
-                           .WriteRaw(sequence: AnsiCommand.ResetFontStyles);
+                           .WriteCharacter(backChar.Character);
 
                     frontChar = backChar;
                 }

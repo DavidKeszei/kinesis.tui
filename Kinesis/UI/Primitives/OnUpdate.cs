@@ -9,19 +9,19 @@ using System.Text;
 
 namespace Kinesis.UI;
 
-public delegate void OnUpdateCallback<T>(T message, ref PageEntityVisitor visitor) where T: IWorkMessage;
+public delegate void OnUpdateCallback<T>(T message, ref IslandEntityVisitor visitor) where T: IWorkMessage;
 
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
-public class OnUpdate<T>: Entity where T: IWorkMessage {
+public class OnUpdate<T>: Entity, IContentable<Entity> where T: IWorkMessage {
     private readonly Island m_island = null!;
 
     /// <summary>
     /// Callback, when a frame was rendered.
     /// </summary>
     public OnUpdateCallback<T> On {
-        set {
+        init {
             InteractionComponent? interaction = base.GetComponent<InteractionComponent>();
 
             if (interaction == null) {
@@ -39,8 +39,8 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
     /// <summary>
     /// Attached child of the <see cref="OnUpdate{T}"/>.
     /// </summary>
-    public Entity Child {
-        set {
+    public Entity Content {
+        init {
             if (value == null) return;
 
             Hierarchy connection = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!;
@@ -57,11 +57,10 @@ public class OnUpdate<T>: Entity where T: IWorkMessage {
         this.m_island = context.Root;
     }
 
-    private bool SetCallback(OnUpdateCallback<T> func, T message) {
-        if (func == null) return false;
-        PageEntityVisitor visitor = new PageEntityVisitor(pivot: this);
-        func(message, ref visitor);
+    private void SetCallback(OnUpdateCallback<T> func, T message) {
+        if (func == null) return;
 
-        return visitor.IsChanged;
+        IslandEntityVisitor visitor = new IslandEntityVisitor(pivot: this);
+        func(message, ref visitor);
     }
 }

@@ -52,13 +52,13 @@ public ref struct BuildContext {
     }
 
     /// <summary>
-    /// Set a inheritable component, if that equals with <see cref="IEmpty{TSelf}.Empty"/>.
+    /// Set a inheritable component, if that equals with <see cref="IDefault{TSelf}.IsDefault(TSelf)"/>.
     /// </summary>
     /// <typeparam name="T">Type of the component.</typeparam>
-    /// <param name="target">Target of the Set{T}().</param>
+    /// <param name="target">Target of the <see cref="Set{T}"/>.</param>
     /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
     /// <param name="index">Index of the component.</param>
-    public void Set<T>(Entity target, T @default, int index = 0) where T : Component, IStaticType, IDefault<T>, ICopyable<T> {
+    public void Set<T>(Entity target, T @default, int index = 0) where T: Component, IStaticType, IDefault<T>, ICopyable<T> {
         if (target == null || @default == null) return;
 
         T? component = target.GetComponent<T>(index);
@@ -75,6 +75,7 @@ public ref struct BuildContext {
                 position.Origin = ((Position)result);
         }
 
+        /* This not dependent from "is default" state: always using the given space by the "parent" */
         if (component is Scale scale && m_inheritanceTargets[type].TryPeek(out Component? peek))
             scale.Maximum = ((Scale)peek);
 

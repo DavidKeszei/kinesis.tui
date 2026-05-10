@@ -66,14 +66,14 @@ internal class InputSystem: IDynamicSystem {
                     if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
 
                         lastAction = InputAction.HOLD;
-                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: m_startInputInfo.isPress));
+                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: m_startInputInfo.isPress));
                     }
                 }
                 /* 1.1 If not: do fast swap between the new & current keys */
                 else if (m_startInputInfo.Key != info.Key || m_startInputInfo.Modifier != info.Modifiers) {
                     if (m_startInputInfo.When != TimeSpan.Zero) {
 
-                        WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
+                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
                         deadZoneTime = DEAD_ZONE;
                     }
 
@@ -90,7 +90,7 @@ internal class InputSystem: IDynamicSystem {
             /* 2. Send it after the DEAD_ZONE. (Only, if the action is not HOLD)*/
             if (deadZoneTime <= 0) {
                 if (lastAction != InputAction.HOLD)
-                    WorkerSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
+                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
 
                 m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 

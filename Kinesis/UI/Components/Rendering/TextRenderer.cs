@@ -46,8 +46,10 @@ public class TextRenderer: RenderComponent {
         if (buffer.Scale.Y == 0 || buffer.Scale.X == 0)
             return;
 
-        if(m_entityVersion != version)
+        if (m_entityVersion != version) {
+            m_entityVersion = version;
             CacheStyles(styles);
+        }
 
         Style? bg = null!;
         Style? fg = null!;
@@ -75,13 +77,11 @@ public class TextRenderer: RenderComponent {
                     ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
                     ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
 
-                    if (attr == null) ch.Styles = StyleFlag.NONE;
+                    if (attr == null) ch.Styles = TextDecoration.NONE;
                     else ch.Styles = ((Style)attr).AsAttribute;
                 }
             }
         }
-
-        m_entityVersion = version;
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

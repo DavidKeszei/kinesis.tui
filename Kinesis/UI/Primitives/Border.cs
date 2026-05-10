@@ -11,9 +11,9 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a border on an area like a stickers.
 /// </summary>
-public class Border: Entity, ICopyable<BuildContext> {
-    public Entity Child {
-        set {
+public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
+    public Entity Content {
+        init {
             if (value == null) return;
 
             value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
@@ -23,7 +23,7 @@ public class Border: Entity, ICopyable<BuildContext> {
 
     public RGB Foreground { get => GetComponent<Style>()!.AsRGB; set => GetComponent<Style>()!.AsRGB = value; }
 
-    public BorderDrawCharacters Characters { set => value.CreateStyles(to: this); }
+    public BorderDecoration Characters { set => value.CreateStyles(to: this); }
 
     public Border() {
         InitRenderEntityWith<BorderRenderer>();
@@ -43,7 +43,7 @@ public class Border: Entity, ICopyable<BuildContext> {
 /// <summary>
 /// Represents a collection of border-draw characters.
 /// </summary>
-public readonly struct BorderDrawCharacters {
+public readonly struct BorderDecoration {
     private readonly char m_topLeft = ' ';
     private readonly char m_topRight = ' ';
 
@@ -56,8 +56,8 @@ public readonly struct BorderDrawCharacters {
     /// <summary>
     /// Modern, unicode border characters.
     /// </summary>
-    public static BorderDrawCharacters Arc { 
-        get => new BorderDrawCharacters {
+    public static BorderDecoration Arc { 
+        get => new BorderDecoration {
             TopRigth = '╮',
             TopLeft = '╭',
 
@@ -67,6 +67,32 @@ public readonly struct BorderDrawCharacters {
             Horizontal = '─',
             Vertical = '│',
         }; 
+    }
+
+    public static BorderDecoration None {
+        get => new BorderDecoration {
+            TopRigth = ' ',
+            TopLeft = ' ',
+
+            BottomRight = ' ',
+            BottomLeft = ' ',
+
+            Horizontal = ' ',
+            Vertical = ' ',
+        };
+    }
+
+    public static BorderDecoration Square {
+        get => new BorderDecoration {
+            TopRigth = '┐',
+            TopLeft = '┌',
+
+            BottomRight = '┘',
+            BottomLeft = '└',
+
+            Horizontal = '─',
+            Vertical = '│'
+        };
     }
 
     /// <summary>
@@ -99,7 +125,7 @@ public readonly struct BorderDrawCharacters {
     /// </summary>
     public char Horizontal { init => m_horizontal = value; }
 
-    public BorderDrawCharacters() { }
+    public BorderDecoration() { }
 
     internal void CreateStyles(Border to) {
         to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_TOP_LEFT, m_topLeft));

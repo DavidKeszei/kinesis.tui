@@ -11,7 +11,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple, plain box on the screen with background.
 /// </summary>
-public class UIBox: Entity, ICopyable<BuildContext> {
+public class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity> {
 
     /// <summary>
     /// Size of the <see cref="UIBox"/>.
@@ -26,8 +26,8 @@ public class UIBox: Entity, ICopyable<BuildContext> {
     /// <summary>
     /// Attached <see cref="Entity"/> instance as child.
     /// </summary>
-    public Entity Child {
-        set {
+    public Entity Content {
+        init {
             if (value == null) return;
 
             _ = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;

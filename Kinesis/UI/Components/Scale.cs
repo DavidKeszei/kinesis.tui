@@ -8,13 +8,18 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a dimension in the 2D space.
 /// </summary>
-public sealed class Scale : Component, IStaticType, ICopyable<Scale>, IDefault<Scale> {
+public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Scale> {
     private static readonly string s_type = nameof(Scale);
 
     private Scale m_max = null!;
     private Vec2 m_scale = Vec2.Zero;
 
     public static string Name { get => s_type; }
+
+    /// <summary>
+    /// This indicates on an axis, which is auto/default.
+    /// </summary>
+    public static float Auto { get => float.MinValue; }
 
     /// <summary>
     /// Value of the current <see cref="Scale"/> instance.
@@ -26,12 +31,28 @@ public sealed class Scale : Component, IStaticType, ICopyable<Scale>, IDefault<S
     /// </summary>
     public Scale Maximum { get => m_max; set => m_max = value; }
 
-    public Scale(Vec2 scale): base(id: ComponentRegistry.QueryComponent(name: s_type))
+    public Scale(Vec2 scale): base(id: ComponentRegistry.QueryComponent(name: s_type)) 
         => m_scale = scale;
+
+    /// <summary>
+    /// Indicates what axis was setted to <see cref="Scale.AUTO_ON_AXIS"/>.,
+    /// </summary>
+    /// <returns>Returns a <see cref="bool"/> tuple, which indicates the auto state each axis.</returns>
+    public (bool X, bool Y) IsAuto()
+        => (m_scale.X == float.MinValue, m_scale.Y == float.MinValue);
+
+    /// <summary>
+    /// Change an <paramref name="axis"/> <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">New value of the axis.</param>
+    /// <param name="axis">Affected axis of the change.</param>
+    public void ChangeAxisValue(float value, Axis axis) {
+        if (axis == Axis.X) m_scale.X = value;
+        if (axis == Axis.Y) m_scale.Y = value;
+    }
 
     public void Copy(ref Scale from) {
         if (from == null) return;
-
         m_max = from.m_max;
 
         if(m_scale.X == float.MinValue) m_scale.X = from.m_scale.X;
@@ -47,8 +68,9 @@ public sealed class Scale : Component, IStaticType, ICopyable<Scale>, IDefault<S
         if (m_max != null) {
             Vec2 result = m_scale;
 
-            if (result.X > m_max.Value.X || m_scale.X == float.MinValue) result.X = m_max.Value.X;
-            if (result.Y > m_max.Value.Y || m_scale.Y == float.MinValue) result.Y = m_max.Value.Y;
+            /* TODO: Revisit for better scale updating. */
+            if (m_scale.X == float.MinValue || result.X > m_max.Value.X) result.X = m_max.Value.X;
+            if (m_scale.Y == float.MinValue || result.Y > m_max.Value.Y) result.Y = m_max.Value.Y;
 
             return result;
         }

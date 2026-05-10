@@ -16,8 +16,3 @@ public interface ICopyable<TFrom> where TFrom: allows ref struct {
     /// <param name="from">Holder of the copy values.</param>
     public void Copy(ref TFrom from);
 }
-
-public interface IImmutableCopy<TSelf> where TSelf: allows ref struct {
-
-    public TSelf Copy();
-}

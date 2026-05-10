@@ -1,20 +1,22 @@
 ﻿using Kinesis.Core;
 using Kinesis.Core.Rendering;
 using Kinesis.UI.Components;
+using Microsoft.VisualBasic;
+using System.Runtime.InteropServices;
 
 namespace Kinesis.UI;
 
 /// <summary>
-/// Represent a segment on the screen.
+/// Represent a segment on the screen. Acts like a container for complex objects.
 /// </summary>
-public abstract class Island : Entity {
+public abstract class Island: Entity {
     private readonly List<Entity> m_renderSet = null!;
     private bool m_isActive = false;
 
     /// <summary>
     /// Created <see cref="Entity"/> instance-tree as "list".
     /// </summary>
-    internal IReadOnlyList<Entity> Tree { get => m_renderSet; }
+    internal List<Entity> Tree { get => m_renderSet; }
 
     /// <summary>
     /// Indicates the <see cref="Island"/> is active by the <see cref="ImmediateRenderer"/> and the <see cref="INavigator"/>.

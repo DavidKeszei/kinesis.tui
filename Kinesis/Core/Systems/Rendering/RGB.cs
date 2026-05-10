@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace Kinesis.Core.Rendering;
@@ -21,13 +25,15 @@ public struct RGB: IEquatable<RGB> {
 
     public static implicit operator RGB(uint color) => new RGB(color);
 
-    #region STATICS
+    #region PREDEFINES
 
     public static RGB White { get => new RGB(r: 255, g: 255, b: 255, a: 255); }
 
     public static RGB Black { get => new RGB(r: 0, g: 0, b: 0, a: 255); }
 
     public static RGB Purple { get => new RGB(r: 128, g: 0, b: 128, a: 255); }
+
+    public static RGB Blue { get => new RGB(color: 0x0000FFFF); }
 
     public static RGB Yellow { get => new RGB(r: 255, g: 255, b: 0, a: 255); }
 
@@ -55,7 +61,20 @@ public struct RGB: IEquatable<RGB> {
         m_alpha = a;
     }
 
-    public RGB(uint color) => m_color = color;
+    public unsafe RGB(uint color) {
+        if (BitConverter.IsLittleEndian) {
+            byte* asArray = (byte*)(void*)&color;
+
+            m_red = asArray[3];
+            m_green = asArray[2];
+
+            m_blue = asArray[1];
+            m_alpha = asArray[0];
+            return;
+        }
+
+        m_color = color;
+    }
 
     public readonly bool Equals(RGB rgb)
         => rgb.m_red == m_red && rgb.m_green == m_green && 
@@ -75,6 +94,17 @@ public struct RGB: IEquatable<RGB> {
     /// <param name="time">Interpolation between the two <see cref="RGB"/> values.</param>
     /// <returns>Return a new <see cref="RGB"/> between <paramref name="left"/> and <paramref name="right"/> based on the <paramref name="time"/>.</returns>
     public static RGB Lerp(RGB left, RGB right, float time) {
+        if (time <= 0) return left;
+        if (time >= 1) return right;
+
+        if (Vector.IsHardwareAccelerated) {
+            Vector4 simdLeft = new Vector4(x: left.m_red, y: left.m_green, z: left.m_blue, w: left.m_alpha);
+            Vector4 simdRight = new Vector4(x: right.m_red, y: right.m_green, z: right.m_blue, w: right.m_alpha);
+
+            Vector4 lerp = Vector4.Lerp(simdLeft, simdRight, time);
+            return new RGB((byte)lerp.X, (byte)lerp.Y, (byte)lerp.Z, (byte)lerp.W);
+        }
+
         float r = left.R + (right.R - left.R) * time;
         float g = left.G + (right.G - left.G) * time;
 
@@ -84,16 +114,48 @@ public struct RGB: IEquatable<RGB> {
         return new RGB((byte)r, (byte)g, (byte)b, (byte)a);
     }
 
+    /// <summary>
+    /// Blend two <see cref="RGB"/> instance based on thier alpha values.
+    /// </summary>
+    /// <param name="top">Top/Left of the <see cref="RGB"/> value.</param>
+    /// <param name="bottom">Bottom/Rigth of the parameters.</param>
+    /// <returns>Returns a <see cref="RGB"/> instance, which represents blend of the two <see cref="RGB"/> instances.</returns>
     public static RGB Blend(RGB top, RGB bottom) {
         if (top.A == byte.MaxValue) return top;
         if (top.A == byte.MinValue) return bottom;
 
-        float ratio = 1f - (top.m_alpha / 255f);
+        float topNormalizedAlpha = top.m_alpha / 255f;
+        float ratio = 1f -  topNormalizedAlpha;
 
-        byte r = (byte)float.Clamp((top.m_red * (top.m_alpha / 255f)) + (bottom.m_red * ratio), byte.MinValue, byte.MaxValue);
-        byte g = (byte)float.Clamp((top.m_green * (top.m_alpha / 255f)) + (bottom.m_green * ratio), byte.MinValue, byte.MaxValue);
-        byte b = (byte)float.Clamp((top.m_blue * (top.m_alpha / 255f)) + (bottom.m_blue * ratio), byte.MinValue, byte.MaxValue);
+        /* Use SIMD-feature, if we can */
+        if (Vector.IsHardwareAccelerated) {
+            Vector4 topSIMD = new Vector4(top.m_red, top.m_green, top.m_blue, top.m_alpha);
+            Vector4 bottomSIMD = new Vector4(bottom.m_red, bottom.m_green, bottom.m_blue, bottom.m_alpha);
+
+            topSIMD *= topNormalizedAlpha;
+            bottomSIMD *= ratio;
+
+            topSIMD = Vector4.Clamp(topSIMD + bottomSIMD, min: Vector4.Zero, max: Vector4.One * byte.MaxValue);
+            return new RGB((byte)topSIMD.X, (byte)topSIMD.Y, (byte)topSIMD.Z, 255);
+        }
+
+        byte r = (byte)float.Clamp((top.m_red * topNormalizedAlpha) + (bottom.m_red * ratio), byte.MinValue, byte.MaxValue);
+        byte g = (byte)float.Clamp((top.m_green * topNormalizedAlpha) + (bottom.m_green * ratio), byte.MinValue, byte.MaxValue);
+        byte b = (byte)float.Clamp((top.m_blue * topNormalizedAlpha) + (bottom.m_blue * ratio), byte.MinValue, byte.MaxValue);
 
         return new RGB(r, g, b, a: 255);
+    }
+
+    public static void Gradient(RGB from, RGB to, Span<RGB> output) {
+        if (output.Length < 2) return;
+
+        float ratio = 1f / output.Length;
+        int index = 0;
+
+        for (int i = 1; i < output.Length; ++i)
+            output[index++] = Lerp(from, to, i * ratio);
+
+        output[0]  = from;
+        output[^1] = to;
     }
 }

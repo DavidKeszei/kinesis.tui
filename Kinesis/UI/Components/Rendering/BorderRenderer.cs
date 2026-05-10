@@ -11,18 +11,12 @@ namespace Kinesis.Core.Rendering;
 /// Represent a renderer for the <see cref="Border"/> UI element.
 /// </summary>
 internal sealed class BorderRenderer: RenderComponent {
-    private static readonly string IS_MISSING_STYLE = "[UI::Warning] Some border style is missing, no border rendering occurs..";
-    private bool m_isMissing = true;
 
     internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
-        if (m_entityVersion != version)
+        if (m_entityVersion != version) {
+            m_entityVersion = version;
             CacheStyles(styles);
-
-        if (m_isMissing) {
-            Trace.Assert(condition: !m_isMissing, message: IS_MISSING_STYLE);
-            return;
         }
-
 
         for (int y = 0; y < buffer.Scale.Y; ++y) {
             for(int x = 0; x < buffer.Scale.X; ++x) {
@@ -53,8 +47,6 @@ internal sealed class BorderRenderer: RenderComponent {
             };
 
             if (!isBorderStyle) continue;
-
-            m_isMissing = false;
             m_cache.Add(style.Tag, style);
         }
     }

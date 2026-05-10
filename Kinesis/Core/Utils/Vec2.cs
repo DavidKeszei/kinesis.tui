@@ -36,11 +36,11 @@ public struct Vec2: IAdditionOperators<Vec2, Vec2, Vec2> {
 
     public static Vec2 operator -(Vec2 vec, float amount) => new Vec2(x: vec.m_x - amount, y: vec.m_y - amount);
 
+    public static Vec2 operator +(Vec2 left, Vec2 right) => new Vec2(x: left.m_x + right.m_x, y: left.m_y + right.m_y);
+
     public static bool operator ==(Vec2 left, Vec2 right) => left.m_x == right.m_x && left.m_y == right.m_y;
 
     public static bool operator !=(Vec2 left, Vec2 right) => !(left == right);
-
-    public static Vec2 operator +(Vec2 left, Vec2 right) => new Vec2(x: left.m_x + right.m_x, y: left.m_y + right.m_y);
 
     public Vec2(float x, float y) {
         m_x = x;

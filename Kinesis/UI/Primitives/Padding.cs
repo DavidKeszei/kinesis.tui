@@ -1,4 +1,5 @@
-﻿using Kinesis.UI.Components;
+﻿using Kinesis.Core;
+using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a space between <see cref="Entity"/> instances.
 /// </summary>
-public sealed class Padding: Entity {
+public sealed class Padding: Entity, IContentable<Entity> {
 
     /// <summary>
     /// Value of the spacing.
@@ -16,10 +17,10 @@ public sealed class Padding: Entity {
     public uint Value { get => (uint)this.GetComponent<Style>()!.AsInt; set => UpdateChildPadding(value); }
 
     /// <summary>
-    /// Child of the current <see cref="Padding"/>.
+    /// Content of the current <see cref="Padding"/>.
     /// </summary>
-    public Entity Child {
-        set {
+    public Entity Content {
+        init {
             if (value == null) return;
 
             this.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;

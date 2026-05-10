@@ -40,7 +40,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
     private readonly Task m_watchman = null!;
     private readonly WindowsConsoleMsgTag[] m_tags = null!;
 
-    private bool m_isLocked = false;
+    private volatile bool m_isLocked = false;
 
     public WindowsConsoleInfoProvider() {
         m_inputs = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);

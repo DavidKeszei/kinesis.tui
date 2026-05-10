@@ -10,7 +10,7 @@ public struct VT100Char: IEquatable<vtchar_t> {
     private RGB m_fg = RGB.White;
 
     private char m_character = ' ';
-    private StyleFlag m_styles = StyleFlag.NONE;
+    private TextDecoration m_styles = TextDecoration.NONE;
 
     /// <summary>
     /// Character of the current buffer.
@@ -30,7 +30,7 @@ public struct VT100Char: IEquatable<vtchar_t> {
     /// <summary>
     /// Applied font styles to the character.
     /// </summary>
-    public StyleFlag Styles { get => m_styles; set => m_styles = value; }
+    public TextDecoration Styles { get => m_styles; set => m_styles = value; }
 
     public static bool operator ==(VT100Char l, VT100Char r) => l.Equals(r);
 
@@ -50,7 +50,7 @@ public struct VT100Char: IEquatable<vtchar_t> {
         m_bg = RGB.Transparent;
         m_fg = RGB.Transparent;
 
-        m_styles = StyleFlag.NONE;
+        m_styles = TextDecoration.NONE;
         m_character = ' ';
     }
 }
