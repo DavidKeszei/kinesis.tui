@@ -49,15 +49,18 @@ public class Entity {
     /// <param name="component">Pre-defined value of the component. If this <see langword="null"/>, then the system creates a default component.</param>
     /// <param name="isUnique">Indicates the component is unique on the <see cref="Entity"/>.</param>
     /// <returns>Return <see langword="true"/> if the component is added to the entity. Otherwise return <see langword="false"/>.</returns>
-    public bool AttachComponent<T>(T? component = null!, bool isUnique = false) where T: Component, IStaticType {
+    public bool AttachComponent<T>(T component, bool isUnique = false) where T: Component, IStaticType {
         if (component == null) return false;
+
+        bool hasEmptySlot = m_emptySpaces.TryDequeue(out int slot);
+
         if(isUnique || component.TypeOf(type: RenderComponent.Name)) {
-            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.Name), m_components.Count))
+            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.Name), !hasEmptySlot ? m_components.Count : slot))
                 return false;
         }
 
-        if (m_emptySpaces.Count == 0) this.m_components.Add(component);
-        else this.m_components[m_emptySpaces.Dequeue()] = component;
+        if (!hasEmptySlot) this.m_components.Add(component);
+        else this.m_components[slot] = component;
 
         ++m_version;
         return true;
@@ -121,10 +124,27 @@ public class Entity {
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, new() {
-        _ = this.AttachComponent<Position>(new Position(origin: null!) { Relative = Vec2.One * Scale.Auto }, isUnique: true);
+        _ = this.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
         _ = this.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
 
         _ = this.AttachComponent<T>(new T(), isUnique: true);
         _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
+    }
+
+    /// <summary>
+    /// Create a new <see cref="Entity"/> instance with scale, position and basic up and down connection.
+    /// </summary>
+    /// <param name="name">Name of the instance.</param>
+    /// <param name="content">Content of the instance.</param>
+    /// <returns>Return an <see cref="Entity"/> with scale, position and connections.</returns>
+    protected static Entity CreatePlaceholder(string name, Entity? content = null!) {
+        Entity entity = new Entity() { Name = name };
+        entity.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
+        entity.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+
+        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
+        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.DOWN, Attached = content });
+
+        return entity;
     }
 }

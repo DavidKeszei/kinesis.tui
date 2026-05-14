@@ -45,6 +45,6 @@ public sealed class Position: Component, IStaticType, ICopyable<Position>, IDefa
 
     public static bool IsDefault(Position instance) {
         if (instance == null) return false;
-        return instance.m_offset == new Vec2(x: float.MinValue, y: float.MinValue) && instance.m_origin == null!;
+        return instance.m_offset == (Vec2.One * Scale.Auto) && instance.m_origin == null!;
     }
 }

@@ -7,7 +7,7 @@ using System.Text;
 namespace Kinesis.UI.Components;
 
 /// <summary>
-/// Represent connection information between two or more <see cref="Entity"/> instances.
+/// Represent connection information between two <see cref="Entity"/> instances.
 /// </summary>
 public class Hierarchy: Component, IStaticType {
     private const string TYPE_NAME = "ConnectionComponent";
@@ -32,6 +32,12 @@ public class Hierarchy: Component, IStaticType {
     /// Start index of the children on every <see cref="Entity"/> instance.
     /// </summary>
     public static int ChildrenStart { get => CHILDREN_START_INDEX; }
+
+    /// <summary>
+    /// Simply implicit cast between <see cref="Hierarchy"/> and <see cref="Entity"/> classes.
+    /// </summary>
+    /// <param name="hierarchy">Holder of the child <see cref="Entity"/> instance. This can be <see langword="null"/>.</param>
+    public static implicit operator Entity(Hierarchy hierarchy) => hierarchy.Attached;
 
     /// <summary>
     /// Next <see cref="Entity"/> instance from this <see cref="Entity"/>.

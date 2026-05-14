@@ -39,9 +39,6 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             for (int i = 0; i < value.Count; ++i) {
                 Scale? scale = value[i].GetComponent<Scale>();
 
-                if (scale == null) 
-                    Trace.WriteLine($"[UI::Layout] The current entiy ({value[i].Name}) not has {nameof(Scale)}.");
-
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
 
@@ -93,7 +90,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
     public FlexibleLayout() {
-        _ = AttachComponent<Position>(component: new Position() { Origin = null!, Relative = Vec2.One * Scale.Auto }, isUnique: true);
+        _ = AttachComponent<Position>(component: new Position(), isUnique: true);
         _ = AttachComponent<Scale>(component: new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
     }
 

@@ -107,7 +107,6 @@ internal class JobSystem: IDynamicSystem {
         while(true) {
             if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
-                Debug.WriteLine($"[JobSystem] Current job-calls: {m_targets.Count}");
                 continue;
             }
 

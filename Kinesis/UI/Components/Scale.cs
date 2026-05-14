@@ -14,6 +14,8 @@ public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Sc
     private Scale m_max = null!;
     private Vec2 m_scale = Vec2.Zero;
 
+    private Vec2 m_inset = Vec2.Zero;
+
     public static string Name { get => s_type; }
 
     /// <summary>
@@ -27,12 +29,21 @@ public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Sc
     public Vec2 Value { get => Limit(); set => m_scale = value; }
 
     /// <summary>
+    /// Value of the inset from the <see cref="Value"/>.
+    /// </summary>
+    /// <remarks>
+    /// Example: If the scale is 10x10 and the inset is 1x1, then the calculated scale is 9x9.
+    /// </remarks>
+    public Vec2 Inset { get => m_inset; set => m_inset = value; }
+
+    /// <summary>
     /// Parent/Maximum value of the scale of the current <see cref="Scale"/> instance.
     /// </summary>
     public Scale Maximum { get => m_max; set => m_max = value; }
 
-    public Scale(Vec2 scale): base(id: ComponentRegistry.QueryComponent(name: s_type)) 
-        => m_scale = scale;
+    public Scale(Vec2 scale) : base(id: ComponentRegistry.QueryComponent(name: s_type)) {
+        m_scale = scale;
+    }
 
     /// <summary>
     /// Indicates what axis was setted to <see cref="Scale.AUTO_ON_AXIS"/>.,
@@ -67,10 +78,14 @@ public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Sc
     private Vec2 Limit() {
         if (m_max != null) {
             Vec2 result = m_scale;
+            Vec2 parent = m_max.Value;
 
             /* TODO: Revisit for better scale updating. */
-            if (m_scale.X == float.MinValue || result.X > m_max.Value.X) result.X = m_max.Value.X;
-            if (m_scale.Y == float.MinValue || result.Y > m_max.Value.Y) result.Y = m_max.Value.Y;
+            if (m_scale.X == float.MinValue || result.X > parent.X) result.X = parent.X;
+            if (m_scale.Y == float.MinValue || result.Y > parent.Y) result.Y = parent.Y;
+
+            result.X -= m_inset.X;
+            result.Y -= m_inset.Y;
 
             return result;
         }

@@ -44,7 +44,7 @@ public class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity> {
 
     public void Copy(ref BuildContext from) {
         from.Set<Position>(this, @default: new Position());
-        from.Set<Scale>(this, @default: new Components.Scale(scale: Vec2.One * float.MinValue));
+        from.Set<Scale>(this, @default: new Components.Scale(scale: Vec2.One * Components.Scale.Auto));
 
         from.Set<Style>(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
     }

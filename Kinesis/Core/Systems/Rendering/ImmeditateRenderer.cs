@@ -15,7 +15,7 @@ namespace Kinesis.Core.Rendering;
 internal sealed class ImmediateRenderer {
     #region PREDEFINES
     private const float NS_TO_MS = 1000f;
-    private const float LIMIT = 1.0f;
+    private const float LIMIT = 1f;
 
     private const float FPS_CONVERT = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
@@ -47,7 +47,7 @@ internal sealed class ImmediateRenderer {
         m_backbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
         m_frontbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
 
-        m_out = new StreamWriter(stream: Console.OpenStandardOutput()) {
+        m_out = new StreamWriter(stream: Console.OpenStandardOutput(), encoding: Encoding.UTF8) {
             AutoFlush = false
         };
 

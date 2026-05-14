@@ -70,14 +70,14 @@ public ref struct BuildContext {
         if (T.IsDefault(component)) {
             Component copy = m_inheritanceTargets[type].TryPeek(out Component? result) ? ((T)m_inheritanceTargets[type].Peek()) : @default;
             component.Copy(ref Unsafe.As<Component, T>(ref copy));
-
-            if (component is Position position && result != null)
-                position.Origin = ((Position)result);
         }
 
         /* This not dependent from "is default" state: always using the given space by the "parent" */
         if (component is Scale scale && m_inheritanceTargets[type].TryPeek(out Component? peek))
             scale.Maximum = ((Scale)peek);
+
+        if (component is Position position && m_inheritanceTargets[type].TryPeek(out Component? pos))
+            position.Origin = ((Position)pos);
 
         m_inheritanceTargets[type].Push(component);
         m_flags |= (byte)(1 << type);
