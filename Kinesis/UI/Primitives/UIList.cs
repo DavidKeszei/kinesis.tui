@@ -1,15 +1,20 @@
-﻿using Kinesis.Core.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using Kinesis.UI.Components;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Kinesis.UI;
 
-public class UIList: Entity {
+/// <summary>
+/// Represents an <see cref="Entity"/> with multiple children, but nothing more.
+/// </summary>
+public class UIList: Entity, IContentable<List<Entity>> {
 
-    public List<Entity> Children {
-        set {
+    public List<Entity> Content {
+        init {
             if (value == null || value.Count == 0)
                 return;
 

@@ -20,7 +20,7 @@ public class UIText: Entity, ICopyable<BuildContext> {
             return base.GetComponent<TextRenderer>()!.Value;
         }
         set {
-            if (string.IsNullOrEmpty(value))
+            if (value == null)
                 return;
 
             base.GetComponent<TextRenderer>()!.Value = value;
@@ -41,23 +41,23 @@ public class UIText: Entity, ICopyable<BuildContext> {
     /// <summary>
     /// Style indicators of the <see cref="UIText"/>.
     /// </summary>
-    public StyleFlag Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(index: 2)!.AsAttribute = value; }
+    public TextDecoration Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(index: 2)!.AsAttribute = value; }
 
     public UIText() {
         base.InitRenderEntityWith<TextRenderer>();
         base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
 
         base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
-        base.AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE));
+        base.AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
     }
 
-    public void Copy(BuildContext from) {
+    public void Copy(ref BuildContext from) {
         from.Set<Position>(this, @default: new Position());
         from.Set<Scale>(this, @default: new Scale(scale: Vec2.Zero));
 
         from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
         from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White), index: 1);
 
-        from.Set<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: StyleFlag.NONE), index: 2);
+        from.Set<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE), index: 2);
     }
 }

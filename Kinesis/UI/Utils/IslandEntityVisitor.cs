@@ -9,16 +9,16 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a local visitor on the entity-tree to the bottom.
 /// </summary>
-public ref struct PageEntityVisitor {
+public ref struct IslandEntityVisitor {
+    private const int MAX_USE_ENTITY_COUNT = 128;
+
+    private static Dictionary<string, Entity> m_mostUsed = null!;
     private readonly Entity? m_pivot = null!;
-    private bool m_isChanged = false;
 
-    /// <summary>
-    /// Indicates the user changed something on the entities.
-    /// </summary>
-    internal readonly bool IsChanged { get => m_isChanged; }
-
-    internal PageEntityVisitor(Entity? pivot) => m_pivot = pivot;
+    internal IslandEntityVisitor(Entity? pivot) {
+        m_pivot = pivot;
+        m_mostUsed ??= new Dictionary<string, Entity>();
+    }
 
     /// <summary>
     /// Visit a specific <typeparamref name="T"/> entity in the tree.
@@ -27,21 +27,26 @@ public ref struct PageEntityVisitor {
     /// <param name="name">Unique name of the entity.</param>
     /// <param name="track">Indicates the visited entity must be updated after the visit. If this <see langword="false"/>, then any change is not propagated.</param>
     /// <returns>Return a entity as <typeparamref name="T"/>. If not in the tree, then return <see langword="null"/>.</returns>
-    public T? Visit<T>(string name, bool track = true) where T: Entity {
+    public T? Visit<T>(string name) where T: Entity {
+        if (m_mostUsed.TryGetValue(name, out Entity? result))
+            return (T)result;
+
         if (string.IsNullOrEmpty(name) || m_pivot == null) return null!;
         else if (IsSequenceEqual(m_pivot.Name, name) && m_pivot is T ret) return ret;
 
-        Entity? result = RecursiveVisit(current: m_pivot, name);
-        if(!m_isChanged) 
-            m_isChanged = result != null && track;
+        result = RecursiveVisit(current: m_pivot, name);
 
+        if (m_mostUsed.Count >= MAX_USE_ENTITY_COUNT)
+            m_mostUsed.Clear();
+
+        if(result != null) _ = m_mostUsed.TryAdd(name, result!);
         return (T?)result;
     }
 
     private Entity? RecursiveVisit(Entity? current, string name) {
         if (current == null) return null!;
 
-        int childrenCount = CountOfChild(current);
+        int childrenCount = current.CountComponent<Hierarchy>();
         for (int i = 1; i < childrenCount; ++i) {
             Entity? child = current.GetComponent<Hierarchy>(index: i)?.Attached;
 
@@ -67,17 +72,5 @@ public ref struct PageEntityVisitor {
                 return false;
 
         return true;
-    }
-
-    private int CountOfChild(Entity entity) {
-        if(entity == null) return 0;
-        int count = 0;
-
-        foreach(Component component in entity) {
-            if (component.TypeOf(type: Hierarchy.Name))
-                ++count;
-        }
-
-        return count;
     }
 }

@@ -8,62 +8,60 @@ using System.Text;
 
 namespace Kinesis.UI;
 
-public sealed class Center: Island, ICopyable<BuildContext> {
-    private readonly static string s_box = "__center__";
+/// <summary>
+/// Represents centering UI element on an area.
+/// </summary>
+public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity> {
+    private string m_boxName = string.Empty;
+    private Scale? m_parentScale = null!;
 
     private Scale? m_childScale = null!;
-    private bool m_scaleNotDefined = false;
 
-    public Entity Child {
+    public Entity Content {
         init {
             if (value == null) return;
 
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = value;
-            value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            UIBox container = new UIBox { Name = (m_boxName = $"__center__{Guid.CreateVersion7()}__"), Content = value };
+            container.RemoveComponent<RenderComponent>();
+
+            container.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
+
+            m_childScale = value.GetComponent<Scale>();
         }
     }
 
     public Center() {
-        _ = this.AttachComponent<Position>(component: new Position() { Relative = new Vec2(x: float.MinValue, y: float.MinValue) },isUnique: true);
-        _ = this.AttachComponent<Scale>(component: new Scale(new Vec2(x: float.MinValue, y: float.MinValue)), isUnique: true);
+        _ = this.AttachComponent<Position>(component: new Position() { Relative = Vec2.One * Scale.Auto }, isUnique: true);
+        _ = this.AttachComponent<Scale>(component: new Scale(Vec2.One * Scale.Auto), isUnique: true);
     }
 
-    public void Copy(BuildContext context) {
+    public void Copy(ref BuildContext context) {
         context.Set<Position>(this, @default: new Position());
-        context.Set<Scale>(this, @default: new Scale(scale: new Vec2(x: float.MinValue, y: float.MinValue)));
+        context.Set<Scale>(this, @default: new Scale(scale: Vec2.One * Scale.Auto));
 
-        m_scaleNotDefined = Scale.IsDefault(instance: GetComponent<Scale>());
+        GetComponent<Scale>()!.Value = Vec2.One * Scale.Auto;
     }
 
     protected override Entity? Build(BuildContext context) {
-        if ((m_childScale = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached.GetComponent<Scale>()) == null) {
-            Trace.Fail(
-                message: $"[UI::Fail] Given child not has Scale component; this can be lead to miscalculation. ({context.Current.Name} as {context.Current.Name.GetType().Name})"
-            );
-        }
 
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref visitor) => {
-                if (m_scaleNotDefined)
-                    GetComponent<Scale>()!.Value = message.Scale;
+            On = (message, ref tree) => {
+                if (m_childScale == null) return;
 
-                UIBox box = visitor.Visit<UIBox>(name: s_box)!;
-                Position pos = GetComponent<Position>()!;
+                UIBox box = tree.Visit<UIBox>(name: m_boxName)!;
+                Position pos = this.GetComponent<Position>()!;
 
                 Vec2 pivot = GetComponent<Scale>()!.Value;
+                Vec2 childScale = m_childScale.Value;
 
                 if (pivot.X > message.Scale.X) pivot.X = message.Scale.X;
                 if (pivot.Y > message.Scale.Y) pivot.Y = message.Scale.Y;
 
-                Vec2 center = new Vec2(x: (pivot.X / 2) - (m_childScale.Value.X / 2), y: (pivot.Y / 2) - (m_childScale.Value.Y / 2));
+                Vec2 center = new Vec2(x: MathF.Round((pivot.X - childScale.X) / 2), y: MathF.Round((pivot.Y - childScale.Y) / 2));
                 pos.Relative = center;
             },
-            Child = new UIBox() {
-                Name = s_box,
-
-                Scale = m_childScale?.Value ?? Vec2.Zero,
-                Child = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
-            }
+            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached!
         };
     }
 }

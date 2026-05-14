@@ -48,4 +48,9 @@ internal static class AnsiCommand {
     /// Indicates to the terminal emulator for rendering the current buffer to the screen.
     /// </summary>
     public static string EndBufferLoad { get; } = "\e[?2026l";
+
+    /// <summary>
+    /// Reset all font attributes.
+    /// </summary>
+    public static string ResetFontStyles { get; } = "\e[22;23;24;25;26;27;28;29m";
 }

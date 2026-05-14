@@ -27,13 +27,16 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     public const int FLUSH_BARRIER = 128;
 
-    private int m_position = 0;
-    private RGB m_background = RGB.Transparent;
+    private readonly Span<char> m_stack = default!;
+    private Vec2 m_lastWritePosition = Vec2.One;
 
     private RGB m_foreground = RGB.Transparent;
-    private readonly Span<char> m_stack = default!;
+    private RGB m_background = RGB.Transparent;
 
-    public readonly int Position { get => m_position; }
+    private int m_position = 0;
+    private TextDecoration m_flag = TextDecoration.NONE;
+
+    private bool m_characterWritten = false;
 
     public readonly bool BarrierReached { get => m_stack.Length - m_position <= FLUSH_BARRIER; }
 
@@ -53,6 +56,13 @@ internal ref struct VT100StringBuilder {
         /* VT100 indexes starting from 1..n */
         ++x;
         ++y;
+
+        if (m_lastWritePosition.Y == y && x - m_lastWritePosition.X == 1) {
+            m_lastWritePosition.X = x;
+
+            m_lastWritePosition.Y = y;
+            return ref this;
+        }
 
         m_stack[m_position++] = '\e';
         m_stack[m_position++] = '[';
@@ -114,38 +124,39 @@ internal ref struct VT100StringBuilder {
     }
 
     [UnscopedRef]
-    public ref VT100StringBuilder WriteFontStyles(StyleFlag flags) {
-        if(flags == StyleFlag.NONE || flags == 0) return ref this;
+    public ref VT100StringBuilder WriteFontStyles(TextDecoration flags) {
+        if(m_flag == flags || flags == TextDecoration.NONE || flags == 0)
+            return ref this;
 
         /* Static stack allocated flags, which give us information about the supported flags. */
-        Span<StyleFlag> supportedFlags = stackalloc StyleFlag[] {
-            StyleFlag.BOLD, StyleFlag.ITALIC, StyleFlag.UNDERLINE,
-            StyleFlag.BLINK_SLOW, StyleFlag.BLINK_FAST, StyleFlag.INVERSE,
+        Span<TextDecoration> supportedFlags = stackalloc TextDecoration[] {
+            TextDecoration.BOLD, TextDecoration.ITALIC, TextDecoration.UNDERLINE,
+            TextDecoration.BLINK_SLOW, TextDecoration.BLINK_FAST, TextDecoration.INVERSE,
 
-            StyleFlag.HIDDEN, StyleFlag.STROKE_THROUGH, StyleFlag.DOUBLE_UNDERLINE,
-            StyleFlag.OVERLINE
+            TextDecoration.HIDDEN, TextDecoration.STROKE_THROUGH, TextDecoration.DOUBLE_UNDERLINE,
+            TextDecoration.OVERLINE
         };
 
         ESC.CopyTo(destination: m_stack[m_position..]);
         m_position += ESC.Length;
 
-        foreach(StyleFlag flag in supportedFlags) {
+        foreach(TextDecoration flag in supportedFlags) {
             if((flags & flag) == flag) {
                 int code = flag switch {
-                    StyleFlag.BOLD => 1,
-                    StyleFlag.ITALIC => 3,
+                    TextDecoration.BOLD => 1,
+                    TextDecoration.ITALIC => 3,
 
-                    StyleFlag.UNDERLINE => 4,
-                    StyleFlag.BLINK_SLOW => 5,
+                    TextDecoration.UNDERLINE => 4,
+                    TextDecoration.BLINK_SLOW => 5,
 
-                    StyleFlag.BLINK_FAST => 6,
-                    StyleFlag.INVERSE => 7,
+                    TextDecoration.BLINK_FAST => 6,
+                    TextDecoration.INVERSE => 7,
 
-                    StyleFlag.HIDDEN => 8,
-                    StyleFlag.STROKE_THROUGH => 9,
+                    TextDecoration.HIDDEN => 8,
+                    TextDecoration.STROKE_THROUGH => 9,
 
-                    StyleFlag.DOUBLE_UNDERLINE => 21,
-                    StyleFlag.OVERLINE => 53,
+                    TextDecoration.DOUBLE_UNDERLINE => 21,
+                    TextDecoration.OVERLINE => 53,
 
                     _ => 0
                 };
@@ -160,6 +171,8 @@ internal ref struct VT100StringBuilder {
         }
 
         m_stack[m_position - 1] = 'm';
+        m_flag = flags;
+
         return ref this;
     }
 
@@ -169,8 +182,18 @@ internal ref struct VT100StringBuilder {
     /// <param name="value">Value of the character.</param>
     /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
     [UnscopedRef]
-    public ref VT100StringBuilder WriteCharacter(char value) {
+    public ref VT100StringBuilder WriteCharacter(char value) {                                    
+        if (m_characterWritten && value == ' ') {
+            m_characterWritten = false;
+            m_flag = TextDecoration.NONE;
+
+            _ = AnsiCommand.ResetFontStyles.TryCopyTo(destination: m_stack[m_position..]);
+            m_position += AnsiCommand.ResetFontStyles.Length;
+        }
+
         m_stack[m_position++] = value;
+        m_characterWritten = value != ' ';
+
         return ref this;
     }
 

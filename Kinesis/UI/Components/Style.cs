@@ -11,7 +11,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a other container component.
 /// </summary>
-public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
+public class Style: Component, IStaticType, ICopyable<Style>, IDefault<Style> {
     private readonly static string s_type = "Style";
     private StyleUnion m_union = default;
 
@@ -36,9 +36,14 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
     public RGB AsRGB { get => m_union.Color ?? RGB.Transparent; set => m_union.Color = value; }
 
     /// <summary>
-    /// Interact the underlying value as <see cref="StyleFlag"/>.
+    /// Interact the underlying value as <see cref="TextDecoration"/>.
     /// </summary>
-    public StyleFlag AsAttribute { get => m_union.Flag; set => m_union.Flag = value; }
+    public TextDecoration AsAttribute { get => m_union.Flag; set => m_union.Flag = value; }
+
+    /// <summary>
+    /// Interact the underlying value as <see cref="char"/>.
+    /// </summary>
+    public char AsCharacter { get => m_union.Character; set => m_union.Character = value; }
 
     private Style(StyleTag tag, RGB? color) : base(id: ComponentRegistry.QueryComponent(s_type)) {
         m_union = new StyleUnion(tag);
@@ -50,7 +55,7 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
         m_union.INumber = value;
     }
 
-    private Style(StyleTag tag, StyleFlag flag) : base(id: ComponentRegistry.QueryComponent(s_type)) {
+    private Style(StyleTag tag, TextDecoration flag) : base(id: ComponentRegistry.QueryComponent(s_type)) {
         m_union = new StyleUnion(tag);
         m_union.Flag = flag;
     }
@@ -77,12 +82,12 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
     public static Style CreateFromInt(StyleTag tag, int value) => new Style(tag, value);
 
     /// <summary>
-    /// Create a new <see cref="Style"/> with <see cref="StyleFlag"/> value.
+    /// Create a new <see cref="Style"/> with <see cref="TextDecoration"/> value.
     /// </summary>
     /// <param name="tag">Tag of the other.</param>
     /// <param name="flag">The flag value of the VT100 character.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromAttributes(StyleTag tag, StyleFlag flag) => new Style(tag, flag);
+    public static Style CreateFromAttributes(StyleTag tag, TextDecoration flag) => new Style(tag, flag);
 
     /// <summary>
     /// Create a new <see cref="Style"/> with <see cref="char"/> value.
@@ -96,14 +101,14 @@ public class Style : Component, IStaticType, ICopyable<Style>, IDefault<Style> {
         if (instance == null) return false;
 
         return instance.m_union.Tag switch {
-            StyleTag.BACKGROUND or StyleTag.FOREGROUND or StyleTag.BORDER_COLOR => instance.m_union.Color == null,
+            StyleTag.BACKGROUND or StyleTag.FOREGROUND => instance.m_union.Color == null,
             StyleTag.PADDING => instance.m_union.INumber == int.MinValue,
-            StyleTag.FONT_ATTR => instance.m_union.Flag == StyleFlag.NONE,
+            StyleTag.FONT_ATTR => instance.m_union.Flag == TextDecoration.NONE,
             _ => false
         };
     }
 
-    public void Copy(Style? from) {
+    public void Copy(ref Style from) {
         if (from == null || from.m_union.Equals(default)) return;
         m_union = from.m_union;
     }
@@ -117,7 +122,7 @@ internal struct StyleUnion : IEquatable<StyleUnion> {
     [FieldOffset(0)] private int m_integer = 0;
     [FieldOffset(0)] private float m_floating = .0f;
 
-    [FieldOffset(0)] private StyleFlag m_flag = StyleFlag.NONE;
+    [FieldOffset(0)] private TextDecoration m_flag = TextDecoration.NONE;
     [FieldOffset(0)] private RGB? m_color = null!;
 
     [FieldOffset(0)] private char m_char = '\0';
@@ -142,11 +147,11 @@ internal struct StyleUnion : IEquatable<StyleUnion> {
 
     public RGB? Color { readonly get => m_color; set => m_color = value; }
 
-    public StyleFlag Flag { readonly get => m_flag; set => m_flag = value; }
+    public TextDecoration Flag { readonly get => m_flag; set => m_flag = value; }
 
     public bool Equals(StyleUnion union) {
         return m_tag == union.m_tag && m_tag switch {
-            StyleTag.BACKGROUND or StyleTag.FOREGROUND or StyleTag.BORDER_COLOR => m_color.Equals(union.m_color),
+            StyleTag.BACKGROUND or StyleTag.FOREGROUND => m_color.Equals(union.m_color),
             StyleTag.FONT_ATTR => m_flag == union.m_flag,
             StyleTag.PADDING => m_integer == union.m_integer,
             _ => false
@@ -157,8 +162,12 @@ internal struct StyleUnion : IEquatable<StyleUnion> {
 public enum StyleTag : byte {
     BACKGROUND,
     FOREGROUND,
-    BORDER_COLOR,
-    BORDER_CHAR,
     PADDING,
-    FONT_ATTR
+    FONT_ATTR,
+    BORDER_CHAR_TOP_RIGHT,
+    BORDER_CHAR_TOP_LEFT,
+    BORDER_CHAR_BOTTOM_RIGHT,
+    BORDER_CHAR_BOTTOM_LEFT,
+    BORDER_CHAR_HORIZONTAL,
+    BORDER_CHAR_VERTICAL,
 }

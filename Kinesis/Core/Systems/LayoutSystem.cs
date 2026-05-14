@@ -16,7 +16,7 @@ namespace Kinesis.Core;
 /// </summary>
 internal partial class LayoutSystem: IDynamicSystem {
     #region PREDEFINES
-    private const int POOLING_TIME = 8;
+    private const int POOLING_TIME = 1;
     #endregion
 
     private readonly State<LayoutInfo> m_info = null!;
@@ -42,7 +42,7 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Start watching of changes of the console window.
     /// </summary>
     public void Run() {
-        WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+        JobSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             RunOnWindows();
@@ -58,13 +58,12 @@ internal partial class LayoutSystem: IDynamicSystem {
                 continue;
             }
 
-            
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
             if (!info.Equals(default)) {
                 if (!isFirst) {
                     m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), IsChanged: true);
-                    WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale with { X = info.X - 1, Y = info.Y - 1}));
+                    JobSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale with { X = info.X - 1, Y = info.Y - 1}));
                 }
 
                 isFirst = false;

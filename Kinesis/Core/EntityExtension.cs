@@ -15,9 +15,12 @@ public static class EntityExtension {
             int count = 0;
             comparand ??= static(_) => true;
 
-            foreach (Component comp in entity)
+            foreach (Component comp in entity) {
+                if (comp == null) continue;
+
                 if (comp.TypeOf(T.Name) && comparand((T)comp))
                     ++count;
+            }
 
             return count;
         }
