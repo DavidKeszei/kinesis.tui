@@ -10,7 +10,7 @@ namespace Kinesis.Core;
 public readonly struct LayoutMessage: IWorkMessage {
     private readonly Vec2 m_layoutGlobalScale = Vec2.Zero;
 
-    public static WorkTag Target { get => WorkTag.LAYOUT; }
+    public static JobTag Target { get => JobTag.LAYOUT; }
 
     /// <summary>
     /// Scale of the current console window.

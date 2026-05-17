@@ -24,6 +24,8 @@ public class BoxRenderer: RenderComponent {
             CacheStyles(styles);
         }
 
+        bool isEmptyFiller = m_cache[StyleTag.FILLER].AsCharacter == ' ';
+
         for (int x = 0; x < buffer.Scale.X; ++x) {
             for (int y = 0; y < buffer.Scale.Y; ++y) {
                 ref vtchar_t ch = ref buffer[x, y];
@@ -37,6 +39,10 @@ public class BoxRenderer: RenderComponent {
                 }
                 else {
                     ch.Background = RGB.Blend(top: bg.AsRGB, bottom: ch.Background);
+                    ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
+
+                    if (!isEmptyFiller) 
+                        ch.Character = m_cache[StyleTag.FILLER].AsCharacter;
                 }
             }
         }
@@ -50,7 +56,11 @@ public class BoxRenderer: RenderComponent {
                 case StyleTag.BACKGROUND:
                     m_cache.Add(style.Tag, style);
                     break;
-                default:
+                case StyleTag.FOREGROUND:
+                    m_cache.Add(style.Tag, style);
+                    break;
+                case StyleTag.FILLER:
+                    m_cache.Add(style.Tag, style);
                     break;
             }
         }

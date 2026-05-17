@@ -154,6 +154,6 @@ public sealed partial class KinesisEngine: ISystemProvider {
         this.RegisterComponent<Hierarchy>();
         this.RegisterComponent<Style>();
 
-        this.RegisterComponent<InteractionComponent>();
+        this.RegisterComponent<JobComponent>();
     }
 }

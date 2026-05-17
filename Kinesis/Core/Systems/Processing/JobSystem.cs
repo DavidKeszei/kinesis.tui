@@ -12,7 +12,7 @@ namespace Kinesis.Core;
 /// </summary>
 /// <param name="Action">Callback of the work.</param>
 /// <param name="Island">Container of the changed entities.</param>
-internal record JobTarget(Delegate Action, Island Island, WorkTag Tag);
+internal record JobTarget(Delegate Action, Island Island, JobTag Tag);
 
 /// <summary>
 /// Represent a bunch of workers for different tasks.
@@ -26,7 +26,7 @@ internal class JobSystem: IDynamicSystem {
     private const int MAX_MSG_COUNT = 128;
     private const int MAX_MSG_RND = 1;
 
-    private const int MAX_INTERACTION_COUNT = 1024;
+    private const int MAX_INTERACTION_COUNT = 2048;
     private const int POOLING_TIME = 8;
     #endregion
 
@@ -78,9 +78,8 @@ internal class JobSystem: IDynamicSystem {
     /// Add new <see cref="RenderMessage"/> to the workers.
     /// </summary>
     /// <param name="message">The message itself.</param>
-    public void AddRenderMessage(RenderMessage message) {
-        m_renderMessages.Write(message);
-    }
+    public void AddRenderMessage(RenderMessage message) 
+        => m_renderMessages.Write(message);
 
     /// <summary>
     /// Add new <see cref="LayoutMessage"/> to the workers.

@@ -48,7 +48,7 @@ public ref struct BuildContext {
         m_inheritanceTargets = new Stack<Component>[PADDING]; /* Padding is largest index -> Count of inheritable components */
 
         for (int i = 0; i < m_inheritanceTargets.Length; ++i)
-            m_inheritanceTargets[i] = new Stack<Component>(capacity: 16);
+            m_inheritanceTargets[i] = new Stack<Component>(capacity: 128);
     }
 
     /// <summary>

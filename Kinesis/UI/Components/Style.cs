@@ -170,4 +170,5 @@ public enum StyleTag : byte {
     BORDER_CHAR_BOTTOM_LEFT,
     BORDER_CHAR_HORIZONTAL,
     BORDER_CHAR_VERTICAL,
+    FILLER,
 }

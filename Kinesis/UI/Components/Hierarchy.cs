@@ -16,7 +16,7 @@ public class Hierarchy: Component, IStaticType {
     private const int CHILDREN_START_INDEX = 1;
 
     private Entity m_child = null!;
-    private ConnectionDir m_direction = ConnectionDir.DOWN;
+    private ConnectionDirection m_direction = ConnectionDirection.DOWN;
 
     /// <summary>
     /// Name of the component.
@@ -47,12 +47,12 @@ public class Hierarchy: Component, IStaticType {
     /// <summary>
     /// Direction of the current connection in the hierarchy.
     /// </summary>
-    public ConnectionDir Direction { get => m_direction; init => m_direction = value; }
+    public ConnectionDirection Direction { get => m_direction; init => m_direction = value; }
 
     public Hierarchy(): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) { }
 }
 
-public enum ConnectionDir: byte {
+public enum ConnectionDirection: byte {
     UP,
     DOWN
 }

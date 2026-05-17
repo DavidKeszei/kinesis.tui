@@ -14,7 +14,6 @@ namespace Kinesis.UI;
 public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLayout<List<uint>> {
     private static readonly string s_list = "__flexLayout__";
 
-    /* TODO: Make this to a unqiue component. */
     private List<string> m_childIds = null!;
     private List<uint> m_ratios = null!;
 
@@ -25,7 +24,6 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private int m_sumOfRatios = 0;
 
     private Axis m_direction = Axis.X;
-    /* TOOD: End */
 
     public List<Entity> Content {
         init {

@@ -128,7 +128,7 @@ public class Entity {
         _ = this.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
 
         _ = this.AttachComponent<T>(new T(), isUnique: true);
-        _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
+        _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
     }
 
     /// <summary>
@@ -142,8 +142,8 @@ public class Entity {
         entity.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
         entity.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
 
-        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
-        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.DOWN, Attached = content });
+        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
+        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN, Attached = content });
 
         return entity;
     }

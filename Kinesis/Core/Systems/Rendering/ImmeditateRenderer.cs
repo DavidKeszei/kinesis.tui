@@ -63,6 +63,9 @@ internal sealed class ImmediateRenderer {
 
             for (int i = 0; i < list.Count; ++i) {
 
+                /*
+                 * TODO(2026-05-17T01:41): Save these to Vec2 instances for eliminate not reqiured calculations & gain performance.
+                 */
                 Scale scale = list[i].GetComponent<Scale>()!;
                 Position position = list[i].GetComponent<Position>()!;
 

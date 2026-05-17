@@ -12,5 +12,5 @@ public interface IWorkMessage {
     /// <summary>
     /// Target group of the message.
     /// </summary>
-    public abstract static WorkTag Target { get; }
+    public abstract static JobTag Target { get; }
 }

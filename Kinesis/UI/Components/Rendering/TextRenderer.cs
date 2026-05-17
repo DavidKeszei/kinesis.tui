@@ -15,7 +15,7 @@ public class TextRenderer: RenderComponent {
     private int m_len = 0;
 
     /// <summary>
-    /// Current text text of the <see cref="TextRenderer"/>.
+    /// Current text of the <see cref="TextRenderer"/>.
     /// </summary>
     public string Value { 
         get => new string(value: m_buffer.AsSpan()[..m_len]);

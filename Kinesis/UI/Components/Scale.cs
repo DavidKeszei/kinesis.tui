@@ -26,6 +26,9 @@ public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Sc
     /// <summary>
     /// Value of the current <see cref="Scale"/> instance.
     /// </summary>
+    /// <remarks>
+    /// Remark: This not a "user-defined" value on the get-side; this is calculated based on the <see cref="Maximum"/> and <see cref="Inset"/>.
+    /// </remarks>
     public Vec2 Value { get => Limit(); set => m_scale = value; }
 
     /// <summary>
@@ -80,7 +83,9 @@ public sealed class Scale: Component, IStaticType, ICopyable<Scale>, IDefault<Sc
             Vec2 result = m_scale;
             Vec2 parent = m_max.Value;
 
-            /* TODO: Revisit for better scale updating. */
+            /* 
+             * TODO(2026-05-10T12:36): Revisit for better scale updating. (Cache current, calculated value)
+             */
             if (m_scale.X == float.MinValue || result.X > parent.X) result.X = parent.X;
             if (m_scale.Y == float.MinValue || result.Y > parent.Y) result.Y = parent.Y;
 

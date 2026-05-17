@@ -23,12 +23,12 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
 
     public RGB Foreground { get => GetComponent<Style>()!.AsRGB; set => GetComponent<Style>()!.AsRGB = value; }
 
-    public BorderDecoration Characters { set => value.CreateStyles(to: this); }
+    public BorderDecoration Decoration { set => value.CreateStyles(to: this); }
 
     public Border() {
         InitRenderEntityWith<BorderRenderer>();
 
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.DOWN });
+        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
         _ = AttachComponent<Style>(component: Style.CreateFromRGB(StyleTag.FOREGROUND, null!));
 
         BorderDecoration.None.CreateStyles(to: this, init: true);

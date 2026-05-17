@@ -20,7 +20,7 @@ public class UIList: Entity, IContentable<List<Entity>> {
 
             for (int i = 0; i < value.Count; ++i) {
                 Hierarchy conn = new Hierarchy() {
-                    Direction = ConnectionDir.DOWN,
+                    Direction = ConnectionDirection.DOWN,
                     Attached = value[i]
                 };
 
@@ -31,5 +31,5 @@ public class UIList: Entity, IContentable<List<Entity>> {
     }
 
     public UIList()
-        => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDir.UP });
+        => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
 }

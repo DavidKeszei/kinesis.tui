@@ -13,7 +13,6 @@ namespace Kinesis.UI;
 /// </summary>
 public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity> {
     private string m_boxName = string.Empty;
-    private Scale? m_parentScale = null!;
 
     private Scale? m_childScale = null!;
 

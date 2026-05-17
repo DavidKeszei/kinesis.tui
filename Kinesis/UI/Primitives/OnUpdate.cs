@@ -22,16 +22,16 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IWorkMessage {
     /// </summary>
     public OnUpdateCallback<T> On {
         init {
-            InteractionComponent? interaction = base.GetComponent<InteractionComponent>();
+            JobComponent? interaction = base.GetComponent<JobComponent>();
 
             if (interaction == null) {
                 interaction = T.Target switch {
-                    WorkTag.RENDERING => new InteractionComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
-                    WorkTag.INPUT => new InteractionComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island),
-                    WorkTag.LAYOUT => new InteractionComponent(onLayoutChange: (message) => SetCallback(value, Unsafe.As<LayoutMessage, T>(ref message)), m_island),
+                    JobTag.RENDERING => new JobComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
+                    JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island),
+                    JobTag.LAYOUT => new JobComponent(onLayoutChange: (message) => SetCallback(value, Unsafe.As<LayoutMessage, T>(ref message)), m_island),
                     _ => null!
                 };
-                base.AttachComponent<InteractionComponent>(interaction, isUnique: true);
+                base.AttachComponent<JobComponent>(interaction, isUnique: true);
             }
         }
     }
@@ -51,8 +51,8 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IWorkMessage {
     }
 
     public OnUpdate(BuildContext context) {
-        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.UP });
-        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.DOWN });
+        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
 
         this.m_island = context.Root;
     }

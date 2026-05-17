@@ -80,7 +80,7 @@ public struct Vec2: IInterpolatable<Vec2> {
     /// <param name="scale">Source vector of the correction.</param>
     /// <param name="ratio">Scale ratio of the X axis.</param>
     /// <returns>Returns a new <see cref="Vec2"/> instance, which corrected to the terminal display.</returns>
-    public static Vec2 TerminalBasedScale(Vec2 scale, float ratio = 2f) {
+    public static Vec2 AsSquare(Vec2 scale, float ratio = 2f) {
         if (scale.m_y % (int)scale.m_y == 0)
             return new Vec2(x: scale.m_x * ratio, y: scale.m_y);
 

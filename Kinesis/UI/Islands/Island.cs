@@ -26,8 +26,8 @@ public abstract class Island: Entity {
     public Island() {
         m_renderSet = new List<Entity>(capacity: 32);
 
-        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.UP });
-        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDir.DOWN });
+        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
     }
 
     /// <summary>
@@ -50,8 +50,8 @@ public abstract class Island: Entity {
         }
 
         if (context.Current == null) return;
-        int childrenCount = context.Current.CountComponent<Hierarchy>();
 
+        int childrenCount = context.Current.CountComponent<Hierarchy>();
         if (context.Current.GetComponent<RenderComponent>() != null)
             m_renderSet.Add(context.Current!);
 
