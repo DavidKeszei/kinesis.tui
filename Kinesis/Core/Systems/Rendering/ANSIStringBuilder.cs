@@ -10,9 +10,9 @@ using System.Text;
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Helper structure for building VT100 strings without any heap-allocation.
+/// Helper structure for building VT100/ANSI strings without any heap-allocation.
 /// </summary>
-internal ref struct VT100StringBuilder {
+internal ref struct ANSIStringBuilder {
     private const string ESC = "\e[";
     private const string ESC_CLEAR = "\e[0m";
 
@@ -23,7 +23,7 @@ internal ref struct VT100StringBuilder {
     private const string ESC_FG_DEFAULT = "\e[39m";
 
     /// <summary>
-    /// Barrier region of the <see cref="VT100StringBuilder"/>, where the flushing can be done.
+    /// Barrier region of the <see cref="ANSIStringBuilder"/>, where the flushing can be done.
     /// </summary>
     public const int FLUSH_BARRIER = 128;
 
@@ -40,7 +40,7 @@ internal ref struct VT100StringBuilder {
 
     public readonly bool BarrierReached { get => m_stack.Length - m_position <= FLUSH_BARRIER; }
 
-    public VT100StringBuilder(Span<char> buffer) {
+    public ANSIStringBuilder(Span<char> buffer) {
         m_stack = buffer;
         m_stack.Clear();
     }
@@ -50,9 +50,9 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     /// <param name="x">X axis value of the position.</param>
     /// <param name="y">Y axis value of the position.</param>
-    /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
+    /// <returns>Return the current <see cref="ANSIStringBuilder"/> instance.</returns>
     [UnscopedRef]
-    public ref VT100StringBuilder WritePosition(int x, int y) {
+    public ref ANSIStringBuilder WritePosition(int x, int y) {
         /* VT100 indexes starting from 1..n */
         ++x;
         ++y;
@@ -84,9 +84,9 @@ internal ref struct VT100StringBuilder {
     /// </summary>
     /// <param name="color">The color itself.</param>
     /// <param name="isBackground">The color is background color or not?</param>
-    /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
+    /// <returns>Return the current <see cref="ANSIStringBuilder"/> instance.</returns>
     [UnscopedRef]
-    public ref VT100StringBuilder WriteColor(RGB? color, bool isBackground) {
+    public ref ANSIStringBuilder WriteColor(RGB? color, bool isBackground) {
         if (color == null) {
             (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).TryCopyTo(m_stack[m_position..]);
             m_position += (isBackground ? ESC_BG_DEFAULT : ESC_FG_DEFAULT).Length;
@@ -124,7 +124,7 @@ internal ref struct VT100StringBuilder {
     }
 
     [UnscopedRef]
-    public ref VT100StringBuilder WriteFontStyles(TextDecoration flags) {
+    public ref ANSIStringBuilder WriteFontStyles(TextDecoration flags) {
         if(m_flag == flags || flags == TextDecoration.NONE || flags == 0)
             return ref this;
 
@@ -180,9 +180,9 @@ internal ref struct VT100StringBuilder {
     /// Add a character to the screen.
     /// </summary>
     /// <param name="value">Value of the character.</param>
-    /// <returns>Return the current <see cref="VT100StringBuilder"/> instance.</returns>
+    /// <returns>Return the current <see cref="ANSIStringBuilder"/> instance.</returns>
     [UnscopedRef]
-    public ref VT100StringBuilder WriteCharacter(char value) {                                    
+    public ref ANSIStringBuilder WriteCharacter(char value) {                                    
         if (m_characterWritten && value == ' ') {
             m_characterWritten = false;
             m_flag = TextDecoration.NONE;
@@ -198,7 +198,7 @@ internal ref struct VT100StringBuilder {
     }
 
     [UnscopedRef]
-    public ref VT100StringBuilder WriteRaw(ReadOnlySpan<char> sequence) {
+    public ref ANSIStringBuilder WriteRaw(ReadOnlySpan<char> sequence) {
         sequence.TryCopyTo(m_stack[m_position..]);
         m_position += sequence.Length;
 
@@ -216,6 +216,4 @@ internal ref struct VT100StringBuilder {
 
         m_position = 0;
     }
-
-    public void Clear() => m_position = 0;
 }

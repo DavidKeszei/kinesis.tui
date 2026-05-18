@@ -24,7 +24,7 @@ internal readonly struct InputKeyEventInfo {
     /// <summary>
     /// Key value of the <see cref="InputKeyEventInfo"/>. This can be ASCII or UNICODE character.
     /// </summary>
-    public char Value { get => (char)m_unicode; }
+    public char Value { get => IsArrowKey(out char arrowKey) ? arrowKey : (char)m_unicode; }
 
     /// <summary>
     /// Indicates the button state in pressing term.
@@ -32,4 +32,24 @@ internal readonly struct InputKeyEventInfo {
     public bool IsPressed { get => m_pressed > 0; }
 
     public InputKeyEventInfo() { }
+
+    private bool IsArrowKey(out char name) {
+        name = (ArrowKey)m_vKeyCode switch {
+            ArrowKey.UP => '\u2191',
+            ArrowKey.RIGHT => '\u2190',
+            ArrowKey.DOWN => '\u2193',
+            ArrowKey.LEFT => '\u2192',
+            _ => '\0'
+        };
+
+        return name != '\0';
+    }
+}
+
+public enum ArrowKey: short {
+    INVALID_NONE = -1,
+    UP = 0x26,
+    RIGHT = 0x25,
+    DOWN = 0x28,
+    LEFT = 0x27
 }

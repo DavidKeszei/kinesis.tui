@@ -64,7 +64,7 @@ public class TextRenderer: RenderComponent {
         for(int x = 0; x < buffer.Scale.X && x <= requiredScale.X; ++x) {
             for(int y = 0; y < buffer.Scale.Y && y <= requiredScale.Y; ++y) {
 
-                ref vtchar_t ch = ref buffer[x, y];
+                ref ANSIChar ch = ref buffer[x, y];
 
                 if(isMissing) {
                     if(y % 2 == 0) ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;

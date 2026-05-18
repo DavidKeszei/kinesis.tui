@@ -7,7 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Provides target recognition for a message somewhere.
 /// </summary>
-public interface IWorkMessage {
+public interface IJobMessage {
 
     /// <summary>
     /// Target group of the message.

@@ -11,5 +11,5 @@ public enum InputModifier: int {
     R_SHIFT = 0xA1,
     L_CTRL  = 0xA2,
     R_CTRL  = 0xA3,
-    ALT     = 0x12 
+    ALT     = 0x12
 }

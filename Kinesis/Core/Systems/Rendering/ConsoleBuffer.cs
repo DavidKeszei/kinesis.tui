@@ -11,7 +11,7 @@ namespace Kinesis.Core.Rendering;
 /// Represent a <see cref="ConsoleBuffer"/> on the screen.
 /// </summary>
 internal readonly unsafe struct ConsoleBuffer: IDisposable {
-    private readonly vtchar_t* m_buffer = null!;
+    private readonly ANSIChar* m_buffer = null!;
     private readonly Vec2 m_scale = new Vec2(-1, -1);
 
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
@@ -22,12 +22,12 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     public Vec2 Scale { get => m_scale; }
 
     /// <summary>
-    /// Get a <see cref="vtchar_t"/> reference from the from.
+    /// Get a <see cref="ANSIChar"/> reference from the from.
     /// </summary>
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
-    /// <returns>Return a <see cref="vtchar_t"/> reference.</returns>
-    public ref vtchar_t this[int x, int y] => ref m_buffer[x + (int)m_startScale.X * y];
+    /// <returns>Return a <see cref="ANSIChar"/> reference.</returns>
+    public ref ANSIChar this[int x, int y] => ref m_buffer[x + (int)m_startScale.X * y];
 
     /// <summary>
     /// Create new <see cref="ConsoleBuffer"/> with specific dimension.
@@ -42,7 +42,7 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         Clear();
     }
 
-    private ConsoleBuffer(vtchar_t* buffer, Vec2 scale, Vec2 startScale) {
+    private ConsoleBuffer(ANSIChar* buffer, Vec2 scale, Vec2 startScale) {
         m_buffer = buffer;
         m_scale = scale;
 
@@ -70,7 +70,7 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     public void Clear() {
         for (int x = 0; x < m_scale.X; ++x) {
             for (int y = 0; y < m_scale.Y; ++y) {
-                ref vtchar_t ch = ref this[x, y];
+                ref ANSIChar ch = ref this[x, y];
                 ch.Clear();
             }
         }
@@ -128,6 +128,6 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         return new ConsoleBuffer(buffer.m_buffer, scale, startScale: buffer.m_startScale);
     }
 
-    private static vtchar_t* Alloc(int x, int y) 
-        => (vtchar_t*)NativeMemory.Alloc(byteCount: (nuint)(Unsafe.SizeOf<vtchar_t>() * (x * y)));
+    private static ANSIChar* Alloc(int x, int y) 
+        => (ANSIChar*)NativeMemory.Alloc(byteCount: (nuint)(Unsafe.SizeOf<ANSIChar>() * (x * y)));
 }

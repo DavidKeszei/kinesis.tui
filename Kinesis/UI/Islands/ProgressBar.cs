@@ -98,7 +98,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext> {
 
     private UIBox CreateContainer() {
         UIBox box = new UIBox {
-            Content = new UIList {
+            Content = new UIStack {
                 Content = [
                         new UIBox {
                             Name = (m_progressEmpty = $"__progress_empty_{Guid.CreateVersion7()}__"),

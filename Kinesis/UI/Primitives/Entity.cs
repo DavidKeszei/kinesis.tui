@@ -143,7 +143,7 @@ public class Entity {
         entity.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
 
         entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
-        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN, Attached = content });
+        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN, Attached = content ?? null! });
 
         return entity;
     }

@@ -20,7 +20,7 @@ internal sealed class BorderRenderer: RenderComponent {
 
         for (int y = 0; y < buffer.Scale.Y; ++y) {
             for(int x = 0; x < buffer.Scale.X; ++x) {
-                ref vtchar_t cell = ref buffer[x, y];
+                ref ANSIChar cell = ref buffer[x, y];
 
                 if (y == 0 && x == 0) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_LEFT].AsCharacter;
                 else if (y == 0 && x == buffer.Scale.X - 1) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_RIGHT].AsCharacter;

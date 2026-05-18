@@ -53,7 +53,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIList {
+            GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
                 Name = s_list,
                 Content = boxes
             };

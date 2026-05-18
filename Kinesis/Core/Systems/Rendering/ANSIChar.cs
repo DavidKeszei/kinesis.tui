@@ -1,11 +1,11 @@
-﻿global using vtchar_t = Kinesis.Core.Rendering.VT100Char;
+﻿global using vtchar_t = Kinesis.Core.Rendering.ANSIChar;
 
 namespace Kinesis.Core.Rendering; 
 
 /// <summary>
 /// Represent a VT100 emulated character on the screen.
 /// </summary>
-public struct VT100Char: IEquatable<vtchar_t> {
+public struct ANSIChar: IEquatable<vtchar_t> {
     private RGB m_bg = RGB.Black;
     private RGB m_fg = RGB.White;
 
@@ -32,11 +32,11 @@ public struct VT100Char: IEquatable<vtchar_t> {
     /// </summary>
     public TextDecoration Styles { get => m_styles; set => m_styles = value; }
 
-    public static bool operator ==(VT100Char l, VT100Char r) => l.Equals(r);
+    public static bool operator ==(ANSIChar l, ANSIChar r) => l.Equals(r);
 
-    public static bool operator !=(VT100Char l, VT100Char r) => !l.Equals(r);
+    public static bool operator !=(ANSIChar l, ANSIChar r) => !l.Equals(r);
 
-    public VT100Char(char character, RGB color) {
+    public ANSIChar(char character, RGB color) {
         m_character = character;
         m_bg = color;
     }

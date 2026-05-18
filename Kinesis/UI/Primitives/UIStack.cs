@@ -11,7 +11,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represents an <see cref="Entity"/> with multiple children, but nothing more.
 /// </summary>
-public class UIList: Entity, IContentable<List<Entity>> {
+public class UIStack: Entity, IContentable<List<Entity>> {
 
     public List<Entity> Content {
         init {
@@ -30,6 +30,6 @@ public class UIList: Entity, IContentable<List<Entity>> {
         }
     }
 
-    public UIList()
+    public UIStack()
         => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
 }

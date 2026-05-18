@@ -9,18 +9,18 @@ using System.Text;
 
 namespace Kinesis.UI;
 
-public delegate void OnUpdateCallback<T>(T message, ref IslandEntityVisitor visitor) where T: IWorkMessage;
+public delegate void JobCallback<T>(T message, ref IslandEntityVisitor visitor) where T: IJobMessage;
 
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
-public class OnUpdate<T>: Entity, IContentable<Entity> where T: IWorkMessage {
+public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     private readonly Island m_island = null!;
 
     /// <summary>
-    /// Callback, when a frame was rendered.
+    /// Job of the current <see cref="OnUpdate{T}"/> instance, which ran by the <see cref="JobSystem"/>.
     /// </summary>
-    public OnUpdateCallback<T> On {
+    public JobCallback<T> On {
         init {
             JobComponent? interaction = base.GetComponent<JobComponent>();
 
@@ -51,16 +51,18 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IWorkMessage {
     }
 
     public OnUpdate(BuildContext context) {
-        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+        _ = base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        _ = base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+
 
         this.m_island = context.Root;
     }
 
-    private void SetCallback(OnUpdateCallback<T> func, T message) {
+    private void SetCallback(JobCallback<T> func, T message) {
         if (func == null) return;
 
         IslandEntityVisitor visitor = new IslandEntityVisitor(pivot: this);
         func(message, ref visitor);
+        visitor.ClearCache();
     }
 }

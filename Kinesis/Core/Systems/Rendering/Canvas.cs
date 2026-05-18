@@ -15,12 +15,12 @@ public readonly ref struct Canvas {
     private readonly Vec2 m_position = Vec2.Zero;
 
     /// <summary>
-    /// Get a <see cref="vtchar_t"/> reference from the canvas.
+    /// Get a <see cref="ANSIChar"/> reference from the canvas.
     /// </summary>
     /// <param name="x">X coordinate of the reference on the screen.</param>
     /// <param name="y">Y coordinate of the reference on the screen.</param>
-    /// <returns>Return a <see cref="vtchar_t"/> reference.</returns>
-    public ref vtchar_t this[int x, int y] { get => ref m_buffer[(int)m_position.X + x, (int)m_position.Y + y]; }
+    /// <returns>Return a <see cref="ANSIChar"/> reference.</returns>
+    public ref ANSIChar this[int x, int y] { get => ref m_buffer[(int)m_position.X + x, (int)m_position.Y + y]; }
 
     /// <summary>
     /// Scale of the <see cref="Canvas"/>.

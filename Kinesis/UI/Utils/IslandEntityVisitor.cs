@@ -10,7 +10,7 @@ namespace Kinesis.UI;
 /// Represent a local visitor on the entity-tree to the bottom.
 /// </summary>
 public ref struct IslandEntityVisitor {
-    private const int MAX_USE_ENTITY_COUNT = 128;
+    private const int MAX_USE_ENTITY_COUNT = 32;
 
     private static Dictionary<string, Entity> m_mostUsed = null!;
     private readonly Entity? m_pivot = null!;
@@ -42,6 +42,8 @@ public ref struct IslandEntityVisitor {
         if(result != null) _ = m_mostUsed.TryAdd(name, result!);
         return (T?)result;
     }
+
+    internal void ClearCache() => m_mostUsed.Clear();
 
     private Entity? RecursiveVisit(Entity? current, string name) {
         if (current == null) return null!;

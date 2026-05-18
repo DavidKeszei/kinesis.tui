@@ -7,7 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent current state of the rendering.
 /// </summary>
-public readonly record struct RenderMessage: IWorkMessage {
+public readonly record struct RenderMessage: IJobMessage {
     private readonly float m_delta = .0f;
     private readonly int m_fps = 0;
 

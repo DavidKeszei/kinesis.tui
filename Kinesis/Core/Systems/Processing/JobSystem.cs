@@ -20,7 +20,7 @@ internal record JobTarget(Delegate Action, Island Island, JobTag Tag);
 internal class JobSystem: IDynamicSystem {
 
     #region PREDEFINES
-    private const string DEDICATED_THREAD_NAME = "JobSystem::Worker";
+    private const string DEDICATED_THREAD_NAME = "Kinesis::JobThread";
     private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
 
     private const int MAX_MSG_COUNT = 128;
@@ -94,7 +94,7 @@ internal class JobSystem: IDynamicSystem {
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
-    public void AddCallback<T>(Action<T> work, Island island) where T: IWorkMessage
+    public void AddCallback<T>(Action<T> work, Island island) where T: IJobMessage
         => m_targets.Write(new JobTarget(work, island, T.Target));
 
     public void Run() {
@@ -117,7 +117,7 @@ internal class JobSystem: IDynamicSystem {
         }
     }
 
-    private void Send<T>(RingBuffer<T> messages) where T: struct, IWorkMessage {
+    private void Send<T>(RingBuffer<T> messages) where T: struct, IJobMessage {
         if (!messages.Read(out T message)) return;
 
         foreach(JobTarget target in m_targets) {

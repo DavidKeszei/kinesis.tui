@@ -93,14 +93,14 @@ internal sealed class ImmediateRenderer {
 
     public void Diffing(bool full) {
         Console.Out.Write(value: AnsiCommand.StartBufferLoad);
-        VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
+        ANSIStringBuilder builder = new ANSIStringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
             for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-                ref vtchar_t backChar = ref m_backbuffer[x, y];
-                ref vtchar_t frontChar = ref m_frontbuffer[x, y];
+                ref ANSIChar backChar = ref m_backbuffer[x, y];
+                ref ANSIChar frontChar = ref m_frontbuffer[x, y];
 
-                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new vtchar_t()))) {
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new ANSIChar()))) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)

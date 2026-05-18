@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kinesis.Native;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,11 +8,11 @@ namespace Kinesis.Core;
 /// <summary>
 /// Single input message from the standard input stream.
 /// </summary>
-public readonly record struct InputMessage: IWorkMessage {
-    private readonly char m_key = '\0';
+public readonly record struct InputMessage: IJobMessage {
     private readonly InputModifier m_modifiers = InputModifier.NONE;
-
     private readonly InputAction m_action = InputAction.PRESS;
+
+    private readonly char m_key = '\0';
     private readonly bool m_isPressed = false;
 
     /// <summary>
@@ -54,5 +55,15 @@ public readonly record struct InputMessage: IWorkMessage {
 
         m_action = action;
         m_isPressed = isPress;
+    }
+
+    public ArrowKey ToArrowKey() {
+        return m_key switch {
+            '\u2190' => ArrowKey.LEFT,
+            '\u2191' => ArrowKey.UP,
+            '\u2192' => ArrowKey.RIGHT,
+            '\u2193' => ArrowKey.DOWN,
+            _ => ArrowKey.INVALID_NONE
+        };
     }
 }

@@ -28,7 +28,7 @@ public class BoxRenderer: RenderComponent {
 
         for (int x = 0; x < buffer.Scale.X; ++x) {
             for (int y = 0; y < buffer.Scale.Y; ++y) {
-                ref vtchar_t ch = ref buffer[x, y];
+                ref ANSIChar ch = ref buffer[x, y];
 
                 /* Source-like visual debug, if the background as visual effect not exists or just wrong type/typo. */
                 if(!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out Style? bg) || bg is not Style) {

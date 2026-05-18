@@ -7,7 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent a message from the current state of global layout parameters.
 /// </summary>
-public readonly struct LayoutMessage: IWorkMessage {
+public readonly struct LayoutMessage: IJobMessage {
     private readonly Vec2 m_layoutGlobalScale = Vec2.Zero;
 
     public static JobTag Target { get => JobTag.LAYOUT; }
