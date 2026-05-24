@@ -18,7 +18,7 @@ public class BoxRenderer: RenderComponent {
     /// Render a box to the specific <paramref name="buffer"/> area.
     /// </summary>
     /// <param name="buffer">Target buffer of the rendering. This can be smaller, than the requested scale.</param>
-    internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+    internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
         if(m_entityVersion != version) {
             m_entityVersion = version;
             CacheStyles(styles);
@@ -39,7 +39,7 @@ public class BoxRenderer: RenderComponent {
                 }
                 else {
                     ch.Background = RGB.Blend(top: bg.AsRGB, bottom: ch.Background);
-                    ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
+                    ch.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
 
                     if (!isEmptyFiller) 
                         ch.Character = m_cache[StyleTag.FILLER].AsCharacter;

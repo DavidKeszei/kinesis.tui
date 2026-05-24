@@ -19,6 +19,8 @@ public class UIStack: Entity, IContentable<List<Entity>> {
                 return;
 
             for (int i = 0; i < value.Count; ++i) {
+                if (value[i] == null) continue;
+
                 Hierarchy conn = new Hierarchy() {
                     Direction = ConnectionDirection.DOWN,
                     Attached = value[i]

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Kinesis.Core;
 
-public interface IInterpolatable<T> {
+public interface IInterpolatable<TSelf> {
 
-    public static abstract T Lerp(T from, T to, float time);
+    public static abstract TSelf Lerp(TSelf from, TSelf to, float time);
 }

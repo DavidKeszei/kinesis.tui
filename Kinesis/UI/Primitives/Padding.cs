@@ -49,15 +49,12 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
         _ = base.AttachComponent<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 0));
 
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
-
         _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN });
     }
 
     public void Copy(ref BuildContext context) {
-        context.Set<Position>(this, @default: new Position());
-        context.Set<Scale>(this, @default: new Scale(scale: Vec2.One * Scale.Auto));
-
-        GetComponent<Scale>()!.Value = Vec2.One * Scale.Auto;
+        context.SetPivot<Position>(this);
+        context.SetPivot<Scale>(this);
     }
 
     protected override Entity? Build(BuildContext context) {

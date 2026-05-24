@@ -1,4 +1,5 @@
 ﻿global using vtchar_t = Kinesis.Core.Rendering.ANSIChar;
+using System.Text;
 
 namespace Kinesis.Core.Rendering; 
 
@@ -15,7 +16,7 @@ public struct ANSIChar: IEquatable<vtchar_t> {
     /// <summary>
     /// Character of the current buffer.
     /// </summary>
-    public char Character { get => m_character; set => m_character = value; }
+    public char Character { readonly get => m_character; set => m_character = value; }
 
     /// <summary>
     /// Background color of the current buffer piece.

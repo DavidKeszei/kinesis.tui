@@ -33,8 +33,8 @@ public abstract class RenderComponent: Component, IStaticType {
     /// Render the component to the screen.
     /// </summary>
     /// <param name="buffer">Portion of the screen buffer.</param>
-    /// <param name="styles">Styles of the renderer.</param>
-    internal abstract void Render(in Canvas buffer, int version, StyleEnumerator styles);
+    /// <param name="styles">Decoration of the renderer.</param>
+    internal protected abstract void Render(in Canvas buffer, int version, StyleEnumerator styles);
 
     /// <summary>
     /// Cache the required <see cref="Style"/>s.

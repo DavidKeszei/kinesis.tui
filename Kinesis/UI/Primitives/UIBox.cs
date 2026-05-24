@@ -51,11 +51,11 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     }
 
     public void Copy(ref BuildContext from) {
-        from.Set<Position>(this, @default: new Position());
-        from.Set<Scale>(this, @default: new Components.Scale(scale: Vec2.One * Components.Scale.Auto));
+        from.Inherit<Style>(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
+        from.Inherit<Style>(this, @default: Style.CreateFromRGB(StyleTag.FOREGROUND, RGB.White), index: 1);
 
-        from.Set<Style>(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
-        from.Set<Style>(this, @default: Style.CreateFromRGB(StyleTag.FOREGROUND, RGB.Transparent), index: 1);
+        from.SetPivot<Scale>(this);
+        from.SetPivot<Position>(this);
     }
 }
 

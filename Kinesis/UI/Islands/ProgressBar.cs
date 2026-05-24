@@ -10,15 +10,15 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represents a status indicator element with numeric indicator.
 /// </summary>
-public sealed class ProgressBar: Island, ICopyable<BuildContext> {
-    private readonly string m_format = "f0";
+public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<Entity> {
     private string m_progressEmpty = string.Empty;
+    private string m_progressFilled = string.Empty;
 
     private readonly Filler m_filled = default;
     private readonly Filler m_empty = default;
 
-    private string m_progressFilled = string.Empty;
-    private string m_progressText = string.Empty;
+    private readonly Action<float, Entity> m_onUpdate = null!;
+    private string m_progressIndicator = string.Empty;
 
     private float m_prePercent = -1.0f;
     private float m_percent = .0f;
@@ -34,9 +34,29 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext> {
     public Filler Empty { init => m_empty = value; }
 
     /// <summary>
-    /// Format of the number status of the <see cref="ProgressBar"/>.
+    /// Provides simple update logic to the indicator of the <see cref="ProgressBar"/>.
     /// </summary>
-    public string Format { init => m_format = value; }
+    /// <remarks><b>Remarks:</b> This property can be <see langword="null"/>, if progress indicator (<see cref="ProgressBar.Content"/>) is not requiring it.</remarks>
+    public Action<float, Entity> On { init => m_onUpdate = value; }
+
+    /// <summary>
+    /// Setting up the loading indicator of the <see cref="ProgressBar"/>.
+    /// </summary>
+    public Entity Content {
+        init {
+            if (value == null || value.GetComponent<Scale>() == null) return;
+
+            UIBox container = new UIBox() {
+                Name = (m_progressIndicator = $"__progress_indicator_{Guid.CreateVersion7()}__"),
+                Content = value
+            };
+
+            container.RemoveComponent<RenderComponent>();
+
+            container.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
+        }
+    }
 
     /// <summary>
     /// Create a new <see cref="ProgressBar"/> instance.
@@ -50,8 +70,8 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext> {
     }
 
     public void Copy(ref BuildContext context) {
-        context.Set<Position>(this, @default: new Position());
-        context.Set<Scale>(this, @default: new Scale(scale: Vec2.One * Scale.Auto));
+        context.SetPivot<Position>(this);
+        context.SetPivot<Scale>(this);
 
         GetComponent<Scale>()!.ChangeAxisValue(value: 1, axis: Axis.Y);
     }
@@ -64,32 +84,38 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext> {
         => m_percent = float.Clamp(percent, min: .0f, max: 100f);
 
     protected override Entity? Build(BuildContext context) {
+        /* TODO(2026-05-21T19:00:32): Add chance to change the loading text to any loading animation.
+         * 
+         * State: Done✅
+         */ 	
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref tree) => {
                 if (m_percent == m_prePercent) return;
+                Entity entity = tree.Visit<Entity>(name: m_progressIndicator)?
+                                    .GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
 
-                tree.Visit<UIText>(name: m_progressText)!.Text = m_percent.ToString(format: m_format);
-                int len = tree.Visit<UIText>(name: m_progressText)!.Text.Length;
+                int len = 0;
+                if (entity != null) {
+                    m_onUpdate?.Invoke(m_percent, entity);
+                    len = (int)entity.GetComponent<Scale>()!.Value.X + 1;
+                }
 
                 UIBox filled = tree.Visit<UIBox>(name: m_progressFilled)!;
                 UIBox empty = tree.Visit<UIBox>(name: m_progressEmpty)!;
 
                 if (len > 0) {
 
-                    empty.GetComponent<Scale>()!.Inset = new Vec2(x: len + 1, y: 0);
-                    empty.GetComponent<Position>()!.Relative = new Vec2(x: len + 1, y: 0);
+                    empty.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    empty.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
 
-                    filled.GetComponent<Scale>()!.Inset = new Vec2(x: len + 1, y: 0);
-                    filled.GetComponent<Position>()!.Relative = new Vec2(x: len + 1, y: 0);
+                    filled.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    filled.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
                 }
 
                 float x = empty.GetComponent<Scale>()!.Value.X;
 
-                /*
-                 * Percent + Text length + Empty Space -> This makes the render flexible & correct
-                 */
-                filled.GetComponent<Scale>()!.ChangeAxisValue(value: (len + 1) + (x / 100f) * m_percent, axis: Axis.X);
-
+                /* Percent + Text length + Empty Space -> This makes the render flexible & correct */
+                filled.GetComponent<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
                 m_prePercent = m_percent;
             },
             Content = CreateContainer()
@@ -108,11 +134,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext> {
                             Name = (m_progressFilled = $"__progress_filled_{Guid.CreateVersion7()}__"),
                             Filler = m_filled
                         },
-                        new UIText {
-                            Name = (m_progressText = $"__progress_text_{Guid.CreateVersion7()}__"),
-                            Foreground = RGB.White,
-                            Text = string.Empty
-                        }
+                        GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
                     ]
             }
         };

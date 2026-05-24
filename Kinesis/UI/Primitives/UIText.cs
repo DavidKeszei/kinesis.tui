@@ -41,7 +41,7 @@ public class UIText: Entity, ICopyable<BuildContext> {
     /// <summary>
     /// Style indicators of the <see cref="UIText"/>.
     /// </summary>
-    public TextDecoration Styles { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(index: 2)!.AsAttribute = value; }
+    public TextDecoration Decoration { get => base.GetComponent<Style>(2)!.AsAttribute; set => base.GetComponent<Style>(index: 2)!.AsAttribute = value; }
 
     public UIText() {
         base.InitRenderEntityWith<TextRenderer>();
@@ -52,12 +52,12 @@ public class UIText: Entity, ICopyable<BuildContext> {
     }
 
     public void Copy(ref BuildContext from) {
-        from.Set<Position>(this, @default: new Position());
-        from.Set<Scale>(this, @default: new Scale(scale: Vec2.Zero));
+        from.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
+        from.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White), index: 1);
 
-        from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
-        from.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White), index: 1);
+        from.Inherit<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE), index: 2);
 
-        from.Set<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE), index: 2);
+        from.SetPivot<Position>(this);
+        from.SetPivot<Scale>(this);
     }
 }

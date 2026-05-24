@@ -35,10 +35,10 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     }
 
     public void Copy(ref BuildContext context) {
-        context.Set<Position>(this, @default: new Position());
-        context.Set<Scale>(this, @default: new Scale(scale: Vec2.Zero));
+        context.SetPivot<Position>(this);
+        context.SetPivot<Scale>(this);
 
-        context.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        context.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
 
         /* 
          * A border not has specific scale, always query the actual parent scale. (Scale.Auto indicates this -> float.MinValue)

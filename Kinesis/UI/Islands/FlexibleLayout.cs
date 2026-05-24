@@ -93,11 +93,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     }
 
     public void Copy(ref BuildContext context) {
-        context.Set<Position>(this, @default: new Position());
-        context.Set<Scale>(this, @default: new Scale(scale: Vec2.One * Scale.Auto));
-
-        if(m_direction == Axis.X) GetComponent<Scale>()!.Value = GetComponent<Scale>()!.Value with { X = Scale.Auto };
-        else if(m_direction == Axis.Y) GetComponent<Scale>()!.Value = GetComponent<Scale>()!.Value with { Y = Scale.Auto };
+        context.SetPivot<Scale>(this);
+        context.SetPivot<Position>(this);
     }
 
     protected override Entity? Build(BuildContext context) {
@@ -185,7 +182,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     }
 }
 
+[Flags]
 public enum Axis: byte {
-    Y,
-    X,
+    Y = (1 << 1),
+    X = (1 << 2),
 }

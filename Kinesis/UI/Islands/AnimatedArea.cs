@@ -31,6 +31,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     private AnimationState m_state = AnimationState.Animate;
 
     private bool m_isFirstSet = true;
+    private bool m_isPeriodic = false;
 
     /// <summary>
     /// Selector function, which helps querying the specific value.
@@ -38,14 +39,14 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     public Func<Entity, T> Selector { init => m_selector = value; }
 
     /// <summary>
-    /// Applier/Set function, which applying the animated value back to the <see cref="Entity"/>.
+    /// Applier/Inherit function, which applying the animated value back to the <see cref="Entity"/>.
     /// </summary>
     public Action<Entity, T> Applier { init => m_applier = value; }
 
     /// <summary>
     /// Duration of the animation.
     /// </summary>
-    public TimeSpan Duration { init => m_duration = (long)value.Ticks; }
+    public TimeSpan Duration { init => m_duration = value.Ticks; }
 
     /// <summary>
     /// Target value of the animation at the end.
@@ -56,6 +57,11 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     /// State of the animation.
     /// </summary>
     public AnimationState State { get => m_state; }
+
+    /// <summary>
+    /// Indicates the animation run periodicly; always.
+    /// </summary>
+    public bool IsPeriodic { init => m_isPeriodic = value; }
 
     public Entity Content {
         init {
@@ -68,12 +74,13 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
             box.RemoveComponent<RenderComponent>();
 
             /*
-             * The scale contstraints is different here: the AnimatedArea<T> is not animate a value on the parent;
-             * the class animates the given content value on the given scale/area. 
+             * The scale contstraints is different here: the AnimatedArea<TSelf> is not animate a value on the parent;
+             * the class animates the given content on the given scale/area. 
              */
             Scale? scale = null!;
-            if ((scale = value.GetComponent<Scale>()) != null)
+            if ((scale = value.GetComponent<Scale>()) != null) {
                 _ = AttachComponent<Scale>(scale, isUnique: true);
+            }
         }
     }
 
@@ -92,11 +99,18 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
                     m_current = m_selector(content);
                     m_isFirstSet = false;
                 }
-
+                
                 float time = (currentTimeStamp - m_startTimeStamp) / (float)m_duration;
                 T interpolated =  T.Lerp(from: m_current, to: m_target, time);
 
                 m_applier(content, interpolated);
+
+                if (m_isPeriodic && time >= 1f) {
+                    Reset();
+                    Start();
+
+                    return;
+                }
 
                 if (m_state == AnimationState.Animate && time >= 1f)
                     m_state = AnimationState.End;

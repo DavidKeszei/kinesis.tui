@@ -1,4 +1,5 @@
-﻿using Kinesis.Core.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -19,15 +20,10 @@ public class TextRenderer: RenderComponent {
     /// </summary>
     public string Value { 
         get => new string(value: m_buffer.AsSpan()[..m_len]);
-        set => Replace(text: value);
+        set => Write(text: value);
     }
 
     public TextRenderer() { }
-
-    public TextRenderer(string text) {
-        m_buffer = text.ToCharArray();
-        m_len = text.Length;
-    }
 
     /// <summary>
     /// Remove characters from internal buffer.
@@ -42,7 +38,25 @@ public class TextRenderer: RenderComponent {
         m_len -= count;
     }
 
-    internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+    /// <summary>
+    /// Write into the internal buffer a specific <paramref name="text"/>.
+    /// </summary>
+    /// <param name="text">New value of the internal buffer.</param>
+    public void Write(ReadOnlySpan<char> text) {
+        if (m_len < text.Length) {
+            m_len = text.Length;
+            m_buffer = new char[m_len];
+        }
+
+        for (int i = 0; i < m_len; ++i) {
+            if (text.Length <= i) break;
+            else m_buffer[i] = text[i];
+        }
+
+        m_len = text.Length;
+    }
+
+    internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
         if (buffer.Scale.Y == 0 || buffer.Scale.X == 0)
             return;
 
@@ -102,23 +116,5 @@ public class TextRenderer: RenderComponent {
                     break;
             }
         }
-    }
-
-    /// <summary>
-    /// Replace the internal buffer with a new character sequence.
-    /// </summary>
-    /// <param name="text">Replace text.</param>
-    private void Replace(ReadOnlySpan<char> text) {
-        if (m_len < text.Length) {
-            m_len = text.Length;
-            m_buffer = new char[m_len];
-        }
-
-        for (int i = 0; i < m_len; ++i) {
-            if (text.Length <= i) break;
-            else m_buffer[i] = text[i];
-        }
-
-        m_len = text.Length;
     }
 }

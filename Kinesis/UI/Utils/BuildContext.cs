@@ -2,6 +2,7 @@
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -41,6 +42,9 @@ public ref struct BuildContext {
     /// </summary>
     public readonly Island Root { get => m_root; internal init => m_root = value; }
 
+    /// <summary>
+    /// Flags, which indicates what kind of components setted. (Must be init.-d with 0 value every level of building)
+    /// </summary>
     internal byte ChangeStyleFlag { init => m_flags = value; }
 
     internal BuildContext(Entity current) {
@@ -52,13 +56,13 @@ public ref struct BuildContext {
     }
 
     /// <summary>
-    /// Set a inheritable component, if that equals with <see cref="IDefault{TSelf}.IsDefault(TSelf)"/>.
+    /// Inherit from an most-closes component on the build-tree.
     /// </summary>
     /// <typeparam name="T">Type of the component.</typeparam>
-    /// <param name="target">Target of the <see cref="Set{T}"/>.</param>
+    /// <param name="target">Target of the <see cref="Inherit{T}"/>.</param>
     /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
     /// <param name="index">Index of the component.</param>
-    public void Set<T>(Entity target, T @default, int index = 0) where T: Component, IStaticType, IDefault<T>, ICopyable<T> {
+    public void Inherit<T>(Entity target, T @default, int index = 0) where T: Component, IStaticType, IDefault<T>, ICopyable<T> {
         if (target == null || @default == null) return;
 
         T? component = target.GetComponent<T>(index);
@@ -72,15 +76,33 @@ public ref struct BuildContext {
             component.Copy(ref Unsafe.As<Component, T>(ref copy));
         }
 
-        /* This not dependent from "is default" state: always using the given space by the "parent" */
+        if ((m_flags & (1 << type)) != (1 << type)) {
+            m_inheritanceTargets[type].Push(component);
+            m_flags |= (byte)(1 << type);
+        }
+    }
+
+    /// <summary>
+    /// Set pivot of a(n) <typeparamref name="T"/> component. 
+    /// </summary>
+    /// <typeparam name="T">Type of the component.</typeparam>
+    /// <param name="target">Holder of the component.</param>
+    public void SetPivot<T>(Entity target) where T: Component, IStaticType {
+        T component = target.GetComponent<T>() ?? null!;
+
+        if (component == null) return;
+        int type = MatchId(component);
+
         if (component is Scale scale && m_inheritanceTargets[type].TryPeek(out Component? peek))
             scale.Maximum = ((Scale)peek);
 
         if (component is Position position && m_inheritanceTargets[type].TryPeek(out Component? pos))
             position.Origin = ((Position)pos);
 
-        m_inheritanceTargets[type].Push(component);
-        m_flags |= (byte)(1 << type);
+        if ((m_flags & (1 << type)) != (1 << type)) {
+            m_inheritanceTargets[type].Push(component);
+            m_flags |= (byte)(1 << type);
+        }
     }
 
     internal readonly void DropCurrentLevelStyles() {

@@ -12,7 +12,7 @@ namespace Kinesis.Core.Rendering;
 /// </summary>
 internal sealed class BorderRenderer: RenderComponent {
 
-    internal override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+    internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
         if (m_entityVersion != version) {
             m_entityVersion = version;
             CacheStyles(styles);

@@ -57,10 +57,10 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
     }
 
     public void Copy(ref BuildContext context) {
-        context.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, RGB.Transparent));
-        context.Set<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, RGB.Transparent), index: 1);
+        context.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, RGB.Transparent));
+        context.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, RGB.Transparent), index: 1);
 
-        context.Set<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, TextDecoration.NONE), index: 2);
+        context.Inherit<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, TextDecoration.NONE), index: 2);
     }
 
     protected override Entity? Build(BuildContext context) {
