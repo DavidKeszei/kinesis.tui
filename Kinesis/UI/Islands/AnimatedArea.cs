@@ -68,18 +68,18 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
             if (value == null) return;
             UIBox box = new UIBox { Name = (s_box = $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
 
-            box.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
+            box.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
 
-            box.RemoveComponent<RenderComponent>();
+            box.Remove<RenderComponent>();
 
             /*
              * The scale contstraints is different here: the AnimatedArea<TSelf> is not animate a value on the parent;
              * the class animates the given content on the given scale/area. 
              */
             Scale? scale = null!;
-            if ((scale = value.GetComponent<Scale>()) != null) {
-                _ = AttachComponent<Scale>(scale, isUnique: true);
+            if ((scale = value.Get<Scale>()) != null) {
+                _ = Attach<Scale>(scale, isUnique: true);
             }
         }
     }
@@ -89,7 +89,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
             On = (message, ref tree) => {
                 if (m_state != AnimationState.Animate) return;
                 Entity content = tree.Visit<UIBox>(name: s_box)?
-                                     .GetComponent<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
+                                     .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
 
                 if(content == null) return;
                 long currentTimeStamp = Stopwatch.GetTimestamp();
@@ -115,7 +115,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
                 if (m_state == AnimationState.Animate && time >= 1f)
                     m_state = AnimationState.End;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
         };
     }
 

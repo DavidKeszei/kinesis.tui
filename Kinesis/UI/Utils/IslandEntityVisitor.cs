@@ -25,7 +25,6 @@ public ref struct IslandEntityVisitor {
     /// </summary>
     /// <typeparam name="T">Type of the entity.</typeparam>
     /// <param name="name">Unique name of the entity.</param>
-    /// <param name="track">Indicates the visited entity must be updated after the visit. If this <see langword="false"/>, then any change is not propagated.</param>
     /// <returns>Return a entity as <typeparamref name="T"/>. If not in the tree, then return <see langword="null"/>.</returns>
     public T? Visit<T>(string name) where T: Entity {
         if (m_mostUsed.TryGetValue(name, out Entity? result))
@@ -43,14 +42,14 @@ public ref struct IslandEntityVisitor {
         return (T?)result;
     }
 
-    internal void ClearCache() => m_mostUsed.Clear();
+    internal readonly void ClearCache() => m_mostUsed.Clear();
 
     private Entity? RecursiveVisit(Entity? current, string name) {
         if (current == null) return null!;
 
         int childrenCount = current.CountComponent<Hierarchy>();
         for (int i = 1; i < childrenCount; ++i) {
-            Entity? child = current.GetComponent<Hierarchy>(index: i)?.Attached;
+            Entity? child = current.Get<Hierarchy>(index: i)?.Attached;
 
             if (child != null) {
                 if (!string.IsNullOrEmpty(child.Name) && IsSequenceEqual(child.Name, name)) return child;

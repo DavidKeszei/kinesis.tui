@@ -24,36 +24,36 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
                 Scale = Vec2.Zero,
                 Content = value
             };
-            scaffold.RemoveComponent<RenderComponent>();
+            scaffold.Remove<RenderComponent>();
 
-            scaffold.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
+            scaffold.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
         }
     }
 
     /// <summary>
     /// Background at the root level.
     /// </summary>
-    public RGB Background { init => GetComponent<Style>(index: 0)!.AsRGB = value; }
+    public RGB Background { init => Get<Style>(index: 0)!.AsRGB = value; }
 
     /// <summary>
     /// Foreground at the root level.
     /// </summary>
-    public RGB Foreground { init => GetComponent<Style>(index: 1)!.AsRGB = value; }
+    public RGB Foreground { init => Get<Style>(index: 1)!.AsRGB = value; }
 
     /// <summary>
     /// Text-decoration at the root level.
     /// </summary>
-    public TextDecoration TextDecoration { init => GetComponent<Style>(index: 2)!.AsAttribute = value; }
+    public TextDecoration TextDecoration { init => Get<Style>(index: 2)!.AsAttribute = value; }
 
     public Scaffold() {
-        _ = AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
-        _ = AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
+        _ = Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
+        _ = Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
 
-        _ = AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
+        _ = Attach<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
 
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+        _ = Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        _ = Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
     }
 
     public void Copy(ref BuildContext context) {
@@ -68,7 +68,7 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
             On = (message, ref tree) => {
                 tree.Visit<UIBox>(name: m_scaffoldName)?.Scale = message.Scale;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
+            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
         };
     }
 }

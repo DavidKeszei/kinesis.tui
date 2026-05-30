@@ -26,12 +26,12 @@ public class UIStack: Entity, IContentable<List<Entity>> {
                     Attached = value[i]
                 };
 
-                value[i].GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
-                _ = base.AttachComponent<Hierarchy>(conn);
+                value[i].Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
+                _ = base.Attach<Hierarchy>(conn);
             }
         }
     }
 
     public UIStack()
-        => _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
+        => _ = base.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
 }

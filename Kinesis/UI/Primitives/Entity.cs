@@ -49,7 +49,7 @@ public class Entity {
     /// <param name="component">Pre-defined value of the component. If this <see langword="null"/>, then the system creates a default component.</param>
     /// <param name="isUnique">Indicates the component is unique on the <see cref="Entity"/>.</param>
     /// <returns>Return <see langword="true"/> if the component is added to the entity. Otherwise return <see langword="false"/>.</returns>
-    public bool AttachComponent<T>(T component, bool isUnique = false) where T: Component, IStaticType {
+    public bool Attach<T>(T component, bool isUnique = false) where T: Component, IStaticType {
         if (component == null) return false;
 
         bool hasEmptySlot = m_emptySpaces.TryDequeue(out int slot);
@@ -72,7 +72,7 @@ public class Entity {
     /// <typeparam name="T">Type of the component.</typeparam>
     /// <param name="index">Indicates, which component we wan't from the type. (Example: if the index = 1, then return second component of the <typeparamref name="T"/>.)</param>
     /// <returns>Return <typeparamref name="T"/> component. If not exists, then return <see langword="null"/>.</returns>
-    public T? GetComponent<T>(int index = 0) where T: Component, IStaticType {
+    public T? Get<T>(int index = 0) where T: Component, IStaticType {
         if (index < 0) return null!;
 
         if (m_uniqueComponents.TryGetValue(ComponentRegistry.QueryComponent(T.Name), out int i))
@@ -94,7 +94,7 @@ public class Entity {
     /// </summary>
     /// <typeparam name="T">Type of the component.</typeparam>
     /// <param name="index">Indicates where we want delete the component.</param>
-    public void RemoveComponent<T>(int index = 0) where T: Component, IStaticType {
+    public void Remove<T>(int index = 0) where T: Component, IStaticType {
         if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.Name), out int i)) {
             m_components[i] = null!;
             m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.Name));
@@ -124,27 +124,10 @@ public class Entity {
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, new() {
-        _ = this.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
-        _ = this.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+        _ = this.Attach<Position>(new Position(origin: null!), isUnique: true);
+        _ = this.Attach<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
 
-        _ = this.AttachComponent<T>(new T(), isUnique: true);
-        _ = this.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
-    }
-
-    /// <summary>
-    /// Create a new <see cref="Entity"/> instance with scale, position and basic up and down connection.
-    /// </summary>
-    /// <param name="name">Name of the instance.</param>
-    /// <param name="content">Content of the instance.</param>
-    /// <returns>Return an <see cref="Entity"/> with scale, position and connections.</returns>
-    protected static Entity CreatePlaceholder(string name, Entity? content = null!) {
-        Entity entity = new Entity() { Name = name };
-        entity.AttachComponent<Position>(new Position(origin: null!), isUnique: true);
-        entity.AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
-
-        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
-        entity.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN, Attached = content ?? null! });
-
-        return entity;
+        _ = this.Attach<T>(new T(), isUnique: true);
+        _ = this.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
     }
 }

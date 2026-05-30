@@ -40,7 +40,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     /// <summary>
     /// (Foreground) color of the <see cref="Spinner"/>.
     /// </summary>
-    public RGB Foreground { get => GetComponent<Style>()!.AsRGB; set => GetComponent<Style>()!.AsRGB = value; }
+    public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
 
     /// <summary>
     /// Frame states of the <see cref="Spinner"/>.
@@ -53,10 +53,10 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     public TimeSpan Duration { init => m_changeTime = value.Ticks; }
 
     public Spinner() {
-        _ = AttachComponent<Position>(new Position(), isUnique: true);
-        _ = AttachComponent<Scale>(new Scale(scale: Vec2.One), isUnique: true);
+        _ = Attach<Position>(new Position(), isUnique: true);
+        _ = Attach<Scale>(new Scale(scale: Vec2.One), isUnique: true);
 
-        _ = AttachComponent<Style>(Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!), isUnique: true);
+        _ = Attach<Style>(Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!), isUnique: true);
     }
 
     public static Spinner Create(SpinnerPreset preset, TimeSpan durationPerCycle, RGB? color = null) {
@@ -89,7 +89,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
             Selector = (text) => m_index,
             Applier = (text, value) => {
                 m_index = value;
-                text.GetComponent<TextRenderer>()!.Write(text: [ m_spinnerStates[m_index % m_spinnerStates.Length] ]);
+                text.Get<TextRenderer>()!.Write(text: [ m_spinnerStates[m_index % m_spinnerStates.Length] ]);
             },
 
             Duration = TimeSpan.FromTicks(value: m_changeTime),

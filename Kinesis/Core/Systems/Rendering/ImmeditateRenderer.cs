@@ -62,13 +62,13 @@ internal sealed class ImmediateRenderer {
             bool fullRedrawRequested = OnLayoutChange();
 
             for (int i = 0; i < list.Count; ++i) {
-                Vec2 scale = list[i].GetComponent<Scale>()!.Value;
-                Vec2 position = list[i].GetComponent<Position>()!.Absolute;
+                Vec2 scale = list[i].Get<Scale>()!.Value;
+                Vec2 position = list[i].Get<Position>()!.Absolute;
 
                 if (!InBuffer(position: position, scale: scale)) 
                     continue;
 
-                RenderComponent renderLogic = list[i].GetComponent<RenderComponent>()!;
+                RenderComponent renderLogic = list[i].Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
                 using StyleEnumerator style = new StyleEnumerator(entity: list[i]);

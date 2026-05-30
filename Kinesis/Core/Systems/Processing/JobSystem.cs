@@ -4,6 +4,7 @@ using Kinesis.UI;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
 
 namespace Kinesis.Core;
 
@@ -12,7 +13,7 @@ namespace Kinesis.Core;
 /// </summary>
 /// <param name="Action">Callback of the work.</param>
 /// <param name="Island">Container of the changed entities.</param>
-internal record JobTarget(Delegate Action, Island Island, JobTag Tag);
+internal record JobTarget(Delegate Action, Island Island, JobTag Tag, State<JobRequestIntent> Status);
 
 /// <summary>
 /// Represent a bunch of workers for different tasks.
@@ -20,7 +21,7 @@ internal record JobTarget(Delegate Action, Island Island, JobTag Tag);
 internal class JobSystem: IDynamicSystem {
 
     #region PREDEFINES
-    private const string DEDICATED_THREAD_NAME = "Kinesis::JobThread";
+    private const string DEDICATED_THREAD_NAME = "kinesis.tui::job_thread";
     private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
 
     private const int MAX_MSG_COUNT = 128;
@@ -31,12 +32,14 @@ internal class JobSystem: IDynamicSystem {
     #endregion
 
     private static JobSystem s_instance = null!;
-    private readonly RingBuffer<JobTarget> m_targets = null!;
+    private readonly List<JobTarget> m_targets = null!;
 
     private readonly RingBuffer<InputMessage> m_inputMessages = null!;
     private readonly RingBuffer<RenderMessage> m_renderMessages = null!;
 
     private readonly RingBuffer<LayoutMessage> m_layoutMessages = null!;
+    private readonly ConcurrentQueue<JobTarget> m_addIntents = null!;
+
     private State<JobSystemStateInfo> m_workState = null!;
 
     /// <summary>
@@ -50,12 +53,14 @@ internal class JobSystem: IDynamicSystem {
     public static JobSystem Current { get => s_instance ??= new JobSystem(); }
 
     public JobSystem() {
-        m_targets = new RingBuffer<JobTarget>(capacity: MAX_INTERACTION_COUNT);
+        m_targets = new List<JobTarget>(capacity: MAX_INTERACTION_COUNT);
 
         m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND);
         m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_COUNT);
 
         m_layoutMessages = new RingBuffer<LayoutMessage>(capacity: MAX_MSG_COUNT);
+
+        m_addIntents = new ConcurrentQueue<JobTarget>();
     }
 
     /// <summary>
@@ -94,8 +99,19 @@ internal class JobSystem: IDynamicSystem {
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
-    public void AddCallback<T>(Action<T> work, Island island) where T: IJobMessage
-        => m_targets.Write(new JobTarget(work, island, T.Target));
+    public State<JobRequestIntent> AddCallback<T>(Action<T> work, Island island) where T: IJobMessage {
+        /* TODO(2026-05-29T23:27:05): Refactor to request based job register. (Status: ✅)
+         * 
+         * INSPECTIONS:
+         * 	- Plan to migrate this to thread-safe version with ConcurrentQueue<T> to register the intent for job registration.
+         * 	- Always the "JobSystem" run we: register/remove & send messages to the registered job holders.
+         */
+
+        JobTarget target = new JobTarget(work, island, T.Target, new ValueState<JobRequestIntent>(@default: JobRequestIntent.ACTIVE));
+        m_addIntents.Enqueue(target);
+
+        return target.Status;
+    }
 
     public void Run() {
         if (m_workState == null)
@@ -109,6 +125,9 @@ internal class JobSystem: IDynamicSystem {
                 continue;
             }
 
+            RemoveJobs();
+            AddJobs();
+
             Send<InputMessage>(messages: m_inputMessages);
             Send<LayoutMessage>(messages: m_layoutMessages);
             Send<RenderMessage>(messages: m_renderMessages);
@@ -121,13 +140,35 @@ internal class JobSystem: IDynamicSystem {
         if (!messages.Read(out T message)) return;
 
         foreach(JobTarget target in m_targets) {
-            if (!target.Island.IsActive)
+            if (!target.Island.IsActive || target.Status == JobRequestIntent.SUSPEND)
                 continue;
 
             Delegate _ref = target.Action;
             if (target.Tag == T.Target)
                 Unsafe.As<Delegate, Action<T>>(ref _ref)(message);
         }
+    }
+
+    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+    private void RemoveJobs() {
+        for (int i = 0; i < m_targets.Count; ++i)
+            if (m_targets[i].Status == JobRequestIntent.REMOVE) {
+                JobTarget target = m_targets[^1];
+                m_targets[^1] = m_targets[i];
+
+                m_targets[i] = target;
+                m_targets.RemoveAt(m_targets.Count - 1);
+
+                --i;
+            }
+    }
+
+    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+    private void AddJobs() {
+        if (m_addIntents.IsEmpty) return;
+
+        while (m_addIntents.TryDequeue(out JobTarget? target) && target != null)
+            m_targets.Add(item: target);
     }
 }
 

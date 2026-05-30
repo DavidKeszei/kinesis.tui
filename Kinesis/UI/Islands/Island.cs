@@ -16,7 +16,7 @@ public abstract class Island: Entity {
     /// <summary>
     /// Created <see cref="Entity"/> instance-tree as "list".
     /// </summary>
-    internal List<Entity> Tree { get => m_renderSet; }
+    internal List<Entity> DrawCalls { get => m_renderSet; }
 
     /// <summary>
     /// Indicates the <see cref="Island"/> is active by the <see cref="ImmediateRenderer"/> and the <see cref="INavigator"/>.
@@ -26,8 +26,8 @@ public abstract class Island: Entity {
     public Island() {
         m_renderSet = new List<Entity>(capacity: 32);
 
-        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        this.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+        this.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        this.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
     }
 
     /// <summary>
@@ -45,26 +45,26 @@ public abstract class Island: Entity {
             Entity? created = island.Build(context);
             if (created == null) return;
 
-            context.Current.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = created;
-            created.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
+            context.Current.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = created;
+            created.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
         }
 
         if (context.Current == null) return;
-
         int childrenCount = context.Current.CountComponent<Hierarchy>();
-        if (context.Current.GetComponent<RenderComponent>() != null)
-            m_renderSet.Add(context.Current!);
+
+        if (context.Current.Get<RenderComponent>() != null)
+            context.Root.DrawCalls.Add(context.Current!);
 
         if (context.Current is ICopyable<BuildContext> copyable)
             copyable.Copy(from: ref context);
 
         for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
-            Hierarchy child = context.Current!.GetComponent<Hierarchy>(i)!;
+            Hierarchy child = context.Current!.Get<Hierarchy>(i)!;
 
             if (child.Attached != null) {
                 BuildTree(context: context with {
-                    Current = child.Attached,
-                    ChangeStyleFlag = 0
+                    ChangeStyleFlag = 0,
+                    Current = child.Attached
                 });
             }
         }

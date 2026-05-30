@@ -65,7 +65,7 @@ public ref struct BuildContext {
     public void Inherit<T>(Entity target, T @default, int index = 0) where T: Component, IStaticType, IDefault<T>, ICopyable<T> {
         if (target == null || @default == null) return;
 
-        T? component = target.GetComponent<T>(index);
+        T? component = target.Get<T>(index);
         if (component == null) return;
 
         int type = MatchId(@default);
@@ -88,7 +88,7 @@ public ref struct BuildContext {
     /// <typeparam name="T">Type of the component.</typeparam>
     /// <param name="target">Holder of the component.</param>
     public void SetPivot<T>(Entity target) where T: Component, IStaticType {
-        T component = target.GetComponent<T>() ?? null!;
+        T component = target.Get<T>() ?? null!;
 
         if (component == null) return;
         int type = MatchId(component);

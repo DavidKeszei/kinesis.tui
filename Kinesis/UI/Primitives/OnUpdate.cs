@@ -22,7 +22,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     /// </summary>
     public JobCallback<T> On {
         init {
-            JobComponent? interaction = base.GetComponent<JobComponent>();
+            JobComponent? interaction = base.Get<JobComponent>();
 
             if (interaction == null) {
                 interaction = T.Target switch {
@@ -31,10 +31,15 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
                     JobTag.LAYOUT => new JobComponent(onLayoutChange: (message) => SetCallback(value, Unsafe.As<LayoutMessage, T>(ref message)), m_island),
                     _ => null!
                 };
-                base.AttachComponent<JobComponent>(interaction, isUnique: true);
+                _ = base.Attach<JobComponent>(interaction, isUnique: true);
             }
         }
     }
+
+    /// <summary>
+    /// Current request of the <see cref="OnUpdate{T}"/>.
+    /// </summary>
+    public JobRequestIntent Status { get => Get<JobComponent>()!.Status; }
 
     /// <summary>
     /// Attached child of the <see cref="OnUpdate{T}"/>.
@@ -43,20 +48,29 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
         init {
             if (value == null) return;
 
-            Hierarchy connection = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!;
+            Hierarchy connection = base.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!;
             connection!.Attached = value;
 
-            value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
+            value.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
         }
     }
 
     public OnUpdate(BuildContext context) {
-        _ = base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        _ = base.AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
-
+        _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
+        _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
 
         this.m_island = context.Root;
     }
+
+    /// <summary>
+    /// Indicates change intent to the <see cref="JobSystem"/> state of the <see cref="JobComponent"/>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Remark:</b> This call effect is delayed and inreversable; so if the request was sent to the <see cref="JobSystem"/>,
+    ///                then this system take act to this job in the "next" round based on the <paramref name="request"/>.
+    /// </remarks>
+    /// <param name="request">Requested intent to the <see cref="JobSystem"/>.</param>
+    public void Request(JobRequestIntent request) => Get<JobComponent>()!.Request(request);
 
     private void SetCallback(JobCallback<T> func, T message) {
         if (func == null) return;

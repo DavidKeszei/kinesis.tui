@@ -4,7 +4,7 @@ using System.Text;
 namespace Kinesis.Core.Rendering; 
 
 /// <summary>
-/// Represent a VT100 emulated character on the screen.
+/// Represent a VT100/ANSI emulated character on the screen.
 /// </summary>
 public struct ANSIChar: IEquatable<vtchar_t> {
     private RGB m_bg = RGB.Black;

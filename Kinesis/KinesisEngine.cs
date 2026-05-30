@@ -116,11 +116,11 @@ public sealed partial class KinesisEngine: ISystemProvider {
         while(!token.IsCancellationRequested) {
 
             /* Render the frame to the screen/terminal window. */
-            m_renderer.Run(list: m_navigator.Current?.Tree ?? []);
+            m_renderer.Run(list: m_navigator.Current?.DrawCalls ?? []);
 
             if (!firstRun) {
                 Vec2 safeArea = m_layoutInfo.Value.Scale - 1;
-                m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else {
                 firstRun = false;

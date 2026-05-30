@@ -10,8 +10,8 @@ namespace Kinesis.Core.Rendering;
 /// <summary>
 /// Represent a <see cref="ConsoleBuffer"/> on the screen.
 /// </summary>
-internal readonly unsafe struct ConsoleBuffer: IDisposable {
-    private readonly ANSIChar* m_buffer = null!;
+internal readonly struct ConsoleBuffer: IDisposable {
+    private readonly unsafe ANSIChar* m_buffer = null!;
     private readonly Vec2 m_scale = new Vec2(-1, -1);
 
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
@@ -27,7 +27,7 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
     /// <returns>Return a <see cref="ANSIChar"/> reference.</returns>
-    public ref ANSIChar this[int x, int y] => ref m_buffer[x + (int)m_startScale.X * y];
+    public ref ANSIChar this[int x, int y] { get { unsafe { return ref m_buffer[x + (int)m_startScale.X * y]; } } }
 
     /// <summary>
     /// Create new <see cref="ConsoleBuffer"/> with specific dimension.
@@ -38,11 +38,11 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         m_scale = new Vec2(x, y);
         m_startScale = new Vec2(x, y);
 
-        m_buffer = Alloc(x, y);
+        unsafe { m_buffer = Alloc(x, y); }
         Clear();
     }
 
-    private ConsoleBuffer(ANSIChar* buffer, Vec2 scale, Vec2 startScale) {
+    private unsafe ConsoleBuffer(ANSIChar* buffer, Vec2 scale, Vec2 startScale) {
         m_buffer = buffer;
         m_scale = scale;
 
@@ -76,8 +76,9 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         }
     }
 
-    public void Dispose()
-        => NativeMemory.Free(ptr: m_buffer);
+    public void Dispose() {
+        unsafe { NativeMemory.Free(ptr: m_buffer); }
+    }
 
     /// <summary>
     /// Create a slice from the current <see cref="ConsoleBuffer"/>.
@@ -106,12 +107,14 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
     /// <param name="scale">New scale of the buffer.</param>
     /// <returns>Returns a <see cref="ConsoleBuffer"/> instance.</returns>
     public static ConsoleBuffer Reallocate(ref ConsoleBuffer buffer, Vec2 scale) {
-        ConsoleBuffer temp = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, startScale: scale);
+        ConsoleBuffer temp = default;
+        unsafe { temp = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, startScale: scale); }
+
         temp.Clear();
         temp.Copy(from: Slice(ref buffer, from: Vec2.Zero, scale));
 
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
-            NativeMemory.Free(ptr: buffer.m_buffer);
+            unsafe { NativeMemory.Free(ptr: buffer.m_buffer); }
             Debug.WriteLine(value: $"Memory was freed up & reallocated... (Scale: {scale.X:f0} x {scale.Y:f0})");
             return temp;
         }
@@ -125,9 +128,9 @@ internal readonly unsafe struct ConsoleBuffer: IDisposable {
         buffer.Copy(Slice(ref temp, from: Vec2.Zero, scale));
 
         temp.Dispose();
-        return new ConsoleBuffer(buffer.m_buffer, scale, startScale: buffer.m_startScale);
+        unsafe { return new ConsoleBuffer(buffer.m_buffer, scale, startScale: buffer.m_startScale); }
     }
 
-    private static ANSIChar* Alloc(int x, int y) 
+    private static unsafe ANSIChar* Alloc(int x, int y) 
         => (ANSIChar*)NativeMemory.Alloc(byteCount: (nuint)(Unsafe.SizeOf<ANSIChar>() * (x * y)));
 }

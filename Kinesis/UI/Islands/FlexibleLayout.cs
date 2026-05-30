@@ -35,7 +35,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             m_childCount = value.Count;
 
             for (int i = 0; i < value.Count; ++i) {
-                Scale? scale = value[i].GetComponent<Scale>();
+                Scale? scale = value[i].Get<Scale>();
 
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
@@ -45,15 +45,15 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                     Content = value[i],
                 });
 
-                boxes[^1].RemoveComponent<RenderComponent>();
+                boxes[^1].Remove<RenderComponent>();
                 float max = m_direction == Axis.X ? 
-                                value[i].GetComponent<Scale>()?.Value.Y ?? Scale.Auto :
-                                value[i].GetComponent<Scale>()?.Value.X ?? Scale.Auto;
+                                value[i].Get<Scale>()?.Value.Y ?? Scale.Auto :
+                                value[i].Get<Scale>()?.Value.X ?? Scale.Auto;
 
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
+            Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
                 Name = s_list,
                 Content = boxes
             };
@@ -88,8 +88,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
     public FlexibleLayout() {
-        _ = AttachComponent<Position>(component: new Position(), isUnique: true);
-        _ = AttachComponent<Scale>(component: new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+        _ = Attach<Position>(component: new Position(), isUnique: true);
+        _ = Attach<Scale>(component: new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -104,7 +104,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             On = (message, ref tree) => {
                 if (m_childCount == 0 || (m_previousScale.X == message.Scale.X && m_previousScale.Y == message.Scale.Y)) return;
 
-                Scale scale = GetComponent<Scale>()!;
+                Scale scale = Get<Scale>()!;
                 Vec2 currentScale = GetCurrentScale(scale, message.Scale);
 
                 float ratio = CalculateRatio(currentScale);
@@ -115,13 +115,13 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 for (int i = 0; i < m_childCount; ++i) {
                     UIBox box = tree.Visit<UIBox>(name: m_childIds[i])!;
 
-                    SetOffset(position: box.GetComponent<Position>()!, usedSpace);
-                    error = SetRatioScale(box: box.GetComponent<Scale>()!, scale: (ratio * m_ratios![i]) + error, isLast: i == m_childCount - 1, ref usedSpace);
+                    SetOffset(position: box.Get<Position>()!, usedSpace);
+                    error = SetRatioScale(box: box.Get<Scale>()!, scale: (ratio * m_ratios![i]) + error, isLast: i == m_childCount - 1, ref usedSpace);
                 }
 
                 m_previousScale = message.Scale;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
         };
     }
 

@@ -17,7 +17,7 @@ namespace Kinesis.Core;
 /// Represent a unified source of the inputs.
 /// </summary>
 internal class InputSystem: IDynamicSystem {
-    private const string DEDICATED_THREAD_NAME = "Kinesis::Input";
+    private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread";
 
     /// <summary>
     /// Indicates the wait time between two sampling. (3ms)

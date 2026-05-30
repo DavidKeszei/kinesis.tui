@@ -44,17 +44,17 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// </summary>
     public Entity Content {
         init {
-            if (value == null || value.GetComponent<Scale>() == null) return;
+            if (value == null || value.Get<Scale>() == null) return;
 
             UIBox container = new UIBox() {
                 Name = (m_progressIndicator = $"__progress_indicator_{Guid.CreateVersion7()}__"),
                 Content = value
             };
 
-            container.RemoveComponent<RenderComponent>();
+            container.Remove<RenderComponent>();
 
-            container.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
+            container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
         }
     }
 
@@ -62,8 +62,8 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Create a new <see cref="ProgressBar"/> instance.
     /// </summary>
     public ProgressBar() {
-        _ = AttachComponent<Position>(new Position(), true);
-        _ = AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), true);
+        _ = Attach<Position>(new Position(), true);
+        _ = Attach<Scale>(new Scale(scale: Vec2.One * Scale.Auto), true);
 
         m_filled = new Filler() { Character = '━', Color = RGB.White };
         m_empty = new Filler() { Character = '━', Color = RGB.White with { A = 25 } };
@@ -73,7 +73,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
         context.SetPivot<Position>(this);
         context.SetPivot<Scale>(this);
 
-        GetComponent<Scale>()!.ChangeAxisValue(value: 1, axis: Axis.Y);
+        Get<Scale>()!.ChangeAxisValue(value: 1, axis: Axis.Y);
     }
 
     /// <summary>
@@ -92,12 +92,12 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
             On = (message, ref tree) => {
                 if (m_percent == m_prePercent) return;
                 Entity entity = tree.Visit<Entity>(name: m_progressIndicator)?
-                                    .GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
+                                    .Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
 
                 int len = 0;
                 if (entity != null) {
                     m_onUpdate?.Invoke(m_percent, entity);
-                    len = (int)entity.GetComponent<Scale>()!.Value.X + 1;
+                    len = (int)entity.Get<Scale>()!.Value.X + 1;
                 }
 
                 UIBox filled = tree.Visit<UIBox>(name: m_progressFilled)!;
@@ -105,17 +105,17 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
 
                 if (len > 0) {
 
-                    empty.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
-                    empty.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
+                    empty.Get<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    empty.Get<Position>()!.Relative = new Vec2(x: len, y: 0);
 
-                    filled.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
-                    filled.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
+                    filled.Get<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    filled.Get<Position>()!.Relative = new Vec2(x: len, y: 0);
                 }
 
-                float x = empty.GetComponent<Scale>()!.Value.X;
+                float x = empty.Get<Scale>()!.Value.X;
 
                 /* Percent + Text length + Empty Space -> This makes the render flexible & correct */
-                filled.GetComponent<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
+                filled.Get<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
                 m_prePercent = m_percent;
             },
             Content = CreateContainer()
@@ -134,12 +134,12 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
                             Name = (m_progressFilled = $"__progress_filled_{Guid.CreateVersion7()}__"),
                             Filler = m_filled
                         },
-                        GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
+                        Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
                     ]
             }
         };
 
-        box.RemoveComponent<RenderComponent>();
+        box.Remove<RenderComponent>();
         return box;
     }
 }
