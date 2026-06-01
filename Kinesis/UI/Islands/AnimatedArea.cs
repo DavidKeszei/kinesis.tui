@@ -16,7 +16,7 @@ namespace Kinesis.UI;
 /// </summary>
 /// <typeparam name="T">Target type of the animation on the <see cref="Entity"/>.</typeparam>
 public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T> {
-    private readonly string s_box = string.Empty;
+    private string s_box = null!;
 
     private readonly Func<Entity, T> m_selector = default!;
     private readonly Action<Entity, T> m_applier = default!;
@@ -64,9 +64,9 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     public bool IsPeriodic { init => m_isPeriodic = value; }
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
-            UIBox box = new UIBox { Name = (s_box = $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
+            UIBox box = new UIBox { Name = (s_box ??= $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
 
             box.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;

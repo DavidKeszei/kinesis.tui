@@ -27,15 +27,23 @@ public ref struct BuildContext {
     #endregion
 
     private readonly Island m_root = null!;
-    private readonly Entity m_current = null!;
+    private Island m_currentIsland = null!;
 
+    private readonly Entity m_current = null!;
     private readonly Stack<Component>[] m_inheritanceTargets = null!;
+
     private byte m_flags = 0;
+    private readonly bool m_isTop = true;
 
     /// <summary>
     /// Current target entity of the building.
     /// </summary>
     public readonly Entity Current { get => m_current; internal init => m_current = value; }
+
+    /// <summary>
+    /// Current island of the segment.
+    /// </summary>
+    public Island CurrentIsland { readonly get => m_currentIsland; internal set => m_currentIsland = value; }
 
     /// <summary>
     /// Root <see cref="Island"/> of the building.
@@ -46,6 +54,11 @@ public ref struct BuildContext {
     /// Flags, which indicates what kind of components setted. (Must be init.-d with 0 value every level of building)
     /// </summary>
     internal byte ChangeStyleFlag { init => m_flags = value; }
+
+    /// <summary>
+    /// Indicates the current is the root level. 
+    /// </summary>
+    internal readonly bool IsTop { get => m_isTop; init => m_isTop = value; }
 
     internal BuildContext(Entity current) {
         m_current = current;

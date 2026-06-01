@@ -95,6 +95,8 @@ public class Entity {
     /// <typeparam name="T">Type of the component.</typeparam>
     /// <param name="index">Indicates where we want delete the component.</param>
     public void Remove<T>(int index = 0) where T: Component, IStaticType {
+        if (index < 0) return;
+
         if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.Name), out int i)) {
             m_components[i] = null!;
             m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.Name));

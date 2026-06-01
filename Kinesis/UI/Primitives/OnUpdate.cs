@@ -45,7 +45,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     /// Attached child of the <see cref="OnUpdate{T}"/>.
     /// </summary>
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
             Hierarchy connection = base.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!;

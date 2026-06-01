@@ -10,9 +10,9 @@ using System.Text;
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Represent a IMGUI/immediate-mode based render-engine.
+/// Represent a IMGUI/immediate-mode based renderer.
 /// </summary>
-internal sealed class ImmediateRenderer {
+internal sealed class Renderer {
     #region PREDEFINES
     private const float NS_TO_MS = 1000f;
     private const float LIMIT = 1f;
@@ -40,7 +40,7 @@ internal sealed class ImmediateRenderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public ImmediateRenderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
+    public Renderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -55,24 +55,24 @@ internal sealed class ImmediateRenderer {
         Console.CursorVisible = false;
     }
         
-    public void Run(List<Entity> list) {
+    public void Run(DrawCalls calls) {
         long start = Stopwatch.GetTimestamp();
 
         if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
             bool fullRedrawRequested = OnLayoutChange();
 
-            for (int i = 0; i < list.Count; ++i) {
-                Vec2 scale = list[i].Get<Scale>()!.Value;
-                Vec2 position = list[i].Get<Position>()!.Absolute;
+            foreach(Entity call in calls) {
+                Vec2 scale = call.Get<Scale>()!.Value;
+                Vec2 position = call.Get<Position>()!.Absolute;
 
                 if (!InBuffer(position: position, scale: scale)) 
                     continue;
 
-                RenderComponent renderLogic = list[i].Get<RenderComponent>()!;
+                RenderComponent renderLogic = call.Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
-                using StyleEnumerator style = new StyleEnumerator(entity: list[i]);
-                renderLogic.Render(buffer: canvas, version: list[i].Version, style);
+                using StyleEnumerator style = new StyleEnumerator(entity: call);
+                renderLogic.Render(buffer: canvas, version: call.Version, style);
             }
 
             Diffing(fullRedrawRequested);

@@ -10,7 +10,7 @@ namespace Kinesis.UI;
 /// Represent a space between <see cref="Entity"/> instances.
 /// </summary>
 public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContext> {
-    private readonly string m_container = string.Empty;
+    private string m_container = null!;
 
     /// <summary>
     /// Value of the spacing.
@@ -29,10 +29,10 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
     /// Content of the current <see cref="Padding"/>.
     /// </summary>
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
             UIBox container = new UIBox {
-                Name = (m_container = $"__padding__{Guid.CreateVersion7()}__"),
+                Name = (m_container ??= $"__padding__{Guid.CreateVersion7()}__"),
                 Content = value
             };
 

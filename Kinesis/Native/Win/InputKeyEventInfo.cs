@@ -35,10 +35,10 @@ internal readonly struct InputKeyEventInfo {
 
     private bool IsArrowKey(out char name) {
         name = (ArrowKey)m_vKeyCode switch {
-            ArrowKey.UP => '\u2191',
-            ArrowKey.RIGHT => '\u2190',
-            ArrowKey.DOWN => '\u2193',
-            ArrowKey.LEFT => '\u2192',
+            ArrowKey.RIGHT => '\u2190',  /* Key: ← */
+            ArrowKey.UP => '\u2191', /* Key: ↑ */
+            ArrowKey.LEFT => '\u2192',  /* Key: → */
+            ArrowKey.DOWN => '\u2193',  /* Key: ↓ */
             _ => '\0'
         };
 
@@ -46,10 +46,28 @@ internal readonly struct InputKeyEventInfo {
     }
 }
 
+/// <summary>
+/// Possible character values from the arrow keys. 
+/// </summary>
 public enum ArrowKey: short {
+    /// <summary>
+    /// Indicates the underlying character is not arrow key.
+    /// </summary>
     INVALID_NONE = -1,
+    /// <summary>
+    /// Up direction on the arrow key pad. Key as character: ↑.
+    /// </summary>
     UP = 0x26,
+    /// <summary>
+    /// Right direction on the arrow key pad. Key as character: →.
+    /// </summary>
     RIGHT = 0x25,
+    /// <summary>
+    /// Down direction on the arrow key pad. Key as character: ↓.
+    /// </summary>
     DOWN = 0x28,
+    /// <summary>
+    /// Left direction on the arrow key pad. Key as character: ←.
+    /// </summary>
     LEFT = 0x27
 }

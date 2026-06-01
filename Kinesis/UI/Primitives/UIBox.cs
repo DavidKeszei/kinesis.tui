@@ -32,7 +32,7 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     /// Attached <see cref="Entity"/> instance as child.
     /// </summary>
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
             _ = base.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;

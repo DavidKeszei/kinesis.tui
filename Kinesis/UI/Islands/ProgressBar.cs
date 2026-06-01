@@ -11,8 +11,8 @@ namespace Kinesis.UI;
 /// Represents a status indicator element with numeric indicator.
 /// </summary>
 public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<Entity> {
-    private string m_progressEmpty = string.Empty;
-    private string m_progressFilled = string.Empty;
+    private string m_progressEmpty = null!;
+    private string m_progressFilled = null!;
 
     private readonly Filler m_filled = default;
     private readonly Filler m_empty = default;
@@ -43,11 +43,11 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Setting up the loading indicator of the <see cref="ProgressBar"/>.
     /// </summary>
     public Entity Content {
-        init {
+        set {
             if (value == null || value.Get<Scale>() == null) return;
 
             UIBox container = new UIBox() {
-                Name = (m_progressIndicator = $"__progress_indicator_{Guid.CreateVersion7()}__"),
+                Name = (m_progressIndicator ??= $"__progress_indicator_{Guid.CreateVersion7()}__"),
                 Content = value
             };
 

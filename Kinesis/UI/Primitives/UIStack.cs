@@ -14,7 +14,7 @@ namespace Kinesis.UI;
 public class UIStack: Entity, IContentable<List<Entity>> {
 
     public List<Entity> Content {
-        init {
+        set {
             if (value == null || value.Count == 0)
                 return;
 

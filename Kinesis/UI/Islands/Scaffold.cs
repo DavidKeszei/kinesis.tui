@@ -13,14 +13,14 @@ namespace Kinesis.UI;
 /// and the root visual style (colors, decorations) for its child hierarchy.
 /// </summary>
 public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildContext> {
-    private readonly string m_scaffoldName = string.Empty;
+    private string m_scaffoldName = null!;
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
             UIBox scaffold = new UIBox() { 
-                Name = (m_scaffoldName = $"__scaffold_{Guid.CreateVersion7()}__"),
+                Name = (m_scaffoldName ??= $"__scaffold_{Guid.CreateVersion7()}__"),
                 Scale = Vec2.Zero,
                 Content = value
             };
@@ -51,9 +51,6 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
         _ = Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
 
         _ = Attach<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
-
-        _ = Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        _ = Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
     }
 
     public void Copy(ref BuildContext context) {

@@ -12,16 +12,16 @@ namespace Kinesis.UI;
 /// Represents centering UI element on an area.
 /// </summary>
 public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity> {
-    private string m_boxName = string.Empty;
+    private string m_boxName = null!;
 
     private Scale? m_childScale = null!;
     private readonly Axis m_axis = Axis.X | Axis.Y;
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
-            UIBox container = new UIBox { Name = (m_boxName = $"__center__{Guid.CreateVersion7()}__"), Content = value };
+            UIBox container = new UIBox { Name = (m_boxName ??= $"__center__{Guid.CreateVersion7()}__"), Content = value };
             container.Remove<RenderComponent>();
 
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;

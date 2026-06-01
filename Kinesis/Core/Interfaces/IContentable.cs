@@ -14,5 +14,5 @@ public interface IContentable<T> {
     /// <summary>
     /// Attached content of the current instance.
     /// </summary>
-    public T Content { init; }
+    public T Content { set; }
 }

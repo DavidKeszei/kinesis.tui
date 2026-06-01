@@ -64,7 +64,7 @@ internal class JobSystem: IDynamicSystem {
     }
 
     /// <summary>
-    /// Add synchronization context/state to the <see cref="JobSystem"/> from the <see cref="ImmediateRenderer"/>.
+    /// Add synchronization context/state to the <see cref="JobSystem"/> from the <see cref="Renderer"/>.
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
     /// <remarks>Remarks: If the state wasn't set, then the <see cref="JobSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
@@ -173,7 +173,7 @@ internal class JobSystem: IDynamicSystem {
 }
 
 /// <summary>
-/// Simple state representation between the <see cref="ImmediateRenderer"/> and <see cref="JobSystem"/>.
+/// Simple state representation between the <see cref="Renderer"/> and <see cref="JobSystem"/>.
 /// </summary>
 public enum WorkerSystemState: byte {
     /// <summary>
@@ -181,7 +181,7 @@ public enum WorkerSystemState: byte {
     /// </summary>
     OPEN_FOR_PROCESSING,
     /// <summary>
-    /// Indicates for the <see cref="JobSystem"/> wait to the <see cref="ImmediateRenderer"/>.
+    /// Indicates for the <see cref="JobSystem"/> wait to the <see cref="Renderer"/>.
     /// </summary>
     WAIT_FOR_RENDERER
 }

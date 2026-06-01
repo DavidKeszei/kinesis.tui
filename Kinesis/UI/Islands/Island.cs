@@ -12,6 +12,7 @@ namespace Kinesis.UI;
 public abstract class Island: Entity {
     private readonly List<Entity> m_renderSet = null!;
     private bool m_isActive = false;
+    private bool m_isBuilded = false;
 
     /// <summary>
     /// Created <see cref="Entity"/> instance-tree as "list".
@@ -19,15 +20,22 @@ public abstract class Island: Entity {
     internal List<Entity> DrawCalls { get => m_renderSet; }
 
     /// <summary>
-    /// Indicates the <see cref="Island"/> is active by the <see cref="ImmediateRenderer"/> and the <see cref="INavigator"/>.
+    /// Indicates the <see cref="Island"/> is active by the <see cref="Renderer"/> and the <see cref="INavigator"/>.
     /// </summary>
     internal bool IsActive { get => m_isActive; set => m_isActive = value; }
+
+    /// <summary>
+    /// Indicates the current <see cref="Island"/> was built. This only <see cref="true"/>, if the island a root island.
+    /// </summary>
+    internal bool IsBuilt { get => m_isBuilded; }
 
     public Island() {
         m_renderSet = new List<Entity>(capacity: 32);
 
         this.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
         this.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+
+        this.Attach<DrawCalls>(component: new DrawCalls(), isUnique: true);
     }
 
     /// <summary>
@@ -42,8 +50,13 @@ public abstract class Island: Entity {
     /// <param name="context">Context of the current build period.</param>
     internal void BuildTree(BuildContext context) {
         if (context.Current is Island island) {
+            context.CurrentIsland = island;
+
             Entity? created = island.Build(context);
             if (created == null) return;
+
+            if (!context.IsTop) context.CurrentIsland.Remove<DrawCalls>();
+            context.Root.Get<DrawCalls>()!.Add(island);
 
             context.Current.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = created;
             created.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = context.Current;
@@ -53,7 +66,7 @@ public abstract class Island: Entity {
         int childrenCount = context.Current.CountComponent<Hierarchy>();
 
         if (context.Current.Get<RenderComponent>() != null)
-            context.Root.DrawCalls.Add(context.Current!);
+            context.CurrentIsland.DrawCalls.Add(context.Current!);
 
         if (context.Current is ICopyable<BuildContext> copyable)
             copyable.Copy(from: ref context);
@@ -63,12 +76,14 @@ public abstract class Island: Entity {
 
             if (child.Attached != null) {
                 BuildTree(context: context with {
+                    IsTop = false,
                     ChangeStyleFlag = 0,
-                    Current = child.Attached
+                    Current = child.Attached,
                 });
             }
         }
 
         context.DropCurrentLevelStyles();
+        if(context.IsTop) m_isBuilded = true;
     }
 }

@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a flex-like space-managert on one direction.
 /// </summary>
 public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLayout<List<uint>> {
-    private static readonly string s_list = "__flexLayout__";
+    private string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
 
     private List<string> m_childIds = null!;
     private List<uint> m_ratios = null!;
@@ -26,7 +26,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private Axis m_direction = Axis.X;
 
     public List<Entity> Content {
-        init {
+        set {
             if (value == null || value.Count == 0)
                 return;
 
@@ -54,7 +54,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             }
 
             Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
-                Name = s_list,
+                Name = m_list,
                 Content = boxes
             };
         }

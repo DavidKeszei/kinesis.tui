@@ -13,7 +13,7 @@ namespace Kinesis.UI;
 /// </summary>
 public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
             value.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
