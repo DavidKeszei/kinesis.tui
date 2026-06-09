@@ -84,10 +84,18 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// Create a slice from the current <see cref="ConsoleBuffer"/>.
     /// </summary>
     /// <param name="buffer">Source of the from.</param>
-    /// <param name="from">Absolute index of the from.</param>
-    /// <param name="scale">Scale of the from.</param>
+    /// <param name="from">Absolute index of the <see cref="Canvas"/> instance on the <paramref name="buffer"/>.</param>
+    /// <param name="scale">Requested scale.</param>
     /// <returns>Return a <see cref="Canvas"/> instance.</returns>
     public static Canvas Slice(ref ConsoleBuffer buffer, Vec2 from, Vec2 scale) {
+        /* TODO(2026-06-07T00:13:33): Incorrect left-side inset at rendering (behaves like the object sits on the right-side) (Level: Low)
+         * 
+         * INSPECTIONS:
+         * 	- The position & scale values of the Canvas can leads to the solution.
+         */
+
+        Vec2 start = from;
+
         if (from.X < 0) scale.X += from.X;
         else if (from.X + scale.X >= buffer.Scale.X) scale.X = buffer.Scale.X - from.X;
 
@@ -97,7 +105,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
         from.X = float.Clamp(from.X, 0, buffer.Scale.X - 1);
         from.Y = float.Clamp(from.Y, 0, buffer.Scale.Y - 1);
 
-        return new Canvas(ref buffer, scale, from);
+        return new Canvas(ref buffer, scale, from, start);
     }
 
     /// <summary>
@@ -115,6 +123,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
 
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
             unsafe { NativeMemory.Free(ptr: buffer.m_buffer); }
+
             Debug.WriteLine(value: $"Memory was freed up & reallocated... (Scale: {scale.X:f0} x {scale.Y:f0})");
             return temp;
         }

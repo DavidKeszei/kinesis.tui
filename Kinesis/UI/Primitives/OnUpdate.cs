@@ -9,12 +9,12 @@ using System.Text;
 
 namespace Kinesis.UI;
 
-public delegate void JobCallback<T>(T message, ref IslandEntityVisitor visitor) where T: IJobMessage;
+public delegate void JobCallback<T>(T message, ref readonly IslandEntityVisitor visitor) where T: IJobMessage;
 
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
-public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
+public class OnUpdate<T>(): Entity(count: 4), IContentable<Entity> where T: IJobMessage {
     private readonly Island m_island = null!;
 
     /// <summary>
@@ -28,7 +28,6 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
                 interaction = T.Target switch {
                     JobTag.RENDERING => new JobComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
                     JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island),
-                    JobTag.LAYOUT => new JobComponent(onLayoutChange: (message) => SetCallback(value, Unsafe.As<LayoutMessage, T>(ref message)), m_island),
                     _ => null!
                 };
                 _ = base.Attach<JobComponent>(interaction, isUnique: true);
@@ -55,7 +54,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
         }
     }
 
-    public OnUpdate(BuildContext context) {
+    public OnUpdate(BuildContext context): this() {
         _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
         _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
 

@@ -1,21 +1,26 @@
-﻿using Kinesis.UI;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
+using Kinesis.UI;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-
-using Kinesis.Core;
 
 namespace Kinesis.UI.Components;
 
 /// <summary>
 /// Represent a collection of "draw-calls" as separated <see cref="Island"/>s.
 /// </summary>
-internal class DrawCalls: Component, IStaticType {
+internal class DrawCalls: Component, IStaticType, IPoolable {
     private const string TYPE = nameof(DrawCalls);
     private readonly List<Island> m_islands = null!;
 
     public static string Name { get => TYPE; }
+
+    /// <summary>
+    /// Internal chunks of the draw-calls.
+    /// </summary>
+    internal IReadOnlyList<Island> ChunkHolders { get => m_islands; } 
 
     public DrawCalls(): base(id: ComponentRegistry.QueryComponent(name: TYPE))
         => m_islands = new List<Island>(capacity: 16);
@@ -26,6 +31,17 @@ internal class DrawCalls: Component, IStaticType {
     /// <param name="chunk">A chunk of the draw-calls.</param>
     public void Add(Island chunk) => m_islands.Add(item: chunk);
 
+    public void Remove(int chunk) => m_islands.RemoveAt(chunk);
+
+    public void Reset() {
+        m_islands.Clear();
+        ComponentPool<DrawCalls>.Instance.Return(this);
+    }
+
+    /// <summary>
+    /// Enumerate through the current drawable <see cref="Entity"/> instances.
+    /// </summary>
+    /// <returns></returns>
     public DrawCallIterator GetEnumerator() => new DrawCallIterator(this);
 
     /// <summary>

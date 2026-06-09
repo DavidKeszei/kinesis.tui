@@ -27,15 +27,17 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
+            Get<ContentComponent>()!.Content = container;
+
             m_childScale = value.Get<Scale>();
         }
     }
 
     public Axis Axis { init => m_axis = value; }
 
-    public Center() {
-        _ = this.Attach<Position>(component: new Position(), isUnique: true);
-        _ = this.Attach<Scale>(component: new Scale(Vec2.One * Scale.Auto), isUnique: true);
+    public Center(): base(count: 3) {
+        _ = this.Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -43,9 +45,9 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
         context.SetPivot<Scale>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_childScale == null) return;
 
                 UIBox box = tree.Visit<UIBox>(name: m_boxName)!;
@@ -64,7 +66,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
 
                 pos.Relative = center;
             },
-            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 }

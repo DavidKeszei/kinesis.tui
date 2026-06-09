@@ -52,11 +52,11 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     /// </summary>
     public TimeSpan Duration { init => m_changeTime = value.Ticks; }
 
-    public Spinner() {
-        _ = Attach<Position>(new Position(), isUnique: true);
-        _ = Attach<Scale>(new Scale(scale: Vec2.One), isUnique: true);
+    public Spinner(): base(count: 3) {
+        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One), isUnique: true);
 
-        _ = Attach<Style>(Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!), isUnique: true);
+        _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)), isUnique: true);
     }
 
     public static Spinner Create(SpinnerPreset preset, TimeSpan durationPerCycle, RGB? color = null) {
@@ -84,7 +84,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
         from.SetPivot<Scale>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new AnimatedArea<AnimatedNumber<int>>() {
             Selector = (text) => m_index,
             Applier = (text, value) => {

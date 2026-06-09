@@ -21,17 +21,14 @@ public class UIStack: Entity, IContentable<List<Entity>> {
             for (int i = 0; i < value.Count; ++i) {
                 if (value[i] == null) continue;
 
-                Hierarchy conn = new Hierarchy() {
-                    Direction = ConnectionDirection.DOWN,
-                    Attached = value[i]
-                };
-
                 value[i].Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
-                _ = base.Attach<Hierarchy>(conn);
+
+                _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+                Get<Hierarchy>(Hierarchy.ChildrenStart + i)!.Attached = value[i];
             }
         }
     }
 
     public UIStack()
-        => _ = base.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
+        => _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
 }

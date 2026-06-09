@@ -12,7 +12,7 @@ using System.Text;
 namespace Kinesis.UI;
 
 /// <summary>
-/// Represent a state in the Ui building process.
+/// Represent a state in the UI building process.
 /// </summary>
 public ref struct BuildContext {
     #region PREDEFINES
@@ -85,7 +85,7 @@ public ref struct BuildContext {
         if (type == -1) return;
 
         if (T.IsDefault(component)) {
-            Component copy = m_inheritanceTargets[type].TryPeek(out Component? result) ? ((T)m_inheritanceTargets[type].Peek()) : @default;
+            Component copy = m_inheritanceTargets[type].TryPeek(out Component? _) ? ((T)m_inheritanceTargets[type].Peek()) : @default;
             component.Copy(ref Unsafe.As<Component, T>(ref copy));
         }
 

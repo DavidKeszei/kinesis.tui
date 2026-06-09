@@ -73,6 +73,8 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
 
             box.Remove<RenderComponent>();
 
+            Get<ContentComponent>()!.Content = box;
+
             /*
              * The scale contstraints is different here: the AnimatedArea<TSelf> is not animate a value on the parent;
              * the class animates the given content on the given scale/area. 
@@ -84,9 +86,9 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
         }
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_state != AnimationState.Animate) return;
                 Entity content = tree.Visit<UIBox>(name: s_box)?
                                      .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
@@ -115,7 +117,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
                 if (m_state == AnimationState.Animate && time >= 1f)
                     m_state = AnimationState.End;
             },
-            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 

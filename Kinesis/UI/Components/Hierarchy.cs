@@ -9,8 +9,8 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent connection information between two <see cref="Entity"/> instances.
 /// </summary>
-public class Hierarchy: Component, IStaticType {
-    private const string TYPE_NAME = "ConnectionComponent";
+public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
+    private const string TYPE_NAME = nameof(Hierarchy);
     private const int PARENT_INDEX = 0;
 
     private const int CHILDREN_START_INDEX = 1;
@@ -47,9 +47,14 @@ public class Hierarchy: Component, IStaticType {
     /// <summary>
     /// Direction of the current connection in the hierarchy.
     /// </summary>
-    public ConnectionDirection Direction { get => m_direction; init => m_direction = value; }
+    public ConnectionDirection Direction { get => m_direction; set => m_direction = value; }
 
-    public Hierarchy(): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) { }
+    public void Reset() {
+        m_child = null!;
+        m_direction = ConnectionDirection.DOWN;
+
+        ComponentPool<Hierarchy>.Instance.Return(this);
+    }
 }
 
 public enum ConnectionDirection: byte {

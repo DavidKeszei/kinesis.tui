@@ -41,14 +41,15 @@ public class UIText: Entity, ICopyable<BuildContext> {
     /// <summary>
     /// Style indicators of the <see cref="UIText"/>.
     /// </summary>
-    public TextDecoration Decoration { get => base.Get<Style>(2)!.AsAttribute; set => base.Get<Style>(index: 2)!.AsAttribute = value; }
+    public TextDecoration Decoration { get => base.Get<Style>(index: 2)!.AsAttribute; set => base.Get<Style>(index: 2)!.AsAttribute = value; }
 
-    public UIText() {
+    public UIText(): base(count: 8) {
         base.InitRenderEntityWith<TextRenderer>();
-        base.Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
 
-        base.Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
-        base.Attach<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(StyleTag.BACKGROUND, null));
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(StyleTag.FOREGROUND, null));
+
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(StyleTag.FONT_ATTR, TextDecoration.NONE));
     }
 
     public void Copy(ref BuildContext from) {
