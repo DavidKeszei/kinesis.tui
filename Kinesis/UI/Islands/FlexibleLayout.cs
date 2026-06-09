@@ -32,6 +32,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
             List<Entity> boxes = new List<Entity>(capacity: value.Count);
             m_childIds ??= new List<string>(capacity: value.Count);
+            m_childIds.Clear();
+
             m_childCount = value.Count;
 
             for (int i = 0; i < value.Count; ++i) {
@@ -53,7 +55,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
+            Get<ContentComponent>()!.Content = new UIStack {
                 Name = m_list,
                 Content = boxes
             };
@@ -87,9 +89,9 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     /// </summary>
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
-    public FlexibleLayout() {
-        _ = Attach<Position>(component: new Position(), isUnique: true);
-        _ = Attach<Scale>(component: new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+    public FlexibleLayout(): base(count: 3) {
+        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -97,11 +99,11 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
         context.SetPivot<Position>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         if (m_ratios == null || m_ratios.Count == 0) CreateDefaultRatios();
 
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_childCount == 0 || (m_previousScale.X == message.Scale.X && m_previousScale.Y == message.Scale.Y)) return;
 
                 Scale scale = Get<Scale>()!;
@@ -121,7 +123,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
                 m_previousScale = message.Scale;
             },
-            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 

@@ -8,13 +8,13 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a point in the 2D space.
 /// </summary>
-public sealed class Position: Component, IStaticType, ICopyable<Position>, IDefault<Position> {
-    private static readonly string s_type = nameof(Position);
+public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Position>, IDefault<Position>, IPoolable {
+    private const string TYPE_NAME = nameof(Position);
 
     private Position m_origin = null!;
     private Vec2 m_offset = Vec2.Zero;
 
-    public static string Name { get => s_type; }
+    public static string Name { get => TYPE_NAME; }
 
     /// <summary>
     /// Relative distance from a point in the 2D space.
@@ -31,7 +31,7 @@ public sealed class Position: Component, IStaticType, ICopyable<Position>, IDefa
     /// </summary>
     public Position Origin { get => m_origin; set => m_origin = value; }
 
-    public Position(Position? origin = null!) : base(id: ComponentRegistry.QueryComponent(s_type)) {
+    public Position(Position? origin = null!): this() {
         m_origin = origin!;
         m_offset = Vec2.Zero;
     }
@@ -41,6 +41,13 @@ public sealed class Position: Component, IStaticType, ICopyable<Position>, IDefa
 
         m_offset = position.m_offset;
         m_origin = position.m_origin;
+    }
+
+    public void Reset() {
+        m_offset = Vec2.Zero;
+        m_origin = null!;
+
+        ComponentPool<Position>.Instance.Return(this);
     }
 
     public static bool IsDefault(Position instance) {

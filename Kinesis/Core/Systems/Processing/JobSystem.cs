@@ -37,9 +37,7 @@ internal class JobSystem: IDynamicSystem {
     private readonly RingBuffer<InputMessage> m_inputMessages = null!;
     private readonly RingBuffer<RenderMessage> m_renderMessages = null!;
 
-    private readonly RingBuffer<LayoutMessage> m_layoutMessages = null!;
     private readonly ConcurrentQueue<JobTarget> m_addIntents = null!;
-
     private State<JobSystemStateInfo> m_workState = null!;
 
     /// <summary>
@@ -57,8 +55,6 @@ internal class JobSystem: IDynamicSystem {
 
         m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND);
         m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_COUNT);
-
-        m_layoutMessages = new RingBuffer<LayoutMessage>(capacity: MAX_MSG_COUNT);
 
         m_addIntents = new ConcurrentQueue<JobTarget>();
     }
@@ -87,19 +83,13 @@ internal class JobSystem: IDynamicSystem {
         => m_renderMessages.Write(message);
 
     /// <summary>
-    /// Add new <see cref="LayoutMessage"/> to the workers.
-    /// </summary>
-    /// <param name="message">The message itself.</param>
-    public void AddLayoutMessage(LayoutMessage message) {
-        if(m_layoutMessages.Count < m_layoutMessages.Capacity)
-            m_layoutMessages.Write(message);
-    }
-
-    /// <summary>
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
+    /// <returns>Returns a <see cref="State{T}"/> instance, which helps request and track state of the job.</returns>
     public State<JobRequestIntent> AddCallback<T>(Action<T> work, Island island) where T: IJobMessage {
+        if (work == null || island == null) return null!;
+
         /* TODO(2026-05-29T23:27:05): Refactor to request based job register. (Status: ✅)
          * 
          * INSPECTIONS:
@@ -129,7 +119,6 @@ internal class JobSystem: IDynamicSystem {
             AddJobs();
 
             Send<InputMessage>(messages: m_inputMessages);
-            Send<LayoutMessage>(messages: m_layoutMessages);
             Send<RenderMessage>(messages: m_renderMessages);
 
             m_workState.Value.State = WorkerSystemState.WAIT_FOR_RENDERER;
@@ -140,7 +129,7 @@ internal class JobSystem: IDynamicSystem {
         if (!messages.Read(out T message)) return;
 
         foreach(JobTarget target in m_targets) {
-            if (!target.Island.IsActive || target.Status == JobRequestIntent.SUSPEND)
+            if (!target.Island.IsActive || target.Status != JobRequestIntent.ACTIVE)
                 continue;
 
             Delegate _ref = target.Action;

@@ -27,11 +27,11 @@ public ref struct IslandEntityVisitor {
     /// <param name="name">Unique name of the entity.</param>
     /// <returns>Return a entity as <typeparamref name="T"/>. If not in the tree, then return <see langword="null"/>.</returns>
     public T? Visit<T>(string name) where T: Entity {
-        if (m_mostUsed.TryGetValue(name, out Entity? result))
-            return (T)result;
-
         if (string.IsNullOrEmpty(name) || m_pivot == null) return null!;
         else if (IsSequenceEqual(m_pivot.Name, name) && m_pivot is T ret) return ret;
+
+        if (m_mostUsed.TryGetValue(name, out Entity? result))
+            return (T)result;
 
         result = RecursiveVisit(current: m_pivot, name);
 
@@ -39,7 +39,7 @@ public ref struct IslandEntityVisitor {
             m_mostUsed.Clear();
 
         if(result != null) _ = m_mostUsed.TryAdd(name, result!);
-        return (T?)result;
+        return result as T;
     }
 
     internal readonly void ClearCache() => m_mostUsed.Clear();

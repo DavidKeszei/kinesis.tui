@@ -1,4 +1,5 @@
 ﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
@@ -13,9 +14,9 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
     private string m_container = null!;
 
     /// <summary>
-    /// Value of the spacing.
+    /// Inset of the spacing.
     /// </summary>
-    public Vec2 Value {
+    public Vec2 Inset {
         get => new Vec2(x: this.Get<Style>()!.AsInt, this.Get<Style>(1)!.AsInt);
         set {
             if (value.X < 0 || value.Y < 0) return;
@@ -36,20 +37,24 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
                 Content = value
             };
 
+            container.Remove<RenderComponent>();
+
             this.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = container;
             container.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
+
+            Get<ContentComponent>()!.Content = container;
         }
     }
 
-    public Padding() {
-        _ = base.Attach<Position>(new Position(origin: null!), isUnique: true);
-        _ = base.Attach<Scale>(new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+    public Padding(): base(count: 7) {
+        _ = base.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = base.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
 
-        _ = base.Attach<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 0));
-        _ = base.Attach<Style>(Style.CreateFromInt(StyleTag.PADDING, value: 0));
+        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
+        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
 
-        _ = base.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.UP });
-        _ = base.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN });
+        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
+        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
     }
 
     public void Copy(ref BuildContext context) {
@@ -57,9 +62,9 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
         context.SetPivot<Scale>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 Position pos = Get<Position>()!;
                 Scale scale = Get<Scale>()!;
 
@@ -72,7 +77,7 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.X - scale.Inset.X, axis: Axis.X);
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.Y - scale.Inset.Y, axis: Axis.Y);
             },
-            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 }

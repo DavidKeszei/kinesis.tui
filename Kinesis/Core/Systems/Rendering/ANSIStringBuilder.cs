@@ -29,7 +29,7 @@ internal ref struct ANSIStringBuilder {
     public const int FLUSH_BARRIER = 128;
 
     private readonly Span<char> m_stack = default!;
-    private Vec2 m_lastWritePosition = Vec2.One;
+    private Vec2 m_lastWritePosition = Vec2.Zero;
 
     private RGB m_foreground = RGB.Transparent;
     private RGB m_background = RGB.Transparent;
@@ -177,7 +177,7 @@ internal ref struct ANSIStringBuilder {
     /// <summary>
     /// Add a character to the screen.
     /// </summary>
-    /// <param name="value">Value of the character.</param>
+    /// <param name="value">Inset of the character.</param>
     /// <returns>Return the current <see cref="ANSIStringBuilder"/> instance.</returns>
     [UnscopedRef]
     public ref ANSIStringBuilder WriteCharacter(char value) {

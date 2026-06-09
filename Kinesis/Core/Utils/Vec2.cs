@@ -14,12 +14,12 @@ public struct Vec2: IInterpolatable<Vec2> {
     private float m_y = 0;
 
     /// <summary>
-    /// Value of the X axis.
+    /// Inset of the X axis.
     /// </summary>
     public float X { readonly get => m_x; set => m_x = value; }
 
     /// <summary>
-    /// Value of the Y axis.
+    /// Inset of the Y axis.
     /// </summary>
     public float Y { readonly get => m_y; set => m_y = value; }
 
@@ -63,14 +63,14 @@ public struct Vec2: IInterpolatable<Vec2> {
     /// <summary>
     /// Create a new <see cref="Vec2"/> instance from just the <paramref name="x"/> value.
     /// </summary>
-    /// <param name="x">Value of the X-axis.</param>
+    /// <param name="x">Inset of the X-axis.</param>
     /// <returns>Returns a <see cref="Vec2"/> instance, which X value is equal with <paramref name="x"/>, but the Y value is equals with <see cref="float.MinValue"/>.</returns>
     public static Vec2 FromX(float x) => new Vec2(x, y: float.MinValue);
 
     /// <summary>
     /// Create a new <see cref="Vec2"/> instance from just the <paramref name="y"/> value.
     /// </summary>
-    /// <param name="y">Value of the Y-axis.</param>
+    /// <param name="y">Inset of the Y-axis.</param>
     /// <returns>Returns a <see cref="Vec2"/> instance, which Y value is equal with <paramref name="y"/>, but the X value is equals with <see cref="float.MinValue"/>.</returns>
     public static Vec2 FromY(float y) => new Vec2(x: float.MinValue, y);
 
@@ -85,5 +85,12 @@ public struct Vec2: IInterpolatable<Vec2> {
             return new Vec2(x: scale.m_x * ratio, y: scale.m_y);
 
         return new Vec2(x: scale.m_x * ratio, y: (int)scale.m_y);
+    }
+
+    public static Vec2 Clamp(Vec2 value, Vec2 min, Vec2 max) {
+        float x = value.X < min.X ? min.X : value.X > max.X ? max.X : value.X;
+        float y = value.Y < min.Y ? min.Y : value.Y > max.Y ? max.Y : value.Y;
+
+        return new Vec2(x, y);
     }
 }

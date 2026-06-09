@@ -26,7 +26,7 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     /// <summary>
     /// Filler character inside the box.
     /// </summary>
-    public Filler Filler { init => value.ToComponents(this); }
+    public Filler Filler { set => value.ToComponents(this); }
 
     /// <summary>
     /// Attached <see cref="Entity"/> instance as child.
@@ -40,14 +40,17 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
         }
     }
 
-    public UIBox() {
+    /// <summary>
+    /// Create an <see cref="UIBox"/> instance.
+    /// </summary>
+    public UIBox(): base(count: 8) {
         InitRenderEntityWith<BoxRenderer>();
 
-        _ = base.Attach<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN });
-        _ = base.Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
+        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
 
-        _ = base.Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
-        _ = base.Attach<Style>(component: Style.CreateFromChar(tag: StyleTag.FILLER, chr: ' '));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(tag: StyleTag.FILLER, value: ' ')));
     }
 
     public void Copy(ref BuildContext from) {
@@ -63,9 +66,9 @@ public readonly struct Filler {
     private readonly RGB m_foreground = RGB.Transparent;
     private readonly char m_character = ' ';
 
-    public readonly RGB Color { get => m_foreground; init => m_foreground = value; }
+    public readonly RGB Color { get => m_foreground; }
 
-    public readonly char Character { get => m_character; init => m_character = value; }
+    public readonly char Character { get => m_character; }
 
     public Filler(RGB color, char character) {
         m_character = character;

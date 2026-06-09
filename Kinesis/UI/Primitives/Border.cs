@@ -28,8 +28,8 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     public Border() {
         InitRenderEntityWith<BorderRenderer>();
 
-        _ = Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
-        _ = Attach<Style>(component: Style.CreateFromRGB(StyleTag.FOREGROUND, null!));
+        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null)));
 
         BorderDecoration.None.CreateStyles(to: this, init: true);
     }
@@ -139,15 +139,14 @@ public readonly struct BorderDecoration {
 
     internal void CreateStyles(Border to, bool init = false) {
         if (init) {
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_TOP_RIGHT, m_topRight));
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_TOP_LEFT, m_topLeft));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_TOP_RIGHT, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_TOP_LEFT, ' ')));
 
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_BOTTOM_RIGHT, m_bottomRight));
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_BOTTOM_LEFT, m_bottomLeft));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_BOTTOM_RIGHT, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_BOTTOM_LEFT, ' ')));
 
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_HORIZONTAL, m_horizontal));
-            to.Attach<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_VERTICAL, m_vertical));
-            return;
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_HORIZONTAL, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_VERTICAL, ' ')));
         }
 
         to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_TOP_RIGHT - OFFSET)!.AsCharacter = m_topRight;

@@ -28,6 +28,8 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
 
             scaffold.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
+
+            Get<ContentComponent>()!.Content = scaffold;
         }
     }
 
@@ -46,11 +48,12 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
     /// </summary>
     public TextDecoration TextDecoration { init => Get<Style>(index: 2)!.AsAttribute = value; }
 
-    public Scaffold() {
-        _ = Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
-        _ = Attach<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
+    public Scaffold(): base(count: 4) {
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)));
 
-        _ = Attach<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<TextDecoration>(tag: StyleTag.FONT_ATTR, value: TextDecoration.NONE)));
+        _ = Attach<ContentComponent>(component: ComponentPool<ContentComponent>.Instance.Rent<ContentComponent>(), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -60,12 +63,12 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
         context.Inherit<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, TextDecoration.NONE), index: 2);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 tree.Visit<UIBox>(name: m_scaffoldName)?.Scale = message.Scale;
             },
-            Content = Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 }

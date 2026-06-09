@@ -72,7 +72,7 @@ internal sealed class Renderer {
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
                 using StyleEnumerator style = new StyleEnumerator(entity: call);
-                renderLogic.Render(buffer: canvas, version: call.Version, style);
+                renderLogic.Render(buffer: in canvas, version: call.Version, style);
             }
 
             Diffing(fullRedrawRequested);
@@ -147,6 +147,7 @@ internal sealed class Renderer {
     private Vec2 SetSafeArea(Vec2 scale, Vec2 position) {
         if ((scale.X + position.X) >= m_backbuffer.Scale.X) scale.X -= 1;
         if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) scale.Y -= 1;
+
         return scale;
     }
 }

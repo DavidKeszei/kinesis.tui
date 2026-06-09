@@ -1,6 +1,7 @@
 ﻿using Kinesis.Core;
 using Kinesis.Core.Rendering;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -11,7 +12,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a text renderer component.
 /// </summary>
-public class TextRenderer: RenderComponent {
+public class TextRenderer(): RenderComponent, IPoolable {
     private char[] m_buffer = null!;
     private int m_len = 0;
 
@@ -22,8 +23,6 @@ public class TextRenderer: RenderComponent {
         get => new string(value: m_buffer.AsSpan()[..m_len]);
         set => Write(text: value);
     }
-
-    public TextRenderer() { }
 
     /// <summary>
     /// Remove characters from internal buffer.
@@ -43,17 +42,29 @@ public class TextRenderer: RenderComponent {
     /// </summary>
     /// <param name="text">New value of the internal buffer.</param>
     public void Write(ReadOnlySpan<char> text) {
-        if (m_len < text.Length) {
+        if ((m_buffer?.Length ?? m_len) < text.Length) {
             m_len = text.Length;
-            m_buffer = new char[m_len];
+
+            if(m_buffer != null) ArrayPool<char>.Shared.Return(m_buffer, true);
+            m_buffer = ArrayPool<char>.Shared.Rent(minimumLength: m_len);
         }
 
         for (int i = 0; i < m_len; ++i) {
             if (text.Length <= i) break;
-            else m_buffer[i] = text[i];
+            else m_buffer![i] = text[i];
         }
 
         m_len = text.Length;
+    }
+
+    public override void Reset() {
+        m_len = 0;
+        base.Reset();
+
+        ArrayPool<char>.Shared.Return(m_buffer, true);
+        m_buffer = null!;
+
+        ComponentPool<TextRenderer>.Instance.Return(this);
     }
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
@@ -87,7 +98,8 @@ public class TextRenderer: RenderComponent {
                     ch.Character = ' ';
                 }
                 else {
-                    ch.Character = m_buffer[x];
+                    ch.Character = m_buffer[x + (int)buffer.Start.X];
+
                     ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
                     ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
 

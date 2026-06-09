@@ -7,6 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent a message from the current state of global layout parameters.
 /// </summary>
+[Obsolete(message: "All information of these structure can be find insede the RenderMessage structure. Reason: Code duplication.")]
 public readonly struct LayoutMessage: IJobMessage {
     private readonly Vec2 m_layoutGlobalScale = Vec2.Zero;
 
