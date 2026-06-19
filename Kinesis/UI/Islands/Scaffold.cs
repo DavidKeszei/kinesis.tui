@@ -19,17 +19,17 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
         set {
             if (value == null) return;
 
-            UIBox scaffold = new UIBox() { 
+            Viewport scaffold = new Viewport() { 
                 Name = (m_scaffoldName ??= $"__scaffold_{Guid.CreateVersion7()}__"),
                 Scale = Vec2.Zero,
                 Content = value
             };
-            scaffold.Remove<RenderComponent>();
 
             scaffold.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
 
             Get<ContentComponent>()!.Content = scaffold;
+            Rebuild();
         }
     }
 
@@ -66,7 +66,7 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
     protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
-                tree.Visit<UIBox>(name: m_scaffoldName)?.Scale = message.Scale;
+                tree.Visit<Viewport>(name: m_scaffoldName)?.Scale = message.Scale;
             },
             Content = Get<ContentComponent>()!.Content ?? null!
         };

@@ -4,4 +4,4 @@ using System.Text;
 
 namespace Kinesis.Core;
 
-public record struct InputInfo(char Key, InputModifier Modifiers, bool IsPress);
+public record struct InputInfo(InputModifier Modifiers, char Key, bool IsPress);

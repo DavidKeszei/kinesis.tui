@@ -14,7 +14,7 @@ public delegate void JobCallback<T>(T message, ref readonly IslandEntityVisitor 
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
-public class OnUpdate<T>(): Entity(count: 4), IContentable<Entity> where T: IJobMessage {
+public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     private readonly Island m_island = null!;
 
     /// <summary>
@@ -54,7 +54,7 @@ public class OnUpdate<T>(): Entity(count: 4), IContentable<Entity> where T: IJob
         }
     }
 
-    public OnUpdate(BuildContext context): this() {
+    public OnUpdate(BuildContext context): base(count: 4) {
         _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
         _ = base.Attach<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
 

@@ -14,6 +14,8 @@ public abstract class Island: Entity {
     private readonly List<Entity> m_entities = null!;
 
     private Island m_root = null!;
+    private BuildStackSnapshot m_buildSnapshot = null!;
+
     private int m_chunkId = -1;
 
     private bool m_isActive = false;
@@ -57,8 +59,9 @@ public abstract class Island: Entity {
     /// Do not cache, query, or mutate any objects from the destroyed hierarchy after invoking this method.
     /// </para>
     /// </remarks>
-    public void Rebuild() {
-        if (!Get<ContentComponent>()!.HasChanged) return;
+    protected void Rebuild() {
+        // We only rebuild the Island, if that builded or has any change
+        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChanged ?? false)) return;
 
         bool isTop = m_root == null;
 
@@ -85,7 +88,15 @@ public abstract class Island: Entity {
             _ = Attach<DrawCalls>(ComponentPool<DrawCalls>.Instance.Rent<DrawCalls>(), isUnique: true);
         }
 
-        BuildTree(context: new BuildContext(current: this) { Root = isTop ? this : m_root!, IsTop = isTop });
+        /* TODO(2026-06-11T00:42:34): Implement stack-frame based rebuild. (Status: On-going)
+         * 
+         * INSPECTIONS:
+         * 	- Your inspections goes here...
+         */
+        BuildContext context = new BuildContext(current: this) { Root = isTop ? this : m_root!, IsTop = isTop };
+        context.LoadSnapshot(m_buildSnapshot);
+
+        BuildTree(context);
     }
 
     /// <summary>
@@ -108,6 +119,8 @@ public abstract class Island: Entity {
             if (!context.IsTop) {
                 context.CurrentIsland.Remove<DrawCalls>();
                 context.CurrentIsland.m_root = context.Root;
+
+                context.CurrentIsland.m_buildSnapshot = context.CreateBuildSnapshot();
             }
 
             if (context.CurrentIsland.m_chunkId == -1) {
@@ -143,6 +156,6 @@ public abstract class Island: Entity {
         }
 
         context.DropCurrentLevelStyles();
-        if(context.IsTop) m_isBuilded = true;
+        context.CurrentIsland.m_isBuilded = true;
     }
 }

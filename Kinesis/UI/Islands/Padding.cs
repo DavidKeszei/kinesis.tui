@@ -32,23 +32,22 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
     public Entity Content {
         set {
             if (value == null) return;
-            UIBox container = new UIBox {
+            Viewport container = new Viewport {
                 Name = (m_container ??= $"__padding__{Guid.CreateVersion7()}__"),
                 Content = value
             };
-
-            container.Remove<RenderComponent>();
 
             this.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = container;
             container.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
             Get<ContentComponent>()!.Content = container;
+            Rebuild();
         }
     }
 
     public Padding(): base(count: 7) {
         _ = base.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = base.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
+        _ = base.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
         _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
         _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
@@ -68,7 +67,7 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
                 Position pos = Get<Position>()!;
                 Scale scale = Get<Scale>()!;
 
-                UIBox container = tree.Visit<UIBox>(name: m_container)!;
+                Viewport container = tree.Visit<Viewport>(name: m_container)!;
                 scale.Inset = new Vec2(x: Get<Style>()!.AsInt, y: Get<Style>(1)!.AsInt);
 
                 Vec2 savedScale = scale.Value;

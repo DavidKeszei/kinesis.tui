@@ -50,6 +50,8 @@ public class UIText: Entity, ICopyable<BuildContext> {
         base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(StyleTag.FOREGROUND, null));
 
         base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(StyleTag.FONT_ATTR, TextDecoration.NONE));
+
+        Text = string.Empty;
     }
 
     public void Copy(ref BuildContext from) {

@@ -19,15 +19,10 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
     public static string Name { get => TYPE_NAME; }
 
     /// <summary>
-    /// This indicates on an axis, which is auto/default.
-    /// </summary>
-    public static float Auto { get => float.MinValue; }
-
-    /// <summary>
     /// Inset of the current <see cref="Scale"/> instance.
     /// </summary>
     /// <remarks>
-    /// Remark: This not a "user-defined" value on the get-side; this is calculated based on the <see cref="Maximum"/> and <see cref="Inset"/>.
+    /// <b>Remarks:</b> This not a "user-defined" value on the get-side; this is calculated based on the <see cref="Maximum"/> and <see cref="Inset"/>.
     /// </remarks>
     public Vec2 Value { get => Limit(); set => m_scale = value; }
 
@@ -79,7 +74,7 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
 
     public static bool IsDefault(Scale? instance) {
         if (instance == null) return false;
-        return (instance.m_scale.X == Auto || instance.m_scale.Y == Auto) && instance.m_max == null;
+        return (instance.m_scale.X == Vec2.Auto.X || instance.m_scale.Y == Vec2.Auto.Y) && instance.m_max == null;
     }
 
     private Vec2 Limit() {
@@ -92,8 +87,8 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
             /* 
              * TODO(2026-05-10T12:36): Revisit for better scale updating. (Cache current, calculated value)
              */
-            if (m_scale.X == Auto || result.X > parent.X) result.X = parent.X;
-            if (m_scale.Y == Auto || result.Y > parent.Y) result.Y = parent.Y;
+            if (m_scale.X == Vec2.Auto.X || result.X > parent.X) result.X = parent.X;
+            if (m_scale.Y == Vec2.Auto.Y || result.Y > parent.Y) result.Y = parent.Y;
 
             result.X -= m_inset.X;
             result.Y -= m_inset.Y;

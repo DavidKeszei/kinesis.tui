@@ -20,6 +20,8 @@ public class BoxRenderer: RenderComponent, IPoolable {
     /// </summary>
     /// <param name="buffer">Target buffer of the rendering. This can be smaller, than the requested scale.</param>
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+        if (buffer.Scale == Vec2.Zero) return;
+
         if(m_entityVersion != version) {
             m_entityVersion = version;
             CacheStyles(styles);

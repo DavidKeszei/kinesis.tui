@@ -44,7 +44,7 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
          * A border not has specific scale, always query the actual parent scale. (Scale.Auto indicates this -> float.MinValue)
          * This gives to it some flexiblity, when the scale of the parent occurs, like a stricker.
          */
-        Get<Scale>()!.Value = Vec2.One * Scale.Auto;
+        Get<Scale>()!.Value = Vec2.Auto;
     }
 }
 

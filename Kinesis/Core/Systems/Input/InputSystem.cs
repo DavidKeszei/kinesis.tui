@@ -25,7 +25,7 @@ internal class InputSystem: IDynamicSystem {
     private const int POOLING_TIME = 3;
 
     /// <summary>
-    /// Minimum time, when we think no input was happened and we fire that. (5ms)
+    /// Minimum time, when we think no input was happened and we fire that. (20ms)
     /// </summary>
     private const int DEAD_ZONE = 5;
 
@@ -48,37 +48,47 @@ internal class InputSystem: IDynamicSystem {
     /// Listen inputs from standard input.
     /// </summary>
     public void Run() {
-        if (m_backend == IInputBackend.ERR) return;
+        if (m_backend == IInputBackend.ERR) {
+            Console.Out.Write("[WARNING] No input device detected; no input received.\n");
+            return;
+        }
+
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
         float deadZoneTime = DEAD_ZONE;
+        float holdTime = .0f;
+
+        bool holdSent = false;
         InputAction lastAction = InputAction.PRESS;
 
         while (true) {
             DateTime now = DateTime.UtcNow;
 
             if (m_backend.ReadInput(out InputInfo info)) {
-                if (info.Key == '\0')
-                    continue;
-
                 /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
-                    if ((now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
+                    holdTime += (float)(now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds;
+
+                    if (holdTime >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
 
                         lastAction = InputAction.HOLD;
+                        holdSent = true;
+
                         JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: m_startInputInfo.isPress));
                     }
+
+                    Thread.Sleep(millisecondsTimeout: POOLING_TIME);
+                    continue;
                 }
+
                 /* 1.1 If not: do fast swap between the new & current keys */
-                else if (m_startInputInfo.Key != info.Key || m_startInputInfo.Modifier != info.Modifiers) {
-                    if (m_startInputInfo.When != TimeSpan.Zero) {
+                if (m_startInputInfo.When != TimeSpan.Zero) {
 
-                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
-                        deadZoneTime = DEAD_ZONE;
-                    }
-
-                    m_startInputInfo = (info.Key, info.Modifiers, now.TimeOfDay, info.IsPress);
+                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
+                    deadZoneTime = DEAD_ZONE;
                 }
+
+                m_startInputInfo = (info.Key, info.Modifiers, now.TimeOfDay, info.IsPress);
 
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
@@ -91,11 +101,16 @@ internal class InputSystem: IDynamicSystem {
             if (deadZoneTime <= 0) {
                 if (lastAction != InputAction.HOLD)
                     JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
+                else if(holdSent)
+                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: false));
 
                 m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
                 deadZoneTime = DEAD_ZONE;
                 lastAction = InputAction.PRESS;
+
+                holdTime = .0f;
+                holdSent = false;
                 continue;
             }
 

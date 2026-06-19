@@ -48,17 +48,16 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
                 return;
             }
 
-            UIBox container = new UIBox() {
+            Viewport container = new Viewport() {
                 Name = (m_progressIndicator ??= $"__progress_indicator_{Guid.CreateVersion7()}__"),
                 Content = value
             };
-
-            container.Remove<RenderComponent>();
 
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
             Get<ContentComponent>()!.Content = CreateContainer(container);
+            Rebuild();
         }
     }
 
@@ -67,7 +66,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// </summary>
     public ProgressBar(): base(count: 3) {
         _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
         m_filled = new Filler(color: RGB.White, character: '━');
         m_empty = new Filler(color: RGB.White with { A = 25 }, character: '━');
@@ -95,7 +94,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
          */ 	
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
-                Entity entity = tree.Visit<Entity>(name: m_progressIndicator)?
+                Entity entity = tree.Visit<Viewport>(name: m_progressIndicator)?
                                     .Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
 
                 int len = 0;

@@ -9,7 +9,7 @@ namespace Kinesis.Core;
 /// Represents a bunch of reusable <see cref="T"/> instances.
 /// </summary>
 /// <typeparam name="T">Type of the component.</typeparam>
-internal sealed class ComponentPool<T> where T: Component, IStaticType {
+public sealed class ComponentPool<T> where T: Component, IStaticType {
     private readonly static int s_preAllocationCount = 1024;
     private static ComponentPool<T> s_instance = null!;
 

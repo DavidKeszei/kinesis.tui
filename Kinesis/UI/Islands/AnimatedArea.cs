@@ -66,12 +66,10 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     public Entity Content {
         set {
             if (value == null) return;
-            UIBox box = new UIBox { Name = (s_box ??= $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
+            Viewport box = new Viewport { Name = (s_box ??= $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
 
             box.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
-
-            box.Remove<RenderComponent>();
 
             Get<ContentComponent>()!.Content = box;
 
@@ -83,6 +81,8 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
             if ((scale = value.Get<Scale>()) != null) {
                 _ = Attach<Scale>(scale, isUnique: true);
             }
+
+            Rebuild();
         }
     }
 
@@ -90,7 +90,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
                 if (m_state != AnimationState.Animate) return;
-                Entity content = tree.Visit<UIBox>(name: s_box)?
+                Entity content = tree.Visit<Viewport>(name: s_box)?
                                      .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
 
                 if(content == null) return;

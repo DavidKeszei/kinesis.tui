@@ -10,9 +10,9 @@ namespace Kinesis.Core;
 /// </summary>
 public readonly record struct InputMessage: IJobMessage {
     private readonly InputModifier m_modifiers = InputModifier.NONE;
-    private readonly InputAction m_action = InputAction.PRESS;
-
     private readonly char m_key = '\0';
+
+    private readonly InputAction m_action = InputAction.PRESS;
     private readonly bool m_isPressed = false;
 
     /// <summary>

@@ -40,12 +40,10 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
-        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
-        Console.Out.Write(m_title);
-
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
+        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
         m_consoleSourceInfoProvider = new ConsoleSourceInfo();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
@@ -119,10 +117,11 @@ public sealed partial class KinesisEngine: ISystemProvider {
             m_renderer.Run(calls: m_navigator.Current.Get<DrawCalls>()!);
 
             if (!firstRun) {
-                Vec2 safeArea = m_layoutInfo.Value.Scale - 1;
+                Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
                 m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else {
+                Console.Out.Write(m_title);
                 firstRun = false;
             }
         }

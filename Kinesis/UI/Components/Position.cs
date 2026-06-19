@@ -52,6 +52,6 @@ public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(n
 
     public static bool IsDefault(Position instance) {
         if (instance == null) return false;
-        return instance.m_offset == (Vec2.One * Scale.Auto) && instance.m_origin == null!;
+        return instance.m_offset == (Vec2.Auto) && instance.m_origin == null!;
     }
 }

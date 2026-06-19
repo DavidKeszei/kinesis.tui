@@ -33,6 +33,11 @@ public struct Vec2: IInterpolatable<Vec2> {
     /// </summary>
     public static Vec2 One { get => new Vec2(x: 1, y: 1); }
 
+    /// <summary>
+    /// Represent a "auto" value for the system. This means the the scale filling up the entire given space by the parent.
+    /// </summary>
+    public static Vec2 Auto { get => Vec2.One * float.MinValue; }
+
     public static Vec2 operator *(Vec2 vec, float amount) => new Vec2(x: vec.m_x * amount, y: vec.m_y * amount);
 
     public static Vec2 operator -(Vec2 vec, float amount) => new Vec2(x: vec.m_x - amount, y: vec.m_y - amount);

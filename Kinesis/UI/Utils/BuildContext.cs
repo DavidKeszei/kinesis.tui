@@ -16,6 +16,8 @@ namespace Kinesis.UI;
 /// </summary>
 public ref struct BuildContext {
     #region PREDEFINES
+    public const int STYLE_STACK_FRAME_LEN = 6;
+
     private const int POSITION = 0;
     private const int SCALE = 1;
 
@@ -115,6 +117,35 @@ public ref struct BuildContext {
         if ((m_flags & (1 << type)) != (1 << type)) {
             m_inheritanceTargets[type].Push(component);
             m_flags |= (byte)(1 << type);
+        }
+    }
+
+    /// <summary>
+    /// Create a new <see cref="BuildStackSnapshot"/> instance from the current state.
+    /// </summary>
+    /// <returns>Returns a <see cref="BuildStackSnapshot"/> instance.</returns>
+    internal readonly BuildStackSnapshot CreateBuildSnapshot() {
+        return new BuildStackSnapshot(
+            Scale: m_inheritanceTargets[SCALE].TryPeek(out Component? scale) ? (Scale)scale : null!,
+            Position: m_inheritanceTargets[POSITION].TryPeek(out Component? position) ? (Position)position : null!,
+            Styles: [
+                m_inheritanceTargets[BACKGROUND].TryPeek(out Component? bg) ? (Style)bg : null!,
+                m_inheritanceTargets[FOREGROUND].TryPeek(out Component? fg) ? (Style)fg : null!,
+                m_inheritanceTargets[FONT_STYLE].TryPeek(out Component? fontStyle) ? (Style)fontStyle : null!,
+            ]
+        );
+    }
+
+    internal readonly void LoadSnapshot(BuildStackSnapshot snapshot) {
+        if (snapshot == null!) return;
+
+        if(snapshot.Scale != null)  m_inheritanceTargets[SCALE].Push(item: snapshot.Scale);
+        if(snapshot.Position != null!) m_inheritanceTargets[POSITION].Push(item: snapshot.Position);
+
+        for (int i = BACKGROUND; i < PADDING; ++i) {
+            if (snapshot.Styles[i - BACKGROUND] == null) continue;
+
+            m_inheritanceTargets[i].Push(snapshot.Styles[i - BACKGROUND]);
         }
     }
 

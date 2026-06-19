@@ -130,8 +130,14 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
 
         return instance.m_union.Tag switch {
             StyleTag.BACKGROUND or StyleTag.FOREGROUND => instance.m_union.Color == null,
+
             StyleTag.PADDING => instance.m_union.INumber == int.MinValue,
             StyleTag.FONT_ATTR => instance.m_union.Flag == TextDecoration.NONE,
+
+            StyleTag.BORDER_CHAR_TOP_RIGHT or StyleTag.BORDER_CHAR_TOP_LEFT or StyleTag.BORDER_CHAR_BOTTOM_RIGHT or
+            StyleTag.BORDER_CHAR_BOTTOM_LEFT or StyleTag.BORDER_CHAR_HORIZONTAL or StyleTag.BORDER_CHAR_VERTICAL or
+            StyleTag.FILLER => instance.m_union.Character == '\0',
+
             _ => false
         };
     }

@@ -26,8 +26,18 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// </summary>
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
-    /// <returns>Return a <see cref="ANSIChar"/> reference.</returns>
-    public ref ANSIChar this[int x, int y] { get { unsafe { return ref m_buffer[x + (int)m_startScale.X * y]; } } }
+    /// <returns>Return a <see cref="ANSIChar"/> struct by reference.</returns>
+    /// <exception cref="IndexOutOfRangeException"/>
+    public ref ANSIChar this[int x, int y] { 
+        get {
+            if ((x < 0 || y < 0) || (x >= m_startScale.X || y >= m_startScale.Y))
+                throw new IndexOutOfRangeException(message: $"The {nameof(ConsoleBuffer)} was out of bound by the paramters. (Parameter: x = {x}; y = {y})");
+
+            unsafe { 
+                return ref m_buffer[x + (int)m_startScale.X * y]; 
+            }
+        }
+    }
 
     /// <summary>
     /// Create new <see cref="ConsoleBuffer"/> with specific dimension.
@@ -93,17 +103,16 @@ internal readonly struct ConsoleBuffer: IDisposable {
          * INSPECTIONS:
          * 	- The position & scale values of the Canvas can leads to the solution.
          */
-
         Vec2 start = from;
 
         if (from.X < 0) scale.X += from.X;
-        else if (from.X + scale.X >= buffer.Scale.X) scale.X = buffer.Scale.X - from.X;
+        else if (from.X + scale.X >= buffer.Scale.X) scale.X = buffer.Scale.X - from.X; // <- This mostly used by the internal Reallocate()
 
         if (from.Y < 0) scale.Y += from.Y;
-        else if (from.Y + scale.Y >= buffer.Scale.Y) scale.Y = buffer.Scale.Y - from.Y;
+        else if (from.Y + scale.Y >= buffer.Scale.Y) scale.Y = buffer.Scale.Y - from.Y; // <- This mostly used by the internal Reallocate()
 
-        from.X = float.Clamp(from.X, 0, buffer.Scale.X - 1);
-        from.Y = float.Clamp(from.Y, 0, buffer.Scale.Y - 1);
+        from.X = float.Clamp(from.X, 0, buffer.Scale.X);
+        from.Y = float.Clamp(from.Y, 0, buffer.Scale.Y);
 
         return new Canvas(ref buffer, scale, from, start);
     }

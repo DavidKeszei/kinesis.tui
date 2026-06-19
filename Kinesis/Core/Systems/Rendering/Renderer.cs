@@ -19,6 +19,8 @@ internal sealed class Renderer {
 
     private const float FPS_CONVERT = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
+
+    private static readonly Vec2 USE_FULLSCREEN_AS_LIMIT = Vec2.One * float.MinValue;
     #endregion
 
     private ConsoleBuffer m_backbuffer = default;
@@ -140,13 +142,22 @@ internal sealed class Renderer {
     }
 
     private bool InBuffer(Vec2 position, Vec2 scale) {
-        return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
+        return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
                (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
     }
 
+    /// <summary>
+    /// Create a safe area from the entire scale based on the scale and position.
+    /// </summary>
+    /// <param name="scale">Scale of the <see cref="Entity"/>.</param>
+    /// <param name="position">Position of the <see cref="Entity"/>.</param>
+    /// <returns>Returns a safe area scale.</returns>
     private Vec2 SetSafeArea(Vec2 scale, Vec2 position) {
-        if ((scale.X + position.X) >= m_backbuffer.Scale.X) scale.X -= 1;
-        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) scale.Y -= 1;
+        if ((scale.X + position.X) >= m_backbuffer.Scale.X) 
+            scale.X -= (scale.X + position.X) - (m_backbuffer.Scale.X - 1);
+
+        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) 
+            scale.Y -= (scale.Y + position.Y) - (m_backbuffer.Scale.Y - 1);
 
         return scale;
     }

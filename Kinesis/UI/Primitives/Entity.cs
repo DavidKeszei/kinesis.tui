@@ -41,9 +41,12 @@ public class Entity: IDisposable {
     /// <summary>
     /// Create a new <see cref="Entity"/> instance.
     /// </summary>
-    public Entity(int count = MAX_COMPONENT_COUNT) {
-        m_version = 0;
+    public Entity(int count = MAX_COMPONENT_COUNT): this() {
         m_components = ArrayPool<Component>.Shared.Rent(minimumLength: count);
+    }
+
+    protected Entity() {
+        m_version = 0;
 
         m_emptySpaces = new Queue<int>(capacity: 16);
         m_uniqueComponents = new Dictionary<int, int>();
@@ -67,7 +70,10 @@ public class Entity: IDisposable {
                 return false;
         }
 
-        if (!hasEmptySlot) slot = m_lastEntityIndex++;
+        if (!hasEmptySlot) {
+            if (m_lastEntityIndex == m_components.Length) return false;
+            slot = m_lastEntityIndex++;
+        }
 
         this.m_components[slot] = component;
         ++m_version;
@@ -148,7 +154,7 @@ public class Entity: IDisposable {
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IPoolable, new() {
         _ = this.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = this.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
+        _ = this.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
         _ = this.Attach<T>(ComponentPool<T>.Instance.Rent<T>(), isUnique: true);
         _ = this.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));

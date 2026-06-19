@@ -42,15 +42,14 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
 
-                boxes.Add(item: new UIBox {
+                boxes.Add(item: new Viewport {
                     Name = m_childIds[i],
                     Content = value[i],
                 });
 
-                boxes[^1].Remove<RenderComponent>();
                 float max = m_direction == Axis.X ? 
-                                value[i].Get<Scale>()?.Value.Y ?? Scale.Auto :
-                                value[i].Get<Scale>()?.Value.X ?? Scale.Auto;
+                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.X:
+                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.Y;
 
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
@@ -59,6 +58,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 Name = m_list,
                 Content = boxes
             };
+
+            Rebuild();
         }
     }
 
@@ -91,7 +92,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
     public FlexibleLayout(): base(count: 3) {
         _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One * Scale.Auto), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -115,7 +116,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 float usedSpace = .0f;
 
                 for (int i = 0; i < m_childCount; ++i) {
-                    UIBox box = tree.Visit<UIBox>(name: m_childIds[i])!;
+                    Viewport box = tree.Visit<Viewport>(name: m_childIds[i])!;
 
                     SetOffset(position: box.Get<Position>()!, usedSpace);
                     error = SetRatioScale(box: box.Get<Scale>()!, scale: (ratio * m_ratios![i]) + error, isLast: i == m_childCount - 1, ref usedSpace);
@@ -162,12 +163,12 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private Vec2 GetCurrentScale(Scale scale, Vec2 max) {
         return m_direction switch {
             Axis.X => Vec2.Zero with {
-                X = (scale.Value.X == Scale.Auto || scale.Value.X > max.X ? max.X : scale.Value.X),
+                X = (scale.Value.X == Vec2.Auto.X || scale.Value.X > max.X ? max.X : scale.Value.X),
                 Y = (scale.Value.Y < m_maxCrossAxisValue ? m_maxCrossAxisValue : scale.Value.Y)
             },
             Axis.Y => Vec2.Zero with {
                 X = (scale.Value.X < m_maxCrossAxisValue ? m_maxCrossAxisValue : scale.Value.X),
-                Y = (scale.Value.Y == Scale.Auto || scale.Value.Y > max.Y ? max.Y : scale.Value.Y)
+                Y = (scale.Value.Y == Vec2.Auto.Y || scale.Value.Y > max.Y ? max.Y : scale.Value.Y)
             },
             _ => Vec2.One
         };

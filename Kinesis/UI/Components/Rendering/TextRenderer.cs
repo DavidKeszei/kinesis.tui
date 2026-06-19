@@ -61,14 +61,16 @@ public class TextRenderer(): RenderComponent, IPoolable {
         m_len = 0;
         base.Reset();
 
-        ArrayPool<char>.Shared.Return(m_buffer, true);
-        m_buffer = null!;
+        if (m_buffer != null) {
+            ArrayPool<char>.Shared.Return(m_buffer, true);
+            m_buffer = null!;
+        }
 
         ComponentPool<TextRenderer>.Instance.Return(this);
     }
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
-        if (buffer.Scale.Y == 0 || buffer.Scale.X == 0)
+        if (buffer.Scale == Vec2.Zero)
             return;
 
         if (m_entityVersion != version) {
