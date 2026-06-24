@@ -10,8 +10,8 @@ namespace Kinesis.Core.Rendering;
 /// <summary>
 /// Represent a helper component in the rendering.
 /// </summary>
-public abstract class RenderComponent: Component, IStaticType {
-    private const string TYPE_NAME = "RenderComponent";
+public abstract class RenderComponent: Component, IStaticType, IPoolable {
+    private const string TYPE_NAME = nameof(RenderComponent);
 
     protected readonly Dictionary<StyleTag, Style> m_cache = null!;
     protected int m_entityVersion = 0;
@@ -28,6 +28,11 @@ public abstract class RenderComponent: Component, IStaticType {
 
     protected RenderComponent(): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) 
         => m_cache = new Dictionary<StyleTag, Style>(capacity: 8);
+
+    public virtual void Reset() {
+        m_cache.Clear();
+        m_entityVersion = 0;
+    }
 
     /// <summary>
     /// Render the component to the screen.

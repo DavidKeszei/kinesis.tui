@@ -13,6 +13,8 @@ namespace Kinesis.Core.Rendering;
 internal sealed class BorderRenderer: RenderComponent {
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+        if (buffer.Scale == Vec2.Zero) return;
+
         if (m_entityVersion != version) {
             m_entityVersion = version;
             CacheStyles(styles);
@@ -33,6 +35,11 @@ internal sealed class BorderRenderer: RenderComponent {
                 cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
             }
         }
+    }
+
+    public override void Reset() {
+        base.Reset();
+        ComponentPool<RenderComponent>.Instance.Return(this);
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

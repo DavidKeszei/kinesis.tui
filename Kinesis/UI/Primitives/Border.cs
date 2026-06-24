@@ -13,23 +13,23 @@ namespace Kinesis.UI;
 /// </summary>
 public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
-            value.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = value;
+            value.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = value;
         }
     }
 
-    public RGB Foreground { get => GetComponent<Style>()!.AsRGB; set => GetComponent<Style>()!.AsRGB = value; }
+    public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
 
     public BorderDecoration Decoration { set => value.CreateStyles(to: this); }
 
     public Border() {
         InitRenderEntityWith<BorderRenderer>();
 
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
-        _ = AttachComponent<Style>(component: Style.CreateFromRGB(StyleTag.FOREGROUND, null!));
+        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null)));
 
         BorderDecoration.None.CreateStyles(to: this, init: true);
     }
@@ -44,7 +44,7 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
          * A border not has specific scale, always query the actual parent scale. (Scale.Auto indicates this -> float.MinValue)
          * This gives to it some flexiblity, when the scale of the parent occurs, like a stricker.
          */
-        GetComponent<Scale>()!.Value = Vec2.One * Scale.Auto;
+        Get<Scale>()!.Value = Vec2.Auto;
     }
 }
 
@@ -139,24 +139,23 @@ public readonly struct BorderDecoration {
 
     internal void CreateStyles(Border to, bool init = false) {
         if (init) {
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_TOP_RIGHT, m_topRight));
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_TOP_LEFT, m_topLeft));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_TOP_RIGHT, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_TOP_LEFT, ' ')));
 
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_BOTTOM_RIGHT, m_bottomRight));
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_BOTTOM_LEFT, m_bottomLeft));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_BOTTOM_RIGHT, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_BOTTOM_LEFT, ' ')));
 
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_HORIZONTAL, m_horizontal));
-            to.AttachComponent<Style>(component: Style.CreateFromChar(StyleTag.BORDER_CHAR_VERTICAL, m_vertical));
-            return;
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_HORIZONTAL, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(StyleTag.BORDER_CHAR_VERTICAL, ' ')));
         }
 
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_TOP_RIGHT - OFFSET)!.AsCharacter = m_topRight;
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_TOP_LEFT - OFFSET)!.AsCharacter = m_topLeft;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_TOP_RIGHT - OFFSET)!.AsCharacter = m_topRight;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_TOP_LEFT - OFFSET)!.AsCharacter = m_topLeft;
 
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_BOTTOM_RIGHT - OFFSET)!.AsCharacter = m_bottomRight;
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_BOTTOM_LEFT - OFFSET)!.AsCharacter = m_bottomLeft;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_BOTTOM_RIGHT - OFFSET)!.AsCharacter = m_bottomRight;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_BOTTOM_LEFT - OFFSET)!.AsCharacter = m_bottomLeft;
 
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_HORIZONTAL - OFFSET)!.AsCharacter = m_horizontal;
-        to.GetComponent<Style>(index: (int)StyleTag.BORDER_CHAR_VERTICAL - OFFSET)!.AsCharacter = m_vertical;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_HORIZONTAL - OFFSET)!.AsCharacter = m_horizontal;
+        to.Get<Style>(index: (int)StyleTag.BORDER_CHAR_VERTICAL - OFFSET)!.AsCharacter = m_vertical;
     }
 }

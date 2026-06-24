@@ -16,7 +16,7 @@ namespace Kinesis.UI;
 /// </summary>
 /// <typeparam name="T">Target type of the animation on the <see cref="Entity"/>.</typeparam>
 public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T> {
-    private readonly string s_box = string.Empty;
+    private string s_box = null!;
 
     private readonly Func<Entity, T> m_selector = default!;
     private readonly Action<Entity, T> m_applier = default!;
@@ -64,32 +64,34 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     public bool IsPeriodic { init => m_isPeriodic = value; }
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
-            UIBox box = new UIBox { Name = (s_box = $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
+            Viewport box = new Viewport { Name = (s_box ??= $"__{nameof(AnimatedArea<>)}__{Guid.CreateVersion7()}__"), Content = value };
 
-            box.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
+            box.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
 
-            box.RemoveComponent<RenderComponent>();
+            Get<ContentComponent>()!.Content = box;
 
             /*
              * The scale contstraints is different here: the AnimatedArea<TSelf> is not animate a value on the parent;
              * the class animates the given content on the given scale/area. 
              */
             Scale? scale = null!;
-            if ((scale = value.GetComponent<Scale>()) != null) {
-                _ = AttachComponent<Scale>(scale, isUnique: true);
+            if ((scale = value.Get<Scale>()) != null) {
+                _ = Attach<Scale>(scale, isUnique: true);
             }
+
+            Rebuild();
         }
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_state != AnimationState.Animate) return;
-                Entity content = tree.Visit<UIBox>(name: s_box)?
-                                     .GetComponent<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
+                Entity content = tree.Visit<Viewport>(name: s_box)?
+                                     .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
 
                 if(content == null) return;
                 long currentTimeStamp = Stopwatch.GetTimestamp();
@@ -115,7 +117,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
                 if (m_state == AnimationState.Animate && time >= 1f)
                     m_state = AnimationState.End;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 

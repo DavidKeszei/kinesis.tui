@@ -62,16 +62,18 @@ public struct RGB: IEquatable<RGB>, IInterpolatable<RGB> {
         m_alpha = a;
     }
 
-    public unsafe RGB(uint color) {
-        if (BitConverter.IsLittleEndian) {
-            byte* asArray = (byte*)(void*)&color;
+    public RGB(uint color) {
+        unsafe {
+            if (BitConverter.IsLittleEndian) {
+                byte* asArray = (byte*)(void*)&color;
 
-            m_red = asArray[3];
-            m_green = asArray[2];
+                m_red = asArray[3];
+                m_green = asArray[2];
 
-            m_blue = asArray[1];
-            m_alpha = asArray[0];
-            return;
+                m_blue = asArray[1];
+                m_alpha = asArray[0];
+                return;
+            }
         }
 
         m_color = color;

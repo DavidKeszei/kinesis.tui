@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a flex-like space-managert on one direction.
 /// </summary>
 public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLayout<List<uint>> {
-    private static readonly string s_list = "__flexLayout__";
+    private string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
 
     private List<string> m_childIds = null!;
     private List<uint> m_ratios = null!;
@@ -26,37 +26,40 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private Axis m_direction = Axis.X;
 
     public List<Entity> Content {
-        init {
+        set {
             if (value == null || value.Count == 0)
                 return;
 
             List<Entity> boxes = new List<Entity>(capacity: value.Count);
             m_childIds ??= new List<string>(capacity: value.Count);
+            m_childIds.Clear();
+
             m_childCount = value.Count;
 
             for (int i = 0; i < value.Count; ++i) {
-                Scale? scale = value[i].GetComponent<Scale>();
+                Scale? scale = value[i].Get<Scale>();
 
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
 
-                boxes.Add(item: new UIBox {
+                boxes.Add(item: new Viewport {
                     Name = m_childIds[i],
                     Content = value[i],
                 });
 
-                boxes[^1].RemoveComponent<RenderComponent>();
                 float max = m_direction == Axis.X ? 
-                                value[i].GetComponent<Scale>()?.Value.Y ?? Scale.Auto :
-                                value[i].GetComponent<Scale>()?.Value.X ?? Scale.Auto;
+                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.X:
+                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.Y;
 
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = new UIStack {
-                Name = s_list,
+            Get<ContentComponent>()!.Content = new UIStack {
+                Name = m_list,
                 Content = boxes
             };
+
+            Rebuild();
         }
     }
 
@@ -87,9 +90,9 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     /// </summary>
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
-    public FlexibleLayout() {
-        _ = AttachComponent<Position>(component: new Position(), isUnique: true);
-        _ = AttachComponent<Scale>(component: new Scale(scale: Vec2.One * Scale.Auto), isUnique: true);
+    public FlexibleLayout(): base(count: 3) {
+        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -97,14 +100,14 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
         context.SetPivot<Position>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         if (m_ratios == null || m_ratios.Count == 0) CreateDefaultRatios();
 
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_childCount == 0 || (m_previousScale.X == message.Scale.X && m_previousScale.Y == message.Scale.Y)) return;
 
-                Scale scale = GetComponent<Scale>()!;
+                Scale scale = Get<Scale>()!;
                 Vec2 currentScale = GetCurrentScale(scale, message.Scale);
 
                 float ratio = CalculateRatio(currentScale);
@@ -113,15 +116,15 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 float usedSpace = .0f;
 
                 for (int i = 0; i < m_childCount; ++i) {
-                    UIBox box = tree.Visit<UIBox>(name: m_childIds[i])!;
+                    Viewport box = tree.Visit<Viewport>(name: m_childIds[i])!;
 
-                    SetOffset(position: box.GetComponent<Position>()!, usedSpace);
-                    error = SetRatioScale(box: box.GetComponent<Scale>()!, scale: (ratio * m_ratios![i]) + error, isLast: i == m_childCount - 1, ref usedSpace);
+                    SetOffset(position: box.Get<Position>()!, usedSpace);
+                    error = SetRatioScale(box: box.Get<Scale>()!, scale: (ratio * m_ratios![i]) + error, isLast: i == m_childCount - 1, ref usedSpace);
                 }
 
                 m_previousScale = message.Scale;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 
@@ -160,12 +163,12 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private Vec2 GetCurrentScale(Scale scale, Vec2 max) {
         return m_direction switch {
             Axis.X => Vec2.Zero with {
-                X = (scale.Value.X == Scale.Auto || scale.Value.X > max.X ? max.X : scale.Value.X),
+                X = (scale.Value.X == Vec2.Auto.X || scale.Value.X > max.X ? max.X : scale.Value.X),
                 Y = (scale.Value.Y < m_maxCrossAxisValue ? m_maxCrossAxisValue : scale.Value.Y)
             },
             Axis.Y => Vec2.Zero with {
                 X = (scale.Value.X < m_maxCrossAxisValue ? m_maxCrossAxisValue : scale.Value.X),
-                Y = (scale.Value.Y == Scale.Auto || scale.Value.Y > max.Y ? max.Y : scale.Value.Y)
+                Y = (scale.Value.Y == Vec2.Auto.Y || scale.Value.Y > max.Y ? max.Y : scale.Value.Y)
             },
             _ => Vec2.One
         };

@@ -13,47 +13,47 @@ namespace Kinesis.UI;
 /// and the root visual style (colors, decorations) for its child hierarchy.
 /// </summary>
 public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildContext> {
-    private readonly string m_scaffoldName = string.Empty;
+    private string m_scaffoldName = null!;
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
-            UIBox scaffold = new UIBox() { 
-                Name = (m_scaffoldName = $"__scaffold_{Guid.CreateVersion7()}__"),
+            Viewport scaffold = new Viewport() { 
+                Name = (m_scaffoldName ??= $"__scaffold_{Guid.CreateVersion7()}__"),
                 Scale = Vec2.Zero,
                 Content = value
             };
-            scaffold.RemoveComponent<RenderComponent>();
 
-            scaffold.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
+            scaffold.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
+
+            Get<ContentComponent>()!.Content = scaffold;
+            Rebuild();
         }
     }
 
     /// <summary>
     /// Background at the root level.
     /// </summary>
-    public RGB Background { init => GetComponent<Style>(index: 0)!.AsRGB = value; }
+    public RGB Background { init => Get<Style>(index: 0)!.AsRGB = value; }
 
     /// <summary>
     /// Foreground at the root level.
     /// </summary>
-    public RGB Foreground { init => GetComponent<Style>(index: 1)!.AsRGB = value; }
+    public RGB Foreground { init => Get<Style>(index: 1)!.AsRGB = value; }
 
     /// <summary>
     /// Text-decoration at the root level.
     /// </summary>
-    public TextDecoration TextDecoration { init => GetComponent<Style>(index: 2)!.AsAttribute = value; }
+    public TextDecoration TextDecoration { init => Get<Style>(index: 2)!.AsAttribute = value; }
 
-    public Scaffold() {
-        _ = AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
-        _ = AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
+    public Scaffold(): base(count: 4) {
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)));
 
-        _ = AttachComponent<Style>(component: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE));
-
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.UP });
-        _ = AttachComponent<Hierarchy>(component: new Hierarchy() { Direction = ConnectionDirection.DOWN });
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<TextDecoration>(tag: StyleTag.FONT_ATTR, value: TextDecoration.NONE)));
+        _ = Attach<ContentComponent>(component: ComponentPool<ContentComponent>.Instance.Rent<ContentComponent>(), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -63,12 +63,12 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
         context.Inherit<Style>(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, TextDecoration.NONE), index: 2);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
-                tree.Visit<UIBox>(name: m_scaffoldName)?.Scale = message.Scale;
+            On = (message, ref readonly tree) => {
+                tree.Visit<Viewport>(name: m_scaffoldName)?.Scale = message.Scale;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 }

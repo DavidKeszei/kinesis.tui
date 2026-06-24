@@ -11,17 +11,16 @@ namespace Kinesis.UI;
 /// Represents a status indicator element with numeric indicator.
 /// </summary>
 public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<Entity> {
-    private string m_progressEmpty = string.Empty;
-    private string m_progressFilled = string.Empty;
+    private string m_progressEmpty = null!;
+    private string m_progressFilled = null!;
 
     private readonly Filler m_filled = default;
     private readonly Filler m_empty = default;
 
     private readonly Action<float, Entity> m_onUpdate = null!;
-    private string m_progressIndicator = string.Empty;
+    private string m_progressIndicator = null!;
 
-    private float m_prePercent = -1.0f;
-    private float m_percent = .0f;
+    private float m_percent = -.01f;
 
     /// <summary>
     /// Decoration of the filled bar of the <see cref="ProgressBar"/>.
@@ -43,103 +42,111 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Setting up the loading indicator of the <see cref="ProgressBar"/>.
     /// </summary>
     public Entity Content {
-        init {
-            if (value == null || value.GetComponent<Scale>() == null) return;
+        set {
+            if (value == null || value.Get<Scale>() == null) {
+                Get<ContentComponent>()!.Content = CreateContainer(null!);
+                return;
+            }
 
-            UIBox container = new UIBox() {
-                Name = (m_progressIndicator = $"__progress_indicator_{Guid.CreateVersion7()}__"),
+            Viewport container = new Viewport() {
+                Name = (m_progressIndicator ??= $"__progress_indicator_{Guid.CreateVersion7()}__"),
                 Content = value
             };
 
-            container.RemoveComponent<RenderComponent>();
+            container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
-            container.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
+            Get<ContentComponent>()!.Content = CreateContainer(container);
+            Rebuild();
         }
     }
 
     /// <summary>
     /// Create a new <see cref="ProgressBar"/> instance.
     /// </summary>
-    public ProgressBar() {
-        _ = AttachComponent<Position>(new Position(), true);
-        _ = AttachComponent<Scale>(new Scale(scale: Vec2.One * Scale.Auto), true);
+    public ProgressBar(): base(count: 3) {
+        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        m_filled = new Filler() { Character = '━', Color = RGB.White };
-        m_empty = new Filler() { Character = '━', Color = RGB.White with { A = 25 } };
+        m_filled = new Filler(color: RGB.White, character: '━');
+        m_empty = new Filler(color: RGB.White with { A = 25 }, character: '━');
+
+        Content = null!;
     }
 
     public void Copy(ref BuildContext context) {
         context.SetPivot<Position>(this);
         context.SetPivot<Scale>(this);
 
-        GetComponent<Scale>()!.ChangeAxisValue(value: 1, axis: Axis.Y);
+        Get<Scale>()!.ChangeAxisValue(value: 1, axis: Axis.Y);
     }
 
     /// <summary>
     /// Update the underlying <paramref name="percent"/>.
     /// </summary>
     /// <param name="percent">New value of the percent.</param>
-    public void Update(float percent) 
-        => m_percent = float.Clamp(percent, min: .0f, max: 100f);
+    public void Update(float percent) => m_percent = float.Clamp(percent, min: .0f, max: 100f);
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         /* TODO(2026-05-21T19:00:32): Add chance to change the loading text to any loading animation.
          * 
          * State: Done✅
          */ 	
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
-                if (m_percent == m_prePercent) return;
-                Entity entity = tree.Visit<Entity>(name: m_progressIndicator)?
-                                    .GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
+            On = (message, ref readonly tree) => {
+                Entity entity = tree.Visit<Viewport>(name: m_progressIndicator)?
+                                    .Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!;
 
                 int len = 0;
                 if (entity != null) {
                     m_onUpdate?.Invoke(m_percent, entity);
-                    len = (int)entity.GetComponent<Scale>()!.Value.X + 1;
+                    len = (int)entity.Get<Scale>()!.Value.X + 1;
                 }
 
                 UIBox filled = tree.Visit<UIBox>(name: m_progressFilled)!;
                 UIBox empty = tree.Visit<UIBox>(name: m_progressEmpty)!;
 
+                empty.Filler  = m_empty;
+                filled.Filler = m_filled;
+
                 if (len > 0) {
 
-                    empty.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
-                    empty.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
+                    empty.Get<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    empty.Get<Position>()!.Relative = new Vec2(x: len, y: 0);
 
-                    filled.GetComponent<Scale>()!.Inset = new Vec2(x: len, y: 0);
-                    filled.GetComponent<Position>()!.Relative = new Vec2(x: len, y: 0);
+                    filled.Get<Scale>()!.Inset = new Vec2(x: len, y: 0);
+                    filled.Get<Position>()!.Relative = new Vec2(x: len, y: 0);
                 }
 
-                float x = empty.GetComponent<Scale>()!.Value.X;
+                float x = empty.Get<Scale>()!.Value.X;
 
                 /* Percent + Text length + Empty Space -> This makes the render flexible & correct */
-                filled.GetComponent<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
-                m_prePercent = m_percent;
+                filled.Get<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
             },
-            Content = CreateContainer()
+            Content = Get<ContentComponent>()?.Content ?? null!
         };
     }
 
-    private UIBox CreateContainer() {
-        UIBox box = new UIBox {
-            Content = new UIStack {
+    private UIBox CreateContainer(Entity content) {
+        UIBox box = new UIBox() {
+            Content = new UIStack() {
                 Content = [
-                        new UIBox {
-                            Name = (m_progressEmpty = $"__progress_empty_{Guid.CreateVersion7()}__"),
+                        new UIBox() {
+                            Name = (m_progressEmpty ??= $"__progress_empty_{Guid.CreateVersion7()}__"),
+                            Background = RGB.Transparent,
                             Filler = m_empty
                         },
-                        new UIBox {
-                            Name = (m_progressFilled = $"__progress_filled_{Guid.CreateVersion7()}__"),
+                        new UIBox() {
+                            Name = (m_progressFilled ??= $"__progress_filled_{Guid.CreateVersion7()}__"),
+                            Background = RGB.Transparent,
                             Filler = m_filled
                         },
-                        GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached ?? null!
+                        content
                     ]
             }
         };
 
-        box.RemoveComponent<RenderComponent>();
+        box.Remove<RenderComponent>();
         return box;
     }
 }

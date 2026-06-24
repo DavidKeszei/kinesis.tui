@@ -4,4 +4,8 @@ using System.Text;
 
 namespace Kinesis.Core;
 
-public record struct InputInfo(InputModifier Modifiers, char Key, bool IsPress);
+public enum JobRequestIntent {
+    ACTIVE,
+    SUSPEND,
+    REMOVE
+}

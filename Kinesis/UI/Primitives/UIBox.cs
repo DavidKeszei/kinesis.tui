@@ -16,38 +16,41 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     /// <summary>
     /// Size of the <see cref="UIBox"/>.
     /// </summary>
-    public Vec2 Scale { get => base.GetComponent<Scale>()!.Value; set => base.GetComponent<Scale>()!.Value = value; }
+    public Vec2 Scale { get => base.Get<Scale>()!.Value; set => base.Get<Scale>()!.Value = value; }
 
     /// <summary>
     /// Background color of the <see cref="UIBox"/>.
     /// </summary>
-    public RGB Background { get => base.GetComponent<Style>()!.AsRGB; set => base.GetComponent<Style>()!.AsRGB = value; }
+    public RGB Background { get => base.Get<Style>()!.AsRGB; set => base.Get<Style>()!.AsRGB = value; }
 
     /// <summary>
     /// Filler character inside the box.
     /// </summary>
-    public Filler Filler { init => value.ToComponents(this); }
+    public Filler Filler { set => value.ToComponents(this); }
 
     /// <summary>
     /// Attached <see cref="Entity"/> instance as child.
     /// </summary>
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
-            _ = base.GetComponent<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;
-            _ = value.GetComponent<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
+            _ = base.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = value;
+            _ = value.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
         }
     }
 
-    public UIBox() {
+    /// <summary>
+    /// Create an <see cref="UIBox"/> instance.
+    /// </summary>
+    public UIBox(): base(count: 8) {
         InitRenderEntityWith<BoxRenderer>();
 
-        _ = base.AttachComponent<Hierarchy>(new Hierarchy() { Direction = ConnectionDirection.DOWN });
-        _ = base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: null!));
+        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
 
-        _ = base.AttachComponent<Style>(component: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: null!));
-        _ = base.AttachComponent<Style>(component: Style.CreateFromChar(tag: StyleTag.FILLER, chr: ' '));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(tag: StyleTag.FILLER, value: ' ')));
     }
 
     public void Copy(ref BuildContext from) {
@@ -63,9 +66,9 @@ public readonly struct Filler {
     private readonly RGB m_foreground = RGB.Transparent;
     private readonly char m_character = ' ';
 
-    public readonly RGB Color { get => m_foreground; init => m_foreground = value; }
+    public readonly RGB Color { get => m_foreground; }
 
-    public readonly char Character { get => m_character; init => m_character = value; }
+    public readonly char Character { get => m_character; }
 
     public Filler(RGB color, char character) {
         m_character = character;
@@ -73,7 +76,7 @@ public readonly struct Filler {
     }
 
     public void ToComponents(UIBox box) {
-        box.GetComponent<Style>(index: 1)!.AsRGB = m_foreground;
-        box.GetComponent<Style>(index: 2)!.AsCharacter = m_character;
+        box.Get<Style>(index: 1)!.AsRGB = m_foreground;
+        box.Get<Style>(index: 2)!.AsCharacter = m_character;
     }
 }

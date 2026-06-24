@@ -2,11 +2,18 @@
 using Kinesis.Native;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis.Native;
+
+/* TODO(2026-06-16T01:50:54): Change implementation of the input at Windows side.
+ * 
+ * INSPECTIONS:
+ * 	- Your inspections goes here...
+ */ 	
 
 /// <summary>
 /// Represents a Windows specific console information source.

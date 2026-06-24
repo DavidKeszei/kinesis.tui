@@ -1,4 +1,5 @@
-﻿using Kinesis.Core.Rendering;
+﻿using Kinesis.Core;
+using Kinesis.Core.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -12,13 +13,15 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a component, which can drawing a box to the screen.
 /// </summary>
-public class BoxRenderer: RenderComponent {
+public class BoxRenderer: RenderComponent, IPoolable {
 
     /// <summary>
     /// Render a box to the specific <paramref name="buffer"/> area.
     /// </summary>
     /// <param name="buffer">Target buffer of the rendering. This can be smaller, than the requested scale.</param>
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
+        if (buffer.Scale == Vec2.Zero) return;
+
         if(m_entityVersion != version) {
             m_entityVersion = version;
             CacheStyles(styles);
@@ -39,13 +42,18 @@ public class BoxRenderer: RenderComponent {
                 }
                 else {
                     ch.Background = RGB.Blend(top: bg.AsRGB, bottom: ch.Background);
-                    ch.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                    ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
 
                     if (!isEmptyFiller) 
                         ch.Character = m_cache[StyleTag.FILLER].AsCharacter;
                 }
             }
         }
+    }
+
+    public override void Reset() {
+        base.Reset();
+        ComponentPool<BoxRenderer>.Instance.Return(this);
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

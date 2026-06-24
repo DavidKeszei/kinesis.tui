@@ -85,7 +85,6 @@ internal class RingBuffer<T> {
     public RingBufferSnapshot<T> GetEnumerator() {
         while(Interlocked.CompareExchange(ref m_interlock, TRUE, FALSE) != FALSE);
 
-        _ = Interlocked.Exchange(ref m_interlock, TRUE);
         RingBufferSnapshot<T> snapshot = new RingBufferSnapshot<T>(buffer: m_buffer.AsSpan()[..m_count]);
         _ = Interlocked.Exchange(ref m_interlock, FALSE);
 

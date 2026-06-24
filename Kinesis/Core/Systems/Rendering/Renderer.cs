@@ -10,15 +10,17 @@ using System.Text;
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Represent a IMGUI/immediate-mode based render-engine.
+/// Represent a IMGUI/immediate-mode based renderer.
 /// </summary>
-internal sealed class ImmediateRenderer {
+internal sealed class Renderer {
     #region PREDEFINES
     private const float NS_TO_MS = 1000f;
     private const float LIMIT = 1f;
 
     private const float FPS_CONVERT = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
+
+    private static readonly Vec2 USE_FULLSCREEN_AS_LIMIT = Vec2.One * float.MinValue;
     #endregion
 
     private ConsoleBuffer m_backbuffer = default;
@@ -40,7 +42,7 @@ internal sealed class ImmediateRenderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public ImmediateRenderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
+    public Renderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -55,24 +57,24 @@ internal sealed class ImmediateRenderer {
         Console.CursorVisible = false;
     }
         
-    public void Run(List<Entity> list) {
+    public void Run(DrawCalls calls) {
         long start = Stopwatch.GetTimestamp();
 
         if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
             bool fullRedrawRequested = OnLayoutChange();
 
-            for (int i = 0; i < list.Count; ++i) {
-                Vec2 scale = list[i].GetComponent<Scale>()!.Value;
-                Vec2 position = list[i].GetComponent<Position>()!.Absolute;
+            foreach(Entity call in calls) {
+                Vec2 scale = call.Get<Scale>()!.Value;
+                Vec2 position = call.Get<Position>()!.Absolute;
 
                 if (!InBuffer(position: position, scale: scale)) 
                     continue;
 
-                RenderComponent renderLogic = list[i].GetComponent<RenderComponent>()!;
+                RenderComponent renderLogic = call.Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
-                using StyleEnumerator style = new StyleEnumerator(entity: list[i]);
-                renderLogic.Render(buffer: canvas, version: list[i].Version, style);
+                using StyleEnumerator style = new StyleEnumerator(entity: call);
+                renderLogic.Render(buffer: in canvas, version: call.Version, style);
             }
 
             Diffing(fullRedrawRequested);
@@ -140,13 +142,23 @@ internal sealed class ImmediateRenderer {
     }
 
     private bool InBuffer(Vec2 position, Vec2 scale) {
-        return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.X > position.Y) &&
+        return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
                (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
     }
 
+    /// <summary>
+    /// Create a safe area from the entire scale based on the scale and position.
+    /// </summary>
+    /// <param name="scale">Scale of the <see cref="Entity"/>.</param>
+    /// <param name="position">Position of the <see cref="Entity"/>.</param>
+    /// <returns>Returns a safe area scale.</returns>
     private Vec2 SetSafeArea(Vec2 scale, Vec2 position) {
-        if ((scale.X + position.X) >= m_backbuffer.Scale.X) scale.X -= 1;
-        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) scale.Y -= 1;
+        if ((scale.X + position.X) >= m_backbuffer.Scale.X) 
+            scale.X -= (scale.X + position.X) - (m_backbuffer.Scale.X - 1);
+
+        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) 
+            scale.Y -= (scale.Y + position.Y) - (m_backbuffer.Scale.Y - 1);
+
         return scale;
     }
 }

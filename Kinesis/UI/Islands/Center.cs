@@ -12,30 +12,32 @@ namespace Kinesis.UI;
 /// Represents centering UI element on an area.
 /// </summary>
 public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity> {
-    private string m_boxName = string.Empty;
+    private string m_boxName = null!;
 
     private Scale? m_childScale = null!;
     private readonly Axis m_axis = Axis.X | Axis.Y;
 
     public Entity Content {
-        init {
+        set {
             if (value == null) return;
 
-            UIBox container = new UIBox { Name = (m_boxName = $"__center__{Guid.CreateVersion7()}__"), Content = value };
-            container.RemoveComponent<RenderComponent>();
+            Viewport container = new Viewport { Name = (m_boxName ??= $"__center__{Guid.CreateVersion7()}__"), Content = value };
 
-            container.GetComponent<Hierarchy>(Hierarchy.Parent)!.Attached = this;
-            this.GetComponent<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
+            container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
+            this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
-            m_childScale = value.GetComponent<Scale>();
+            Get<ContentComponent>()!.Content = container;
+
+            m_childScale = value.Get<Scale>();
+            Rebuild();
         }
     }
 
     public Axis Axis { init => m_axis = value; }
 
-    public Center() {
-        _ = this.AttachComponent<Position>(component: new Position(), isUnique: true);
-        _ = this.AttachComponent<Scale>(component: new Scale(Vec2.One * Scale.Auto), isUnique: true);
+    public Center(): base(count: 3) {
+        _ = this.Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
+        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -43,15 +45,15 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
         context.SetPivot<Scale>(this);
     }
 
-    protected override Entity? Build(BuildContext context) {
+    protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
-            On = (message, ref tree) => {
+            On = (message, ref readonly tree) => {
                 if (m_childScale == null) return;
 
-                UIBox box = tree.Visit<UIBox>(name: m_boxName)!;
-                Position pos = this.GetComponent<Position>()!;
+                Viewport box = tree.Visit<Viewport>(name: m_boxName)!;
+                Position pos = this.Get<Position>()!;
 
-                Vec2 pivot = GetComponent<Scale>()!.Value;
+                Vec2 pivot = Get<Scale>()!.Value;
                 Vec2 childScale = m_childScale.Value;
 
                 if (pivot.X > message.Scale.X) pivot.X = message.Scale.X;
@@ -64,7 +66,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
 
                 pos.Relative = center;
             },
-            Content = GetComponent<Hierarchy>(Hierarchy.ChildrenStart)?.Attached!
+            Content = Get<ContentComponent>()!.Content ?? null!
         };
     }
 }

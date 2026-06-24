@@ -20,7 +20,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
     #endregion
 
-    private readonly ImmediateRenderer m_renderer = null!;
+    private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
     private readonly JobSystem m_worker = null!;
@@ -40,12 +40,10 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
-        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
-        Console.Out.Write(m_title);
-
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
+        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
         m_consoleSourceInfoProvider = new ConsoleSourceInfo();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
@@ -57,7 +55,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
         m_worker = JobSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
 
-        m_renderer = new ImmediateRenderer(workState: m_workSyncState, layoutState: m_layoutInfo);
+        m_renderer = new Renderer(workState: m_workSyncState, layoutState: m_layoutInfo);
         m_customSystems = new List<SystemInvocationInfo>();
 
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
@@ -116,13 +114,14 @@ public sealed partial class KinesisEngine: ISystemProvider {
         while(!token.IsCancellationRequested) {
 
             /* Render the frame to the screen/terminal window. */
-            m_renderer.Run(list: m_navigator.Current?.Tree ?? []);
+            m_renderer.Run(calls: m_navigator.Current.Get<DrawCalls>()!);
 
             if (!firstRun) {
-                Vec2 safeArea = m_layoutInfo.Value.Scale - 1;
-                m_worker.AddRenderMessage(new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
+                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else {
+                Console.Out.Write(m_title);
                 firstRun = false;
             }
         }
@@ -147,6 +146,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
     private void RegisterBuiltInComponents() {
         this.RegisterComponent<RenderComponent>();
+        this.RegisterComponent<DrawCalls>();
 
         this.RegisterComponent<Position>();
         this.RegisterComponent<Scale>();
@@ -155,5 +155,6 @@ public sealed partial class KinesisEngine: ISystemProvider {
         this.RegisterComponent<Style>();
 
         this.RegisterComponent<JobComponent>();
+        this.RegisterComponent<ContentComponent>();
     }
 }
