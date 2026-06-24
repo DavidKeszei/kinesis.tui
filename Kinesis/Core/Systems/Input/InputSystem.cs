@@ -25,14 +25,14 @@ internal class InputSystem: IDynamicSystem {
     private const int POOLING_TIME = 3;
 
     /// <summary>
-    /// Minimum time, when we think no input was happened and we fire that. (20ms)
+    /// Minimum time, when we think no input was happened and we fire that. (5ms)
     /// </summary>
     private const int DEAD_ZONE = 5;
 
     /// <summary>
-    /// Minimum time, when we think the press is long-press. (50ms)
+    /// Minimum time, when we think the press is long-press. (70ms)
     /// </summary>
-    private const int HOLD_THRESHHOLD = 50;
+    private const int HOLD_THRESHHOLD = 70;
 
     public SystemBehavior Behavior { get => SystemBehavior.DYNAMIC; }
 

@@ -48,7 +48,7 @@ public class Entity: IDisposable {
     protected Entity() {
         m_version = 0;
 
-        m_emptySpaces = new Queue<int>(capacity: 16);
+        m_emptySpaces = new Queue<int>(capacity: 8);
         m_uniqueComponents = new Dictionary<int, int>();
     }
 

@@ -57,6 +57,10 @@ public readonly record struct InputMessage: IJobMessage {
         m_isPressed = isPress;
     }
 
+    /// <summary>
+    /// Convert the underlying <see cref="char"/> value to an <see cref="ArrowKey"/> enum.
+    /// </summary>
+    /// <returns>Returns an <see cref="ArrowKey"/> enum value.</returns>
     public ArrowKey ToArrowKey() {
         return m_key switch {
             '\u2190' => ArrowKey.LEFT,

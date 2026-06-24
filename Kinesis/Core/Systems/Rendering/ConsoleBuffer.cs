@@ -98,11 +98,6 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// <param name="scale">Requested scale.</param>
     /// <returns>Return a <see cref="Canvas"/> instance.</returns>
     public static Canvas Slice(ref ConsoleBuffer buffer, Vec2 from, Vec2 scale) {
-        /* TODO(2026-06-07T00:13:33): Incorrect left-side inset at rendering (behaves like the object sits on the right-side) (Level: Low)
-         * 
-         * INSPECTIONS:
-         * 	- The position & scale values of the Canvas can leads to the solution.
-         */
         Vec2 start = from;
 
         if (from.X < 0) scale.X += from.X;

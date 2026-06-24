@@ -17,6 +17,7 @@ public abstract class Island: Entity {
     private BuildStackSnapshot m_buildSnapshot = null!;
 
     private int m_chunkId = -1;
+    private int m_levelId = 0;
 
     private bool m_isActive = false;
     private bool m_isBuilded = false;
@@ -64,23 +65,24 @@ public abstract class Island: Entity {
         if (!m_isBuilded || !(Get<ContentComponent>()?.HasChanged ?? false)) return;
 
         bool isTop = m_root == null;
+        m_isBuilded = false;
 
         DrawCalls draws = (isTop ? Get<DrawCalls>()! : m_root!.Get<DrawCalls>()!);
         IReadOnlyList<Island> chunks = draws.ChunkHolders;
 
         for(int i = chunks.Count - 1; i >= m_chunkId; --i) {
-            bool currentChunk = i == m_chunkId;
+            bool fullRebuildRequired = !(i != m_chunkId && chunks[i].m_levelId != m_levelId);
 
             // The first entity each chunk the "chunk holder" itself
-            for (int j = currentChunk ? 1 : 0; j < chunks[i].m_entities.Count; ++j)
+            for (int j = fullRebuildRequired ? 1 : 0; j < chunks[i].m_entities.Count; ++j)
                 chunks[i].m_entities[j].Dispose();
 
-            if (!currentChunk) draws.Remove(i);
+            if (!fullRebuildRequired) draws.Remove(i);
         }
 
         m_entities.Clear();
         m_renderSet.Clear();
-
+        
         if (isTop) {
             Get<DrawCalls>()!.Reset();
             Remove<DrawCalls>();
@@ -88,11 +90,6 @@ public abstract class Island: Entity {
             _ = Attach<DrawCalls>(ComponentPool<DrawCalls>.Instance.Rent<DrawCalls>(), isUnique: true);
         }
 
-        /* TODO(2026-06-11T00:42:34): Implement stack-frame based rebuild. (Status: On-going)
-         * 
-         * INSPECTIONS:
-         * 	- Your inspections goes here...
-         */
         BuildContext context = new BuildContext(current: this) { Root = isTop ? this : m_root!, IsTop = isTop };
         context.LoadSnapshot(m_buildSnapshot);
 
@@ -125,6 +122,8 @@ public abstract class Island: Entity {
 
             if (context.CurrentIsland.m_chunkId == -1) {
                 context.CurrentIsland.m_chunkId = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;
+                context.CurrentIsland.m_levelId = context.LevelId;
+                
                 context.Root.Get<DrawCalls>()!.Add(island);
             }
 
@@ -151,6 +150,7 @@ public abstract class Island: Entity {
                     IsTop = false,
                     ChangeStyleFlag = 0,
                     Current = child.Attached,
+                    LevelId = context.LevelId + 1
                 });
             }
         }

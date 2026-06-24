@@ -129,7 +129,11 @@ internal class JobSystem: IDynamicSystem {
         if (!messages.Read(out T message)) return;
 
         foreach(JobTarget target in m_targets) {
-            if (!target.Island.IsActive || target.Status != JobRequestIntent.ACTIVE)
+            /*
+             * We not run anything, which requested as 'SUSPEND'. If a Job was reuqested as 'REMOVE', then we run it one more time before
+             * we remove it in the next round.
+             */
+            if (!target.Island.IsActive || target.Status == JobRequestIntent.SUSPEND)
                 continue;
 
             Delegate _ref = target.Action;
