@@ -20,19 +20,19 @@ internal class InputSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread";
 
     /// <summary>
-    /// Indicates the wait time between two sampling. (3ms)
+    /// Indicates the wait time between two sampling. (10ms)
     /// </summary>
-    private const int POOLING_TIME = 3;
+    private const int POOLING_TIME = 10;
 
     /// <summary>
     /// Minimum time, when we think no input was happened and we fire that. (5ms)
     /// </summary>
-    private const int DEAD_ZONE = 5;
+    private const int DEAD_ZONE = 10;
 
     /// <summary>
-    /// Minimum time, when we think the press is long-press. (70ms)
+    /// Minimum time, when a single-press repeated as long-press.
     /// </summary>
-    private const int HOLD_THRESHHOLD = 70;
+    private const int HOLD_ZONE = 250;
 
     public SystemBehavior Behavior { get => SystemBehavior.DYNAMIC; }
 
@@ -49,33 +49,28 @@ internal class InputSystem: IDynamicSystem {
     /// </summary>
     public void Run() {
         if (m_backend == IInputBackend.ERR) {
-            Console.Out.Write("[WARNING] No input device detected; no input received.\n");
+            Console.Error.Write("[WARNING] No input device detected; no input received.\n");
             return;
         }
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
-
         float deadZoneTime = DEAD_ZONE;
-        float holdTime = .0f;
 
-        bool holdSent = false;
-        InputAction lastAction = InputAction.PRESS;
+        float holdTime = .0f;
+        DateTime lastTime = DateTime.MinValue;
 
         while (true) {
+            /* TODO(2026-06-27T00:17:06): Key up event not fired at the end of the input. (Status: Done) */
             DateTime now = DateTime.UtcNow;
 
-            if (m_backend.ReadInput(out InputInfo info)) {
+            if (m_backend.ReadInput(out InputInfo info) && info.IsPress) {
+
                 /* 1. Check if the key same as before */
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
-                    holdTime += (float)(now.TimeOfDay - m_startInputInfo.When).TotalMilliseconds;
+                    holdTime = (float)(now - lastTime).TotalMilliseconds;
 
-                    if (holdTime >= HOLD_THRESHHOLD && lastAction != InputAction.HOLD) {
-
-                        lastAction = InputAction.HOLD;
-                        holdSent = true;
-
-                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: m_startInputInfo.isPress));
-                    }
+                    if (holdTime  >= HOLD_ZONE)
+                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
 
                     Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                     continue;
@@ -84,33 +79,29 @@ internal class InputSystem: IDynamicSystem {
                 /* 1.1 If not: do fast swap between the new & current keys */
                 if (m_startInputInfo.When != TimeSpan.Zero) {
 
-                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
+                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
                     deadZoneTime = DEAD_ZONE;
                 }
 
+                lastTime = now;
                 m_startInputInfo = (info.Key, info.Modifiers, now.TimeOfDay, info.IsPress);
 
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
 
+
             /* This decrease CPU usage */
             Thread.Sleep(millisecondsTimeout: POOLING_TIME);
 
             /* 2. Send it after the DEAD_ZONE. (Only, if the action is not HOLD)*/
-            if (deadZoneTime <= 0) {
-                if (lastAction != InputAction.HOLD)
-                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.PRESS, isPress: m_startInputInfo.isPress));
-                else if(holdSent)
-                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, m_startInputInfo.Modifier, action: InputAction.HOLD, isPress: false));
-
+            if (deadZoneTime <= .0f) {
+                JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
                 m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
                 deadZoneTime = DEAD_ZONE;
-                lastAction = InputAction.PRESS;
-
                 holdTime = .0f;
-                holdSent = false;
+
                 continue;
             }
 

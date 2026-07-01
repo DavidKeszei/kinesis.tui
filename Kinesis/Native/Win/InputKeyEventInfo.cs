@@ -9,7 +9,7 @@ namespace Kinesis.Native;
 /// Represent a KEY_EVENT_RECORD struct from Win32 API.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-internal readonly struct InputKeyEventInfo {
+internal readonly record struct InputKeyEventInfo {
     [MarshalAs(unmanagedType: UnmanagedType.Bool), FieldOffset(offset: 0)] private readonly int m_pressed = 0;
     [MarshalAs(unmanagedType: UnmanagedType.U2), FieldOffset(offset: 4)] private readonly ushort m_repeatCount = 0;
 

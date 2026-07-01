@@ -20,7 +20,7 @@ internal partial class WindowsInputBackend: IInputBackend {
     private const string USER32_LIB = "user32.dll";
 
     private const uint MANUAL_PROCESSING = 0x0001;
-    private const string DEDICATED_THREAD_NAME = "Input->Native";
+    private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread::windows";
 
     #endregion
     #region P/INVOKE
@@ -32,22 +32,13 @@ internal partial class WindowsInputBackend: IInputBackend {
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
 
-    //[LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleInputW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
-    //[return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    //private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
-
     #endregion
 
     private readonly RingBuffer<InputInfo> m_infoBuffer = null!;
     private IConsoleSource<InputKeyEventInfo> m_source = null!;
 
-    private InputInfo m_lastInput = default;
-    private bool m_isPressed = false;
-
-    /// <summary>
-    /// Indicates the user pressed/pressing some key currently.
-    /// </summary>
-    public bool HasInput { get => m_infoBuffer.Count > 0; }
+    private InputInfo m_info = default;
+    private bool m_isPressedLastTime = false;
 
     public WindowsInputBackend()
         => m_infoBuffer = new RingBuffer<InputInfo>(capacity: 64);
@@ -58,6 +49,7 @@ internal partial class WindowsInputBackend: IInputBackend {
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
     public static WindowsInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
         WindowsInputBackend backend = new WindowsInputBackend();
+
         if(!SetMode(handle: StdHandle.Input, flags: MANUAL_PROCESSING))
             return null!;
 
@@ -75,29 +67,25 @@ internal partial class WindowsInputBackend: IInputBackend {
             0x12,
         };
 
-        char character = '\0';
-        bool isPressed = false;
-
         InputModifier modifiers = QueryModifiers(modifiersCodes);
         InputKeyEventInfo info = default!;
-
-        bool success = m_source.Read(out info) && info.IsPressed != m_isPressed;
+        
+        bool success = m_source.Read(out info);
 
         if (success) {
-            character = info.Value;
-            isPressed = m_isPressed = info.IsPressed;
+            input = new InputInfo(modifiers, info.Value, info.IsPressed);
 
-            m_lastInput = input = new InputInfo(modifiers, info.Value, info.IsPressed);
+            m_isPressedLastTime = info.IsPressed;
+            m_info = input;
             return true;
         }
 
-        // If the read was unsuccessfull, but we don't detected any key up, then we think the user holding the specific key
-        if (m_isPressed) {
-            input = m_lastInput;
+        if (m_isPressedLastTime) {
+            input = m_info;
             return true;
         }
 
-        m_lastInput = default;
+        m_info = default;
         return false;
     }
 

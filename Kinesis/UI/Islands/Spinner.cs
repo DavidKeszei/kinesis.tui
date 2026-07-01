@@ -78,7 +78,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     }
 
     public void Copy(ref BuildContext from) {
-        from.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
 
         from.SetPivot<Position>(this);
         from.SetPivot<Scale>(this);

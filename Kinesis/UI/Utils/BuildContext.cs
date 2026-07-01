@@ -79,21 +79,22 @@ public ref struct BuildContext {
     /// Inherit from an most-closes component on the build-tree.
     /// </summary>
     /// <typeparam name="T">Type of the component.</typeparam>
-    /// <param name="target">Target of the <see cref="Inherit{T}"/>.</param>
+    /// <param name="target">Target of the <see cref="InheritStyle"/>.</param>
     /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
     /// <param name="index">Index of the component.</param>
-    public void Inherit<T>(Entity target, T @default, int index = 0) where T: Component, IStaticType, IDefault<T>, ICopyable<T> {
+    public void InheritStyle(Entity target, Style @default, int index = 0) {
+        /* TODO(2026-06-30T23:44:28): Change Inhetit<T> to InheritStyle for copy/inherit styles. (Status: Done✅)*/ 	
         if (target == null || @default == null) return;
 
-        T? component = target.Get<T>(index);
+        Style? component = target.Get<Style>(index);
         if (component == null) return;
 
         int type = MatchId(@default);
         if (type == -1) return;
 
-        if (T.IsDefault(component)) {
-            Component copy = m_inheritanceTargets[type].TryPeek(out Component? _) ? ((T)m_inheritanceTargets[type].Peek()) : @default;
-            component.Copy(ref Unsafe.As<Component, T>(ref copy));
+        if (Style.IsDefault(component)) {
+            Style copy = m_inheritanceTargets[type].TryPeek(out Component? _) ? ((Style)m_inheritanceTargets[type].Peek()) : @default;
+            component.Copy(ref copy);
         }
 
         if ((m_flags & (1 << type)) != (1 << type)) {

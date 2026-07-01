@@ -16,6 +16,7 @@ public delegate void JobCallback<T>(T message, ref readonly IslandEntityVisitor 
 /// </summary>
 public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     private readonly Island m_island = null!;
+    private readonly bool m_inputFocus = true;
 
     /// <summary>
     /// Job of the current <see cref="OnUpdate{T}"/> instance, which ran by the <see cref="JobSystem"/>.
@@ -27,7 +28,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
             if (interaction == null) {
                 interaction = T.Target switch {
                     JobTag.RENDERING => new JobComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
-                    JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island),
+                    JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island, m_inputFocus),
                     _ => null!
                 };
                 _ = base.Attach<JobComponent>(interaction, isUnique: true);
@@ -39,6 +40,12 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     /// Current request of the <see cref="OnUpdate{T}"/>.
     /// </summary>
     public JobRequestIntent Status { get => Get<JobComponent>()!.Status; }
+
+    /// <summary>
+    /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message.
+    /// </summary>
+    /// <remarks><b>Remarks:</b> This proprety only works, if the message type is <see cref="InputMessage"/>, otherwise ignored by the library.</remarks>
+    public bool IsFocusBased { get => m_inputFocus; init => m_inputFocus = value; }
 
     /// <summary>
     /// Attached child of the <see cref="OnUpdate{T}"/>.

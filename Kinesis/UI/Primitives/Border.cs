@@ -38,7 +38,7 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
         context.SetPivot<Position>(this);
         context.SetPivot<Scale>(this);
 
-        context.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        context.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
 
         /* 
          * A border not has specific scale, always query the actual parent scale. (Scale.Auto indicates this -> float.MinValue)

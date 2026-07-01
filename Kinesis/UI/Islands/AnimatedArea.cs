@@ -39,7 +39,7 @@ public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IIn
     public Func<Entity, T> Selector { init => m_selector = value; }
 
     /// <summary>
-    /// Applier/Inherit function, which applying the animated value back to the <see cref="Entity"/>.
+    /// Applier/InheritStyle function, which applying the animated value back to the <see cref="Entity"/>.
     /// </summary>
     public Action<Entity, T> Applier { init => m_applier = value; }
 
