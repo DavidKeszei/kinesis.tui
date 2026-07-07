@@ -127,8 +127,8 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
         };
     }
 
-    private UIBox CreateContainer(Entity content) {
-        UIBox box = new UIBox() {
+    private Viewport CreateContainer(Entity content) {
+        Viewport box = new Viewport() {
             Content = new UIStack() {
                 Content = [
                         new UIBox() {
@@ -146,7 +146,6 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
             }
         };
 
-        box.Remove<RenderComponent>();
         return box;
     }
 }

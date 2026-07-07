@@ -16,7 +16,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent a unified source of the inputs.
 /// </summary>
-internal class InputSystem: IDynamicSystem {
+internal sealed class InputSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread";
 
     /// <summary>
@@ -25,7 +25,7 @@ internal class InputSystem: IDynamicSystem {
     private const int POOLING_TIME = 10;
 
     /// <summary>
-    /// Minimum time, when we think no input was happened and we fire that. (5ms)
+    /// Minimum time, when we think no input was happened and we fire that. (10ms)
     /// </summary>
     private const int DEAD_ZONE = 10;
 
@@ -60,7 +60,7 @@ internal class InputSystem: IDynamicSystem {
         DateTime lastTime = DateTime.MinValue;
 
         while (true) {
-            /* TODO(2026-06-27T00:17:06): Key up event not fired at the end of the input. (Status: Done) */
+            /* TODO(2026-06-27T00:17:06): Key up event not fired at the end of the input. (Status: Done✅) */
             DateTime now = DateTime.UtcNow;
 
             if (m_backend.ReadInput(out InputInfo info) && info.IsPress) {
@@ -69,7 +69,7 @@ internal class InputSystem: IDynamicSystem {
                 if (m_startInputInfo.Key == info.Key && m_startInputInfo.Modifier == info.Modifiers) {
                     holdTime = (float)(now - lastTime).TotalMilliseconds;
 
-                    if (holdTime  >= HOLD_ZONE)
+                    if (holdTime >= HOLD_ZONE)
                         JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
 
                     Thread.Sleep(millisecondsTimeout: POOLING_TIME);

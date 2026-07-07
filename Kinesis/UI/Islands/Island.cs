@@ -16,8 +16,8 @@ public abstract class Island: Entity {
     private Island m_root = null!;
     private BuildStackSnapshot m_buildSnapshot = null!;
 
+    private Vec2 m_boundries = Vec2.Zero;
     private int m_chunkId = -1;
-    private int m_levelId = 0;
 
     private bool m_isActive = false;
     private bool m_isBuilded = false;
@@ -62,22 +62,27 @@ public abstract class Island: Entity {
     /// </remarks>
     protected void Rebuild() {
         // We only rebuild the Island, if that builded or has any change
-        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChanged ?? false)) return;
+        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChange ?? false)) return;
 
         bool isTop = m_root == null;
         m_isBuilded = false;
 
+        Stack<Island> rebuildStack = new Stack<Island>();
         DrawCalls draws = (isTop ? Get<DrawCalls>()! : m_root!.Get<DrawCalls>()!);
+
         IReadOnlyList<Island> chunks = draws.ChunkHolders;
 
-        for(int i = chunks.Count - 1; i >= m_chunkId; --i) {
-            bool fullRebuildRequired = !(i != m_chunkId && chunks[i].m_levelId != m_levelId);
+        // Set up the rebuild from end of list to upper (X) boundry
+        for(int i = chunks.Count - 1; i >= m_boundries.X; --i) {
+            if (m_boundries.X <= i && m_boundries.Y >= i) {
 
-            // The first entity each chunk the "chunk holder" itself
-            for (int j = fullRebuildRequired ? 1 : 0; j < chunks[i].m_entities.Count; ++j)
-                chunks[i].m_entities[j].Dispose();
+                // The first entity each chunk the "chunk holder" itself
+                for (int j = m_boundries.X == i ? 1 : 0; j < chunks[i].m_entities.Count; ++j)
+                    chunks[i].m_entities[j].Dispose();
+            }
 
-            if (!fullRebuildRequired) draws.Remove(i);
+            rebuildStack.Push(chunks[i]);
+            draws.Remove(i);
         }
 
         m_entities.Clear();
@@ -90,10 +95,7 @@ public abstract class Island: Entity {
             _ = Attach<DrawCalls>(ComponentPool<DrawCalls>.Instance.Rent<DrawCalls>(), isUnique: true);
         }
 
-        BuildContext context = new BuildContext(current: this) { Root = isTop ? this : m_root!, IsTop = isTop };
-        context.LoadSnapshot(m_buildSnapshot);
-
-        BuildTree(context);
+        AcceptRebuild(rebuildStack, draws);
     }
 
     /// <summary>
@@ -113,6 +115,8 @@ public abstract class Island: Entity {
             if (created == null) return;
             context.CurrentIsland = island;
 
+            context.CurrentIsland.m_boundries.X = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;
+
             if (!context.IsTop) {
                 context.CurrentIsland.Remove<DrawCalls>();
                 context.CurrentIsland.m_root = context.Root;
@@ -121,9 +125,7 @@ public abstract class Island: Entity {
             }
 
             if (context.CurrentIsland.m_chunkId == -1) {
-                context.CurrentIsland.m_chunkId = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;
-                context.CurrentIsland.m_levelId = context.LevelId;
-                
+                context.CurrentIsland.m_chunkId = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;                
                 context.Root.Get<DrawCalls>()!.Add(island);
             }
 
@@ -139,6 +141,7 @@ public abstract class Island: Entity {
         if (context.Current.Get<RenderComponent>() != null)
             context.CurrentIsland.DrawCalls.Add(context.Current!);
 
+        // Inherit styles & viewport pivots (Position; Scale)
         if (context.Current is ICopyable<BuildContext> copyable)
             copyable.Copy(from: ref context);
 
@@ -155,7 +158,37 @@ public abstract class Island: Entity {
             }
         }
 
+        if(context.Current == context.CurrentIsland)
+            context.CurrentIsland.m_boundries.Y = context.Root.Get<DrawCalls>()!.ChunkHolders.Count - 1;
+
         context.DropCurrentLevelStyles();
         context.CurrentIsland.m_isBuilded = true;
+    }
+
+    private void AcceptRebuild(Stack<Island> rebuildStack, DrawCalls draws) {
+
+        while (rebuildStack.TryPop(out Island? rebuildTarget)) {
+            bool isTop = rebuildTarget.m_root == null!;
+
+            if (rebuildTarget.Get<ContentComponent>()?.HasChange ?? false) {
+                rebuildTarget.m_chunkId = -1; // This must be changed, because we "generate" new id for the chunk in the BuildTree(context)
+
+                BuildContext context = new BuildContext(current: rebuildTarget) { Root = isTop ? rebuildTarget : rebuildTarget.m_root!, IsTop = isTop };
+                context.LoadSnapshot(snapshot: rebuildTarget.m_buildSnapshot);
+
+                // Remove chunk, which not the handler/first, because these chunk changed during the rebuild
+                int deleteDeadEndsCount = (int)(m_boundries.Y - m_boundries.X);
+                while (deleteDeadEndsCount-- > 0)
+                    _ = rebuildStack.Pop();
+
+                BuildTree(context);
+                continue;
+            }
+
+            int diff = (int)(rebuildTarget.m_boundries.X - draws.ChunkHolders.Count);
+            rebuildTarget.m_boundries = new Vec2(x: rebuildTarget.m_boundries.X - diff, y: rebuildTarget.m_boundries.Y - diff);
+
+            draws.Add(rebuildTarget);
+        }
     }
 }

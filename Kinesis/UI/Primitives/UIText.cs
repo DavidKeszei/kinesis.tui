@@ -10,7 +10,7 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple text on the screen.
 /// </summary>
-public class UIText: Entity, ICopyable<BuildContext> {
+public sealed class UIText: Entity, ICopyable<BuildContext> {
 
     /// <summary>
     /// Underlying text value of the <see cref="UIText"/>.

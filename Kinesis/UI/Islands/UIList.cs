@@ -9,6 +9,11 @@ using System.Text;
 
 namespace Kinesis.UI;
 
+/// <summary>
+/// Represents a virtaulized list of elements on the screen.
+/// </summary>
+/// <typeparam name="TTemplate">Template object for each row.</typeparam>
+/// <typeparam name="TData">Encapsulated data target for each row.</typeparam>
 public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> where TTemplate: Entity, new() {
     private string m_list = null!;
 
@@ -26,8 +31,14 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
 
     private int m_maxRowCount = 0;
 
+    /// <summary>
+    /// Collection reference of data for the current <see cref="UIList{TTemplate, TData}"/> instance.
+    /// </summary>
     public List<TData> Source { init => m_contentSource = value; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public Action<TData, TTemplate, bool> Bind { init => m_bind = value; }
 
     public uint RowHeight { init => m_rowHeight = (int)(value == 0 ? 1 : value); }

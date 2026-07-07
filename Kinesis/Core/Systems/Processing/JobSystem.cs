@@ -23,10 +23,10 @@ internal sealed class JobSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::job_thread";
     private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
 
-    private const int MAX_MSG_COUNT = 64;
-    private const int MAX_MSG_RND = 1;
+    private const int MAX_MSG_RND_COUNT   = 1;
+    private const int MAX_MSG_INPUT_COUNT = 32;
 
-    private const int MAX_INTERACTION_COUNT = 2048;
+    private const int PRE_ALLOC_INTERACTION_COUNT = 2048;
     private const int POOLING_TIME = 8;
     #endregion
 
@@ -54,10 +54,10 @@ internal sealed class JobSystem: IDynamicSystem {
 
     public JobSystem() {
         m_focusTargetIndexes = new List<int>();
-        m_targets = new List<JobTarget>(capacity: MAX_INTERACTION_COUNT);
+        m_targets = new List<JobTarget>(capacity: PRE_ALLOC_INTERACTION_COUNT);
 
-        m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND);
-        m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_COUNT);
+        m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND_COUNT);
+        m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_INPUT_COUNT);
 
         m_addIntents = new ConcurrentQueue<JobTarget>();
     }
@@ -113,6 +113,12 @@ internal sealed class JobSystem: IDynamicSystem {
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
 
+        /* TODO(2026-07-04T10:55:36): Fix focus based job handling by indexes (remove & add) (Status: Done✅)
+         * 
+         * INSPECTIONS:
+         * 	- Register & Remove method don't remove all unused/invalid jobs -> This leads "ghost" jobs, but application not crashing from it.
+         * 	- Revisit Island.Rebuild(), because after this method the focus management became broken.
+         */ 	
         while(true) {
             if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
@@ -121,8 +127,6 @@ internal sealed class JobSystem: IDynamicSystem {
 
             RemoveJobs();
             AddJobs();
-
-            //Debug.WriteLine(m_inputMessages.Count);
 
             Send<InputMessage>(messages: m_inputMessages);
             Send<RenderMessage>(messages: m_renderMessages);
@@ -139,7 +143,7 @@ internal sealed class JobSystem: IDynamicSystem {
              * We not run anything, which requested as 'SUSPEND'. If a Job was reuqested as 'REMOVE', then we run it one more time before
              * we remove it in the next round.
              */
-            if (!m_targets[i].Island.IsActive || m_targets[i].Status == JobRequestIntent.SUSPEND || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
+        if (!m_targets[i].Island.IsActive || m_targets[i].Status != JobRequestIntent.ACTIVE || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
                 continue;
 
             Delegate _ref = m_targets[i].Action;
@@ -152,7 +156,17 @@ internal sealed class JobSystem: IDynamicSystem {
     private void RemoveJobs() {
         for (int i = m_targets.Count - 1; i >= 0; --i)
             if (m_targets[i].Status == JobRequestIntent.REMOVE) {
-                JobTarget target = m_targets[^1];
+                JobTarget target = m_targets[i];
+
+                if (m_targets[^1].IsFocusBased) {
+                    for (int j = 0; j < m_focusTargetIndexes.Count; ++j) {
+
+                        if (m_focusTargetIndexes[j] == m_targets.Count - 1) {
+                            m_focusTargetIndexes[j] = i;
+                            break;
+                        }
+                    }
+                }
 
                 (m_targets[i], m_targets[^1]) = (m_targets[^1], m_targets[i]);
                 m_targets.RemoveAt(m_targets.Count - 1);

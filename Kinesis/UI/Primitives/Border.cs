@@ -12,6 +12,11 @@ namespace Kinesis.UI;
 /// Represent a border on an area like a stickers.
 /// </summary>
 public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
+
+    public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
+
+    public BorderDecoration Decoration { set => value.CreateStyles(to: this); }
+
     public Entity Content {
         set {
             if (value == null) return;
@@ -21,11 +26,7 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
         }
     }
 
-    public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
-
-    public BorderDecoration Decoration { set => value.CreateStyles(to: this); }
-
-    public Border() {
+    public Border(): base(count: MAX_COMPONENT_COUNT) {
         InitRenderEntityWith<BorderRenderer>();
 
         _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));

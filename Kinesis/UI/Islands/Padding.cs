@@ -64,11 +64,12 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
     protected override Entity? Build(ref readonly BuildContext context) {
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
+                Viewport container = tree.Visit<Viewport>(name: m_container)!;
+
                 Position pos = Get<Position>()!;
                 Scale scale = Get<Scale>()!;
 
-                Viewport container = tree.Visit<Viewport>(name: m_container)!;
-                scale.Inset = new Vec2(x: Get<Style>()!.AsInt, y: Get<Style>(1)!.AsInt);
+                scale.Inset = new Vec2(x: Get<Style>()!.AsInt, y: Get<Style>(index: 1)!.AsInt);
 
                 Vec2 savedScale = scale.Value;
                 container.Get<Position>()!.Relative = scale.Inset;

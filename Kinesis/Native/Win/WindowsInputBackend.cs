@@ -13,7 +13,7 @@ namespace Kinesis.Native;
 /// <summary>
 /// Represent a standard input on the Windows platform. 
 /// </summary>
-internal partial class WindowsInputBackend: IInputBackend {
+internal sealed partial class WindowsInputBackend: IInputBackend {
     #region DEFINES
 
     private const string KERNEL32_LIB = "kernel32.dll";

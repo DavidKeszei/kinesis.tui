@@ -183,7 +183,7 @@ internal ref struct ANSIStringBuilder {
     public ref ANSIStringBuilder WriteCharacter(char value) {
 
         /* TODO(2026-05-19T23:11:36): Make better clear style function, which not bombing the internal terminal ANSI parser
-         *                            with unpleasant clear commands.
+         *                            with unpleasant clear commands. (Status: Done✅)
          *                            
          * INSPECTIONS:
          *      - If we reset the text decorations & colors on every 'px', then the rendering always deterministic & good.

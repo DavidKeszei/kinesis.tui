@@ -15,7 +15,7 @@ namespace Kinesis.UI;
 /// Represents an area/conatiner, which holds target of the animation.
 /// </summary>
 /// <typeparam name="T">Target type of the animation on the <see cref="Entity"/>.</typeparam>
-public class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T> {
+public sealed class AnimatedArea<T>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T> {
     private string s_box = null!;
 
     private readonly Func<Entity, T> m_selector = default!;

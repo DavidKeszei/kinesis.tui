@@ -53,9 +53,4 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
 
         ComponentPool<JobComponent>.Instance.Return(this);
     }
-
-    internal void Change<T>(Action<T> on, Island root) where T: IJobMessage {
-        m_status.Value = JobRequestIntent.REMOVE;
-        JobSystem.Current.AddCallback<T>(on, root, m_focusBased);
-    }
 }
