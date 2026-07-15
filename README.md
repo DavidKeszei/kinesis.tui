@@ -1,46 +1,45 @@
 # Kinesis
 
-Kinesis is small & simple UI library for building terminal apps! It lets you build complex terminal interfaces using a cozy OOP shell that gets flattened into a data-oriented beast under the hood. All this, while (try) keeping a stable footprint—because your RAM has better things to do.
+Declarative, enjoyable way to write TUI applications. A simple, Flutter-inspired library with love of the dotnet ecosystem in C#. You can build simple (or complex) apps, which works like their GUI counterparts with less nerve.
+The goal to create an enjoyable library, which achives performance-boost and less memory pressure without giving up the modern, explicit and declarative UI building!
 
-# Example: The "Not-so-scary" Counter
+# For the start
 
 If you ever touched some UI library (Flutter, React) this will be familiar to you. If you haven't, don't worry I'll (try to) show you! So let's see "the beast"!
 
 ```csharp
-public class App: Island {
-    private int m_counter = 0;
+public static class Program {
+    public static async Task Main(string[] args) {
+        KinesisEngine engine = new KinesisEngine(title: "Playground");
+        engine.RegisterIsland<App>(name: nameof(App), onCreate: static provider => new App());
 
-    protected override Entity? Build() {
-        return new OnUpdate<RenderMessage>(this) {
-            Child = new ListOf {
-                Children = new List<Entity> {
-                    new UIText {
-                        Name = "counter",
-                        Text = "Nothing happened! :/"
+        await engine.Start();
+    }
+}
+
+public class App: Island {
+    protected override Entity? Build(ref readonly BuildContext context) {
+        return new Scaffold {
+            Content = new Center {
+                Content = new AnimatedArea<RGB, UIBox> {
+                    Selector   = static(box)        => box.Background,
+                    Applier    = static(box, color) => box.Background = color,
+
+                    Duration   = TimeSpan.FromSeconds(.5f),
+                    To         = RGB.Blue,
+
+                    IsPeriodic = true,
+                    Content = new UIBox {
+                        Scale      = Vec2.AsSquare(scale: Vec2.One * 5.5f),
+                        Background = RGB.White
                     }
                 }
-            },
-            /* Not required using the 'msg' value. But can be useful! */
-            On = (msg, visitor) => {
-                /* 
-                 * You can decide track each entity or just want read something from it.
-                 * But if you not found the entity (name is not correct mostly), then return NULL! (Very scary)
-                 */
-                UIText? text = visitor.Visit<UIText>(name: "counter");
-                text?.Text = $"Hey! Something is updated x {++m_counter}";
             }
         };
     }
 }
 ```
-See? It's that simple: you declare the UI elements you want to use in a tree structure. If you want some interactivity, just use OnUpdate<T> with an On callback! Easy-peasy!
-
-# The Secret Sauce (How it works?)
-
-"Okay, it's simple and cozy, but where is the 'beast' part?" — you might ask. The magic happens behind the scenes:
-- __Island Flattening__: When you call Build(), Kinesis doesn't just keep a heavy object tree. It flattens everything into a lean, read-only list for the ECS core.
-- __Priority Lane__: We don't like lag. Input information is strictly processed before rendering metadata. Always.
-- __Zero-Allocation Goals__: The engine is a _gentleman_: not spamming the RAM with unpleasant bytes.
+See? It's that simple: you declare the UI elements you want to use in a tree structure. Everthing is explictly declarated with less magic, hidden controll-flow behind it!
 
 # Disclamer
 Developed as a __Diploma Thesis__ project.
