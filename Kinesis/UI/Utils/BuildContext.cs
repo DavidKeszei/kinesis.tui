@@ -19,14 +19,14 @@ public ref struct BuildContext {
     #region PREDEFINES
     public const int STYLE_STACK_FRAME_LEN = 6;
 
-    private const int POSITION = 0;
-    private const int SCALE = 1;
+    //private const int POSITION = 0;
+    //private const int SCALE = 1;
 
-    private const int BACKGROUND = 2;
-    private const int FOREGROUND = 3;
+    //private const int BACKGROUND = 2;
+    //private const int FOREGROUND = 3;
 
-    private const int FONT_STYLE = 4;
-    private const int PADDING = 5;
+    //private const int FONT_STYLE = 4;
+    //private const int PADDING = 5;
     #endregion
 
     private readonly Island m_root = null!;
@@ -69,7 +69,7 @@ public ref struct BuildContext {
 
     internal BuildContext(Entity current) {
         m_current = current;
-        m_inheritanceTargets = new Stack<Component>[PADDING]; /* Padding is largest index -> Count of inheritable components */
+        m_inheritanceTargets = new Stack<Component>[(int)BuildSnapshotComponents.__COUNT__]; /* Padding is largest index -> Count of inheritable components */
 
         for (int i = 0; i < m_inheritanceTargets.Length; ++i)
             m_inheritanceTargets[i] = new Stack<Component>(capacity: 128);
@@ -132,12 +132,12 @@ public ref struct BuildContext {
     /// <returns>Returns a <see cref="BuildStackSnapshot"/> instance.</returns>
     internal readonly BuildStackSnapshot CreateBuildSnapshot() {
         return new BuildStackSnapshot(
-            Scale: m_inheritanceTargets[SCALE].TryPeek(out Component? scale) ? (Scale)scale : null!,
-            Position: m_inheritanceTargets[POSITION].TryPeek(out Component? position) ? (Position)position : null!,
+            Scale: m_inheritanceTargets[(int)BuildSnapshotComponents.SCALE].TryPeek(out Component? scale) ? (Scale)scale : null!,
+            Position: m_inheritanceTargets[(int)BuildSnapshotComponents.POSITION].TryPeek(out Component? position) ? (Position)position : null!,
             Styles: [
-                m_inheritanceTargets[BACKGROUND].TryPeek(out Component? bg) ? (Style)bg : null!,
-                m_inheritanceTargets[FOREGROUND].TryPeek(out Component? fg) ? (Style)fg : null!,
-                m_inheritanceTargets[FONT_STYLE].TryPeek(out Component? fontStyle) ? (Style)fontStyle : null!,
+                m_inheritanceTargets[(int)BuildSnapshotComponents.BACKGROUND].TryPeek(out Component? bg) ? (Style)bg : null!,
+                m_inheritanceTargets[(int)BuildSnapshotComponents.FOREGROUND].TryPeek(out Component? fg) ? (Style)fg : null!,
+                m_inheritanceTargets[(int)BuildSnapshotComponents.FONT_STYLE].TryPeek(out Component? fontStyle) ? (Style)fontStyle : null!,
             ]
         );
     }
@@ -145,13 +145,13 @@ public ref struct BuildContext {
     internal readonly void LoadSnapshot(BuildStackSnapshot snapshot) {
         if (snapshot == null!) return;
 
-        if(snapshot.Scale != null)  m_inheritanceTargets[SCALE].Push(item: snapshot.Scale);
-        if(snapshot.Position != null!) m_inheritanceTargets[POSITION].Push(item: snapshot.Position);
+        if(snapshot.Scale != null)  m_inheritanceTargets[(int)BuildSnapshotComponents.SCALE].Push(item: snapshot.Scale);
+        if(snapshot.Position != null!) m_inheritanceTargets[(int)BuildSnapshotComponents.POSITION].Push(item: snapshot.Position);
 
-        for (int i = BACKGROUND; i < PADDING; ++i) {
-            if (snapshot.Styles[i - BACKGROUND] == null) continue;
+        for (int i = (int)BuildSnapshotComponents.BACKGROUND; i < (int)BuildSnapshotComponents.__COUNT__; ++i) {
+            if (snapshot.Styles[i - (int)BuildSnapshotComponents.BACKGROUND] == null) continue;
 
-            m_inheritanceTargets[i].Push(snapshot.Styles[i - BACKGROUND]);
+            m_inheritanceTargets[i].Push(snapshot.Styles[i - (int)BuildSnapshotComponents.BACKGROUND]);
         }
     }
 
@@ -164,16 +164,27 @@ public ref struct BuildContext {
 
     private readonly int MatchId(Component component) {
         return component switch {
-            Position => POSITION,
-            Scale => SCALE,
-            Style => Unsafe.As<Component, Style>(ref component).Tag switch {
-                StyleTag.BACKGROUND => BACKGROUND,
-                StyleTag.FOREGROUND => FOREGROUND,
-                StyleTag.FONT_ATTR => FONT_STYLE,
-                StyleTag.PADDING => PADDING,
-                _ => -1
+            Position => (int)BuildSnapshotComponents.POSITION,
+            Scale    => (int)BuildSnapshotComponents.SCALE,
+            Style    => Unsafe.As<Component, Style>(ref component).Tag switch {
+                StyleTag.BACKGROUND => (int)BuildSnapshotComponents.BACKGROUND,
+                StyleTag.FOREGROUND => (int)BuildSnapshotComponents.FOREGROUND,
+                StyleTag.FONT_ATTR  => (int)BuildSnapshotComponents.FONT_STYLE,
+                StyleTag.PADDING    => (int)BuildSnapshotComponents.PADDING,
+                _                   => -1
             },
-            _ => -1,
+            _        => -1,
         };
     }
+}
+
+
+file enum BuildSnapshotComponents: byte {
+    POSITION,
+    SCALE,
+    BACKGROUND,
+    FOREGROUND,
+    FONT_STYLE,
+    PADDING,
+    __COUNT__
 }

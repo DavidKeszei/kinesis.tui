@@ -16,14 +16,17 @@ public abstract class Island: Entity {
     private Island m_root = null!;
     private BuildStackSnapshot m_buildSnapshot = null!;
 
-    private Vec2 m_boundries = Vec2.Zero;
+    private Vec2 m_boundries = Vec2.Zero; // <- This indicates the segment boundries from the DrawCalls.ChunkHolders
     private int m_chunkId = -1;
 
+    private int m_builtCount = 0;
     private bool m_isActive = false;
+
     private bool m_isBuilded = false;
 
+
     /// <summary>
-    /// Created <see cref="Entity"/> instance-tree as "list".
+    /// Current "drawable" entities of the <see cref="Island"/> insatance.
     /// </summary>
     internal List<Entity> DrawCalls { get => m_renderSet; }
 
@@ -37,6 +40,11 @@ public abstract class Island: Entity {
     /// </summary>
     internal bool IsBuilt { get => m_isBuilded; }
 
+    /// <summary>
+    /// Built count of the current <see cref="Island"/> during his lifetime.
+    /// </summary>
+    internal int BuiltCount { get => m_builtCount; }
+
     public Island(int count = MAX_COMPONENT_COUNT): base(count != MAX_COMPONENT_COUNT ? count + 3 : MAX_COMPONENT_COUNT) {
         m_renderSet = new List<Entity>(capacity: 32);
         m_entities = new List<Entity>(capacity: 32);
@@ -44,8 +52,13 @@ public abstract class Island: Entity {
         this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.UP));
         this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.DOWN));
 
+        /* TODO(2026-07-09T21:08:53): Make more ergonomic the rebuild process, when the target the root UI Island itself. (Status: Planned⚠️)
+         * 
+         * INSPECTIONS:
+         * 	- The rebuild shortcutted by the ContentComponent.HasChange & m_built field.
+         */ 	
         this.Attach<ContentComponent>(component: ComponentPool<ContentComponent>.Instance.Rent<ContentComponent>(), isUnique: true);
-        this.Attach<DrawCalls>(component: ComponentPool<DrawCalls>.Instance.Rent<DrawCalls>(), isUnique: true);
+        this.Attach<DrawCalls>(component: new DrawCalls(), isUnique: true);
     }
 
     /// <summary>
@@ -54,20 +67,16 @@ public abstract class Island: Entity {
     /// <remarks>
     /// This method is destructive and marks an intent-driven layout shift. 
     /// It immediately invalidates and structural-deconstructs the current UI sub-tree.
-    /// <para>
-    /// <c>WARNING:</c> All entity and component references originating from the old 
-    /// tree-segment before this call are considered <b>stale</b> and are returned to their respective pools. 
-    /// Do not cache, query, or mutate any objects from the destroyed hierarchy after invoking this method.
-    /// </para>
     /// </remarks>
     protected void Rebuild() {
         // We only rebuild the Island, if that builded or has any change
-        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChange ?? false)) return;
+        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChange ?? false))
+            return;
 
         bool isTop = m_root == null;
         m_isBuilded = false;
 
-        Stack<Island> rebuildStack = new Stack<Island>();
+        Stack<Island> rebuildStack = new Stack<Island>(capacity: 32);
         DrawCalls draws = (isTop ? Get<DrawCalls>()! : m_root!.Get<DrawCalls>()!);
 
         IReadOnlyList<Island> chunks = draws.ChunkHolders;
@@ -87,13 +96,6 @@ public abstract class Island: Entity {
 
         m_entities.Clear();
         m_renderSet.Clear();
-        
-        if (isTop) {
-            Get<DrawCalls>()!.Reset();
-            Remove<DrawCalls>();
-
-            _ = Attach<DrawCalls>(ComponentPool<DrawCalls>.Instance.Rent<DrawCalls>(), isUnique: true);
-        }
 
         AcceptRebuild(rebuildStack, draws);
     }
@@ -115,6 +117,7 @@ public abstract class Island: Entity {
             if (created == null) return;
             context.CurrentIsland = island;
 
+            ++context.CurrentIsland.m_builtCount;
             context.CurrentIsland.m_boundries.X = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;
 
             if (!context.IsTop) {

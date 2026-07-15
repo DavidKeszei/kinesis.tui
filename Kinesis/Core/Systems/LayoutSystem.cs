@@ -31,7 +31,7 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Create a new <see cref="LayoutSystem"/> with <paramref name="scale"/>.
     /// </summary>
     /// <param name="scale">Start scale of the application. This is going be the pivot point of the observing.</param>
-    public LayoutSystem(ConsoleSourceInfo provider, State<LayoutInfo> state, Vec2 scale) {
+    public LayoutSystem(ConsoleInfoSource provider, State<LayoutInfo> state, Vec2 scale) {
         m_info = state;
         m_source = provider.Windows;
 

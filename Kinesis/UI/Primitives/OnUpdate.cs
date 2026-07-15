@@ -9,6 +9,12 @@ using System.Text;
 
 namespace Kinesis.UI;
 
+/// <summary>
+/// Represents a callback for job queuing.
+/// </summary>
+/// <typeparam name="T">Type of the message of the callback.</typeparam>
+/// <param name="message">Current message instance from a source.</param>
+/// <param name="visitor">Hierarchy visitor of the current callback.</param>
 public delegate void JobCallback<T>(T message, ref readonly IslandEntityVisitor visitor) where T: IJobMessage;
 
 /// <summary>

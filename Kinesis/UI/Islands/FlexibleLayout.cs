@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a flex-like space-managert on one direction.
 /// </summary>
 public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLayout<List<uint>> {
-    private string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
+    private readonly string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
 
     private List<string> m_childIds = null!;
     private List<uint> m_ratios = null!;

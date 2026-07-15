@@ -38,7 +38,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     private int m_index = 0;
 
     /// <summary>
-    /// (Foreground) color of the <see cref="Spinner"/>.
+    /// Foreground color of the <see cref="Spinner"/>.
     /// </summary>
     public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
 
@@ -59,6 +59,13 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
         _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)), isUnique: true);
     }
 
+    /// <summary>
+    /// Create a spinner based on the predefined constansts.
+    /// </summary>
+    /// <param name="preset">Enumeration value of the preset.</param>
+    /// <param name="durationPerCycle">Duration of a cycle.</param>
+    /// <param name="color">Foreground color of the <see cref="Spinner"/>.</param>
+    /// <returns>Returns a new <see cref="Spinner"/> instance.</returns>
     public static Spinner Create(SpinnerPreset preset, TimeSpan durationPerCycle, RGB? color = null) {
         if (!Enum.IsDefined<SpinnerPreset>(preset))
             return null!;
@@ -85,7 +92,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        return new AnimatedArea<AnimatedNumber<int>>() {
+        return new AnimatedArea<AnimatedNumber<int>, UIText>() {
             Selector = (text) => m_index,
             Applier = (text, value) => {
                 m_index = value;

@@ -39,7 +39,7 @@ internal sealed class InputSystem: IDynamicSystem {
     private readonly IInputBackend m_backend = null!;
     private (char Key, InputModifier Modifier, TimeSpan When, bool isPress) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
-    public InputSystem(ConsoleSourceInfo provider) {
+    public InputSystem(ConsoleInfoSource provider) {
         m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init(source: provider.Windows) : null!;
         Console.InputEncoding = Encoding.UTF8;
     }

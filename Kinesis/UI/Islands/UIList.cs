@@ -85,6 +85,12 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
         m_listRowHead = int.Clamp(m_listRowHead + changeValue, 0, m_contentSource.Count - 1);
     }
 
+    /* TODO(2026-07-08T23:21:21): Make the update "event-drive" based. (Status: Planned ⚠)
+     * 
+     * INSPECTIONS:
+     * 	- The continous update gives a small amount of CPU usage per UIList instance.
+     * 	  This leads to significant CPU usage, when multiple list on the screen.
+     */ 	
     private void Update(RenderMessage message, ref readonly IslandEntityVisitor tree) {
         Vec2 parentScale = Get<Scale>()?.Maximum.Value ?? message.Scale;
 
@@ -110,13 +116,13 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     }
 
     private void CreateRowViewports(float y) {
-        int count = (int)MathF.Round(y / m_rowHeight);
+        m_maxRowCount = (int)MathF.Round(y / m_rowHeight);
 
         UIStack stack = new UIStack(capacity: 64) {
             Name = (m_list ??= $"__list_{Guid.CreateVersion7()}__")
         };
 
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < m_maxRowCount; ++i) {
             TTemplate template = new TTemplate();
 
             _ = stack.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
@@ -128,8 +134,6 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
             template.Move(x: Get<Position>()!.Relative.X, y: i * m_rowHeight);
             template.Get<Hierarchy>(Hierarchy.Parent)!.Attached = stack;
         }
-
-        m_maxRowCount = count;
 
         Get<ContentComponent>()!.Content = new Viewport() { Content = stack };
         SetHeigthOfTheChildren(stack, maxHeigth: y);

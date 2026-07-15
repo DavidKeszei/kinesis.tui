@@ -181,29 +181,6 @@ internal ref struct ANSIStringBuilder {
     /// <returns>Return the current <see cref="ANSIStringBuilder"/> instance.</returns>
     [UnscopedRef]
     public ref ANSIStringBuilder WriteCharacter(char value) {
-
-        /* TODO(2026-05-19T23:11:36): Make better clear style function, which not bombing the internal terminal ANSI parser
-         *                            with unpleasant clear commands. (Status: Done✅)
-         *                            
-         * INSPECTIONS:
-         *      - If we reset the text decorations & colors on every 'px', then the rendering always deterministic & good.
-         *        But this can some overhead to the parser.
-         *      - FPS remained same as before -> CODE OF INSPECT can be removed safely.
-         *        
-         * CODE OF INSPECT:
-         * 
-         * 
-         *  if (m_characterWritten && value == ' ') {
-         *      m_characterWritten = false;
-         *      m_flag = TextDecoration.NONE;
-         *
-         *       _ = AnsiCommand.ResetFontStyles.TryCopyTo(destination: m_stack[m_position..]);
-         *       m_position += AnsiCommand.ResetFontStyles.Length;
-         *   }
-         *
-         *  m_characterWritten = value != ' ';
-         */
-
         m_stack[m_position++] = value;
         _ = AnsiCommand.ResetFontStyles.TryCopyTo(destination: m_stack[m_position..]);
 
