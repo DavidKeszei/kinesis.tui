@@ -43,6 +43,9 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
 
     public uint RowHeight { init => m_rowHeight = (int)(value == 0 ? 1 : value); }
 
+    /// <summary>
+    /// Create a new <see cref="UIList{TTemplate, TData}"/> instance.
+    /// </summary>
     public UIList(): base(count: 8) {
         _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
         _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);

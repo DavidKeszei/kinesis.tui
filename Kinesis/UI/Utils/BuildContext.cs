@@ -35,9 +35,7 @@ public ref struct BuildContext {
     private readonly Entity m_current = null!;
     private readonly Stack<Component>[] m_inheritanceTargets = null!;
 
-    private readonly int m_levelId = 0;
     private byte m_flags = 0;
-
     private readonly bool m_isTop = true;
 
     /// <summary>
@@ -64,8 +62,6 @@ public ref struct BuildContext {
     /// Indicates the current is the root level. 
     /// </summary>
     internal readonly bool IsTop { get => m_isTop; init => m_isTop = value; }
-
-    internal readonly int LevelId { get => m_levelId; init => m_levelId = value; }
 
     internal BuildContext(Entity current) {
         m_current = current;

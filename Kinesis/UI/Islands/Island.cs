@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace Kinesis.UI;
 
 /// <summary>
-/// Represent a segment on the screen. Acts like a container for complex objects.
+/// Represent a segment on the screen. Acts like a zip for complex UI elemens.
 /// </summary>
 public abstract class Island: Entity {
     private readonly List<Entity> m_renderSet = null!;
@@ -16,7 +16,7 @@ public abstract class Island: Entity {
     private Island m_root = null!;
     private BuildStackSnapshot m_buildSnapshot = null!;
 
-    private Vec2 m_boundries = Vec2.Zero; // <- This indicates the segment boundries from the DrawCalls.ChunkHolders
+    private Vec2 m_boundries = Vec2.Zero;
     private int m_chunkId = -1;
 
     private int m_builtCount = 0;
@@ -156,7 +156,6 @@ public abstract class Island: Entity {
                     IsTop = false,
                     ChangeStyleFlag = 0,
                     Current = child.Attached,
-                    LevelId = context.LevelId + 1
                 });
             }
         }

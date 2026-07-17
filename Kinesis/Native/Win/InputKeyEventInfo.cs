@@ -9,7 +9,7 @@ namespace Kinesis.Native;
 /// Represent a KEY_EVENT_RECORD struct from Win32 API.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-internal readonly record struct InputKeyEventInfo {
+internal readonly record struct InputKeyEventInfo() {
     [MarshalAs(unmanagedType: UnmanagedType.Bool), FieldOffset(offset: 0)] private readonly int m_pressed = 0;
     [MarshalAs(unmanagedType: UnmanagedType.U2), FieldOffset(offset: 4)] private readonly ushort m_repeatCount = 0;
 
@@ -31,43 +31,15 @@ internal readonly record struct InputKeyEventInfo {
     /// </summary>
     public bool IsPressed { get => m_pressed != 0; }
 
-    public InputKeyEventInfo() { }
-
     private bool IsArrowKey(out char name) {
-        name = (ArrowKey)m_vKeyCode switch {
-            ArrowKey.RIGHT => '\u2190',  /* Key: ← */
-            ArrowKey.UP => '\u2191', /* Key: ↑ */
-            ArrowKey.LEFT => '\u2192',  /* Key: → */
-            ArrowKey.DOWN => '\u2193',  /* Key: ↓ */
+        name = (Core.ArrowKey)m_vKeyCode switch {
+            Core.ArrowKey.RIGHT => '\u2190',  /* Key: ← */
+            Core.ArrowKey.UP => '\u2191', /* Key: ↑ */
+            Core.ArrowKey.LEFT => '\u2192',  /* Key: → */
+            Core.ArrowKey.DOWN => '\u2193',  /* Key: ↓ */
             _ => '\0'
         };
 
         return name != '\0';
     }
-}
-
-/// <summary>
-/// Possible character values from the arrow keys. 
-/// </summary>
-public enum ArrowKey: short {
-    /// <summary>
-    /// Indicates the underlying character is not arrow key.
-    /// </summary>
-    INVALID_NONE = -1,
-    /// <summary>
-    /// Up direction on the arrow key pad. Key as character: ↑.
-    /// </summary>
-    UP = 0x26,
-    /// <summary>
-    /// Right direction on the arrow key pad. Key as character: →.
-    /// </summary>
-    RIGHT = 0x25,
-    /// <summary>
-    /// Down direction on the arrow key pad. Key as character: ↓.
-    /// </summary>
-    DOWN = 0x28,
-    /// <summary>
-    /// Left direction on the arrow key pad. Key as character: ←.
-    /// </summary>
-    LEFT = 0x27
 }

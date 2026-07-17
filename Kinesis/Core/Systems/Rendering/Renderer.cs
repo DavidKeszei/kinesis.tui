@@ -10,7 +10,7 @@ using System.Text;
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Represent a IMGUI/immediate-mode based renderer.
+/// Represents a IMGUI/immediate-mode based renderer.
 /// </summary>
 internal sealed class Renderer {
     #region PREDEFINES
@@ -78,15 +78,15 @@ internal sealed class Renderer {
             }
 
             Diffing(fullRedrawRequested);
+            m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
         }
 
-        m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
         float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
 
         if (delta <= LIMIT)
             Thread.Sleep(millisecondsTimeout: (int)(LIMIT - delta));
 
-        m_delta = float.Lerp(m_delta, delta, .1f);
+        m_delta = float.Lerp(m_delta, delta, amount: .1f);
     }
 
     public void Diffing(bool full) {
