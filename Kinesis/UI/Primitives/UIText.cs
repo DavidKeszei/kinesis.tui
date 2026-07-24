@@ -70,7 +70,7 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
         TextRenderer renderer = Get<TextRenderer>()!;
         int len = renderer.Write(text, from);
 
-        Get<Scale>()!.Value = new Vec2(x: len, y: 1);
+        Get<Scale>()!.Value = new Vec2(x: len + from, y: 1);
         return len;
     }
 
@@ -80,11 +80,17 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
     }
 
     public void Remove(int count) {
-        if (count == -1) return;
-
-        Get<TextRenderer>()!.Remove(count);
         Scale scale = Get<Scale>()!;
-        scale.ChangeAxisValue(value: scale.Value.X - 1, axis: Axis.X);
+        if (count == -1 || scale.Value.X == 0) return;
+
+        TextRenderer renderer = Get<TextRenderer>()!;
+        int width = (int)scale.Value.X;
+
+        if (width == renderer.Length)
+            scale.ChangeAxisValue(value: width - 1, axis: Axis.X);
+
+        renderer.Remove(count);
+
     }
 
     public void Copy(ref BuildContext from) {

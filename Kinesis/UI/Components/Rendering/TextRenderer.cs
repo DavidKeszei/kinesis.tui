@@ -25,6 +25,11 @@ public class TextRenderer(): RenderComponent, IPoolable {
     }
 
     /// <summary>
+    /// Length of the current rendered text as <see cref="int"/>,
+    /// </summary>
+    public int Length { get => m_len; }
+
+    /// <summary>
     /// Remove characters from internal buffer.
     /// </summary>
     /// <param name="count">Amount of the remove.</param>
