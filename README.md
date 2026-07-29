@@ -8,31 +8,26 @@ The goal to create an enjoyable library, which achives performance-boost and les
 If you ever touched some UI library (Flutter, React) this will be familiar to you. If you haven't, don't worry I'll (try to) show you! So let's see "the beast"!
 
 ```csharp
-public static class Program {
-    public static async Task Main(string[] args) {
-        KinesisEngine engine = new KinesisEngine(title: "Playground");
-        engine.RegisterIsland<App>(name: nameof(App), onCreate: static provider => new App());
+KinesisEngine engine = new KinesisEngine(title: "Counter");
+engine.RegisterIsland<App>(name: nameof(App), static (provider) => new App());
 
-        await engine.Start();
-    }
-}
+await engine.Start();
 
-public class App: Island {
-    protected override Entity? Build(ref readonly BuildContext context) {
-        return new Scaffold {
-            Content = new Center {
-                Content = new AnimatedArea<RGB, UIBox> {
-                    Selector   = static(box)        => box.Background,
-                    Applier    = static(box, color) => box.Background = color,
+public sealed class App: Island {
+    private readonly static string s_uiText = "__uiCounter__";
+    private static uint m_count = 0;
 
-                    Duration   = TimeSpan.FromSeconds(.5f),
-                    To         = RGB.Blue,
+    protected override Entity? Build(BuildContext context) {
+        return new OnUpdate<InputMessage>(context) {
+            On = static(message, ref tree) => {
 
-                    IsPeriodic = true,
-                    Content = new UIBox {
-                        Scale      = Vec2.AsSquare(scale: Vec2.One * 5.5f),
-                        Background = RGB.White
-                    }
+                if (message.IsPressed && message.Key == 0x20)
+                    tree.Visit<UIText>(name: s_uiText)?.Text = $"Press count: {m_count++}";
+            },
+            Child = new Center {
+                Child = new UIText {
+                    Name = s_uiText,
+                    Text = "Press any button to start..."
                 }
             }
         };
