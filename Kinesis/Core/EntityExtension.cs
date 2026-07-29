@@ -11,46 +11,33 @@ namespace Kinesis;
 public static class EntityExtension {
     extension(Entity entity) {
 
-        /// <summary>
-        /// Move the current <see cref="Entity"/> with <paramref name="x"/> and <paramref name="y"/> by the <paramref name="anchor"/>.
-        /// </summary>
-        /// <param name="x">Move adjustment on the X axis.</param>
-        /// <param name="y">Move adjustment on the Y axis.</param>
-        /// <param name="anchor">Pivot/Anchor of the movement.</param>
-        public void Move(float x, float y, MoveAnchor anchor = MoveAnchor.ABSOLUTE) {
-            Transform? transform = entity?.GetComponent<Transform>();
-            if (transform == null) return;
-
-            transform.Position = anchor switch {
-                MoveAnchor.RELATIVE => new Vec2(x: transform.Position.X + x, y: transform.Position.Y + y),
-                MoveAnchor.ABSOLUTE => new Vec2(x, y),
-                _ => transform.Position
-            };
-        }
-
-        public Style? QueryStyle(StyleTag tag) {
-            using StyleEnumerator styles = new StyleEnumerator(entity);
-            foreach (Style component in styles) {
-                if (component.Tag == tag) return component;
-            }
-
-            return null!;
-        }
-
         public int CountComponent<T>(Func<T, bool>? comparand = null) where T: Component, IStaticType {
+            if (entity == null) return 0;
+
             int count = 0;
             comparand ??= static(_) => true;
 
-            foreach (Component comp in entity)
+            foreach (Component comp in entity) {
+                if (comp == null) continue;
+
                 if (comp.TypeOf(T.Name) && comparand((T)comp))
                     ++count;
+            }
 
             return count;
         }
-    }
-}
 
-public enum MoveAnchor: byte {
-    ABSOLUTE,
-    RELATIVE
+        /// <summary>
+        /// Move an <see cref="Entity"/> based on the <paramref name="x"/> and <paramref name="y"/> values.
+        /// </summary>
+        /// <param name="x">Move amount on the X axis.</param>
+        /// <param name="y">Move amount on the Y axis.</param>
+        /// <remarks>
+        /// <b>Remarks:</b> If the entity not has <see cref="Position"/> component, then the function does nothing.
+        /// </remarks>
+        public void Move(float x, float y) {
+            if (entity.Get<Position>() == null) return;
+            entity.Get<Position>()!.Relative = new Vec2(x, y);
+        }
+    }
 }

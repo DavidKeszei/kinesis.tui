@@ -7,7 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent current state of the rendering.
 /// </summary>
-public readonly record struct RenderMessage: IWorkMessage {
+public readonly record struct RenderMessage: IJobMessage {
     private readonly float m_delta = .0f;
     private readonly int m_fps = 0;
 
@@ -31,7 +31,7 @@ public readonly record struct RenderMessage: IWorkMessage {
     /// <summary>
     /// Target callback type of the message.
     /// </summary>
-    public static WorkTag Target { get => WorkTag.RENDERING; }
+    public static JobTag Target { get => JobTag.RENDERING; }
 
     public RenderMessage(float deltaTime, int fps, Vec2 scale) {
         m_delta = deltaTime;

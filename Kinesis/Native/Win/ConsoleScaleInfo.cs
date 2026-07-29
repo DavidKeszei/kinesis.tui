@@ -9,7 +9,7 @@ namespace Kinesis.Native;
 /// Represent a COORD structure in the Win32 API.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Sequential)]
-internal readonly struct ConsoleScaleInfo {
+internal readonly struct ConsoleScaleInfo: IEquatable<ConsoleScaleInfo> {
     private readonly short m_x = 0;
     private readonly short m_y = 0;
 
@@ -21,4 +21,6 @@ internal readonly struct ConsoleScaleInfo {
         m_x = x;
         m_y = y;
     }
+
+    public bool Equals(ConsoleScaleInfo info) => m_x == info.m_x && m_y == info.m_y;
 }

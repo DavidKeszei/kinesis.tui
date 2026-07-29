@@ -41,7 +41,8 @@ internal partial class WindowsInputBackend: IInputBackend {
     private readonly RingBuffer<InputInfo> m_infoBuffer = null!;
     private IConsoleSource<InputKeyEventInfo> m_source = null!;
 
-    private WindowsConsoleEventMsg m_msg = new WindowsConsoleEventMsg(tag: WindowsConsoleMsgTag.INPUT);
+    private InputInfo m_lastInput = default;
+    private bool m_isPressed = false;
 
     /// <summary>
     /// Indicates the user pressed/pressing some key currently.
@@ -75,23 +76,39 @@ internal partial class WindowsInputBackend: IInputBackend {
         };
 
         char character = '\0';
-        InputModifier modifiers = InputModifier.NONE;
         bool isPressed = false;
 
+        InputModifier modifiers = QueryModifiers(modifiersCodes);
         InputKeyEventInfo info = default!;
-        if (m_source.Read(out info)) {
+
+        bool success = m_source.Read(out info) && info.IsPressed != m_isPressed;
+
+        if (success) {
             character = info.Value;
-            isPressed = info.IsPressed;
+            isPressed = m_isPressed = info.IsPressed;
 
-            for (byte i = 0; i < modifiersCodes.Length; ++i) {
-                if (GetKeyState(modifiersCodes[i]) < 0)
-                    modifiers |= (InputModifier)modifiersCodes[i];
-            }
-
-            input = new InputInfo(character, modifiers, isPressed);
+            m_lastInput = input = new InputInfo(modifiers, info.Value, info.IsPressed);
             return true;
         }
 
+        // If the read was unsuccessfull, but we don't detected any key up, then we think the user holding the specific key
+        if (m_isPressed) {
+            input = m_lastInput;
+            return true;
+        }
+
+        m_lastInput = default;
         return false;
+    }
+
+    private InputModifier QueryModifiers(ReadOnlySpan<int> modifiersCodes) {
+        InputModifier modifiers = InputModifier.NONE;
+
+        for (byte i = 0; i < modifiersCodes.Length; ++i) {
+            if (GetKeyState(modifiersCodes[i]) < 0)
+                modifiers |= (InputModifier)modifiersCodes[i];
+        }
+
+        return modifiers;
     }
 }

@@ -4,8 +4,8 @@ using System.Text;
 
 namespace Kinesis.Core;
 
-public enum WorkTag : byte {
-    INPUT,
-    RENDERING,
-    LAYOUT
+public enum JobRequestIntent {
+    ACTIVE,
+    SUSPEND,
+    REMOVE
 }

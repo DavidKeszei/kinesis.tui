@@ -8,7 +8,7 @@ namespace Kinesis.Core.Rendering;
 /// Enumeration of supported character styles.
 /// </summary>
 [Flags]
-public enum StyleFlag: short {
+public enum TextDecoration: short {
     NONE = (1 << 0),
     /// <summary>
     /// Indicates the character is bold.

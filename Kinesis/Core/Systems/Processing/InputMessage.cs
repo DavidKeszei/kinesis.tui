@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kinesis.Native;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,9 +8,9 @@ namespace Kinesis.Core;
 /// <summary>
 /// Single input message from the standard input stream.
 /// </summary>
-public readonly record struct InputMessage: IWorkMessage {
-    private readonly char m_key = '\0';
+public readonly record struct InputMessage: IJobMessage {
     private readonly InputModifier m_modifiers = InputModifier.NONE;
+    private readonly char m_key = '\0';
 
     private readonly InputAction m_action = InputAction.PRESS;
     private readonly bool m_isPressed = false;
@@ -42,7 +43,7 @@ public readonly record struct InputMessage: IWorkMessage {
     /// <summary>
     /// Target callback type of the message.
     /// </summary>
-    public static WorkTag Target { get => WorkTag.INPUT; }
+    public static JobTag Target { get => JobTag.INPUT; }
 
     /// <summary>Create a new <see cref="InputMessage"/>.</summary>
     /// <param name="key">Actual key value as <see cref="char"/>.</param>
@@ -54,5 +55,19 @@ public readonly record struct InputMessage: IWorkMessage {
 
         m_action = action;
         m_isPressed = isPress;
+    }
+
+    /// <summary>
+    /// Convert the underlying <see cref="char"/> value to an <see cref="ArrowKey"/> enum.
+    /// </summary>
+    /// <returns>Returns an <see cref="ArrowKey"/> enum value.</returns>
+    public ArrowKey ToArrowKey() {
+        return m_key switch {
+            '\u2190' => ArrowKey.LEFT,
+            '\u2191' => ArrowKey.UP,
+            '\u2192' => ArrowKey.RIGHT,
+            '\u2193' => ArrowKey.DOWN,
+            _ => ArrowKey.INVALID_NONE
+        };
     }
 }

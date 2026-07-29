@@ -24,8 +24,8 @@ public class NavigationSystem: INavigator {
             if (!m_navigationFrame.TryPeek(out Island? page))
                 return null!;
 
-            if (!page.Tree.Any())
-                page.CreateRenderSet(context: new BuildContext(current: page) { Root = page });
+            if (!page.IsBuilt)
+                page.BuildTree(context: new BuildContext(current: page) { Root = page });
 
             return page;
         } 

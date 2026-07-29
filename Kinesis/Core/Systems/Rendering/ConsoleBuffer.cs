@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis.Core.Rendering;
@@ -7,24 +10,34 @@ namespace Kinesis.Core.Rendering;
 /// <summary>
 /// Represent a <see cref="ConsoleBuffer"/> on the screen.
 /// </summary>
-internal readonly struct ConsoleBuffer {
-    private readonly vtchar_t[,] m_buffer = null!;
+internal readonly struct ConsoleBuffer: IDisposable {
+    private readonly unsafe ANSIChar* m_buffer = null!;
     private readonly Vec2 m_scale = new Vec2(-1, -1);
 
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
 
     /// <summary>
-    /// Dimension of the from.
+    /// Current scale of the <see cref="ConsoleBuffer"/>.
     /// </summary>
     public Vec2 Scale { get => m_scale; }
 
     /// <summary>
-    /// Get a <see cref="vtchar_t"/> reference from the from.
+    /// Get a <see cref="ANSIChar"/> reference from the from.
     /// </summary>
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
-    /// <returns>Return a <see cref="vtchar_t"/> reference.</returns>
-    public ref vtchar_t this[int x, int y] => ref m_buffer[x, y];
+    /// <returns>Return a <see cref="ANSIChar"/> struct by reference.</returns>
+    /// <exception cref="IndexOutOfRangeException"/>
+    public ref ANSIChar this[int x, int y] { 
+        get {
+            if ((x < 0 || y < 0) || (x >= m_startScale.X || y >= m_startScale.Y))
+                throw new IndexOutOfRangeException(message: $"The {nameof(ConsoleBuffer)} was out of bound by the paramters. (Parameter: x = {x}; y = {y})");
+
+            unsafe { 
+                return ref m_buffer[x + (int)m_startScale.X * y]; 
+            }
+        }
+    }
 
     /// <summary>
     /// Create new <see cref="ConsoleBuffer"/> with specific dimension.
@@ -35,59 +48,102 @@ internal readonly struct ConsoleBuffer {
         m_scale = new Vec2(x, y);
         m_startScale = new Vec2(x, y);
 
-        m_buffer = new vtchar_t[x, y];
-
-        for (int _x = 0; _x < x; ++_x) {
-            for (int _y = 0; _y < y; ++_y)
-                m_buffer[_x, _y] = new vtchar_t(' ', RGB.Transparent);
-        }
+        unsafe { m_buffer = Alloc(x, y); }
+        Clear();
     }
 
-    private ConsoleBuffer(vtchar_t[,] buffer, Vec2 scale) {
+    private unsafe ConsoleBuffer(ANSIChar* buffer, Vec2 scale, Vec2 startScale) {
         m_buffer = buffer;
         m_scale = scale;
 
-        m_startScale = scale;
+        m_startScale = startScale;
     }
 
     /// <summary>
     /// Copy <paramref name="from"/> to this from.
     /// </summary>
     /// <param name="from">Source from.</param>
-    public void Copy(in ConsoleBuffer from) {
-        for (int x = 0; x < m_scale.X; ++x) {
-            for (int y = 0; y < m_scale.Y; ++y) {
+    public void Copy(in Canvas from) {
+        int rangeX = (int)(from.Scale.X < m_scale.X ? from.Scale.X : m_scale.X);
+        int rangeY = (int)(from.Scale.Y < m_scale.Y ? from.Scale.Y : m_scale.Y);
+
+        for (int x = 0; x < rangeX; ++x) {
+            for (int y = 0; y < rangeY; ++y) {
                 this[x, y] = from[x, y];
             }
         }
     }
 
     /// <summary>
+    /// Clear the buffer with default values.
+    /// </summary>
+    public void Clear() {
+        for (int x = 0; x < m_scale.X; ++x) {
+            for (int y = 0; y < m_scale.Y; ++y) {
+                ref ANSIChar ch = ref this[x, y];
+                ch.Clear();
+            }
+        }
+    }
+
+    public void Dispose() {
+        unsafe { NativeMemory.Free(ptr: m_buffer); }
+    }
+
+    /// <summary>
     /// Create a slice from the current <see cref="ConsoleBuffer"/>.
     /// </summary>
     /// <param name="buffer">Source of the from.</param>
-    /// <param name="from">Absolute index of the from.</param>
-    /// <param name="scale">Scale of the from.</param>
+    /// <param name="from">Absolute index of the <see cref="Canvas"/> instance on the <paramref name="buffer"/>.</param>
+    /// <param name="scale">Requested scale.</param>
     /// <returns>Return a <see cref="Canvas"/> instance.</returns>
     public static Canvas Slice(ref ConsoleBuffer buffer, Vec2 from, Vec2 scale) {
+        Vec2 start = from;
+
         if (from.X < 0) scale.X += from.X;
-        else if (from.X + scale.X >= buffer.Scale.X) scale.X = buffer.Scale.X - from.X;
+        else if (from.X + scale.X >= buffer.Scale.X) scale.X = buffer.Scale.X - from.X; // <- This mostly used by the internal Reallocate()
 
         if (from.Y < 0) scale.Y += from.Y;
-        else if (from.Y + scale.Y >= buffer.Scale.Y) scale.Y = buffer.Scale.Y - from.Y;
+        else if (from.Y + scale.Y >= buffer.Scale.Y) scale.Y = buffer.Scale.Y - from.Y; // <- This mostly used by the internal Reallocate()
 
-        from.X = float.Clamp(from.X, 0, buffer.Scale.X - 1);
-        from.Y = float.Clamp(from.Y, 0, buffer.Scale.Y - 1);
+        from.X = float.Clamp(from.X, 0, buffer.Scale.X);
+        from.Y = float.Clamp(from.Y, 0, buffer.Scale.Y);
 
-        return new Canvas(ref buffer, scale, from);
+        return new Canvas(ref buffer, scale, from, start);
     }
 
-    public static ConsoleBuffer Reallocate(ConsoleBuffer buffer, Vec2 scale) {
+    /// <summary>
+    /// Reallocate the <paramref name="buffer"/> with new <paramref name="scale"/>.
+    /// </summary>
+    /// <param name="buffer">Target/Old buffer of the reallocation.</param>
+    /// <param name="scale">New scale of the buffer.</param>
+    /// <returns>Returns a <see cref="ConsoleBuffer"/> instance.</returns>
+    public static ConsoleBuffer Reallocate(ref ConsoleBuffer buffer, Vec2 scale) {
+        ConsoleBuffer temp = default;
+        unsafe { temp = new ConsoleBuffer(buffer: Alloc(x: (int)scale.X, y: (int)scale.Y), scale, startScale: scale); }
+
+        temp.Clear();
+        temp.Copy(from: Slice(ref buffer, from: Vec2.Zero, scale));
+
         if (buffer.m_startScale.X < scale.X || buffer.m_startScale.Y < scale.Y) {
-            vtchar_t[,] _new = new vtchar_t[(int)scale.X, (int)scale.Y];
-            return new ConsoleBuffer(_new, scale);
+            unsafe { NativeMemory.Free(ptr: buffer.m_buffer); }
+
+            Debug.WriteLine(value: $"Memory was freed up & reallocated... (Scale: {scale.X:f0} x {scale.Y:f0})");
+            return temp;
         }
 
-        return new ConsoleBuffer(buffer.m_buffer, scale);
+        /* 
+         * Force clear & copy; This forcing the diff for check the new/old cells.
+         * If we not do this, then we just cut it out, but if resize back, then the diff
+         * was not see any differences (because the not saw cells not changed), but we on the screen see the not rendered objects.
+         */
+        buffer.Clear();
+        buffer.Copy(Slice(ref temp, from: Vec2.Zero, scale));
+
+        temp.Dispose();
+        unsafe { return new ConsoleBuffer(buffer.m_buffer, scale, startScale: buffer.m_startScale); }
     }
+
+    private static unsafe ANSIChar* Alloc(int x, int y) 
+        => (ANSIChar*)NativeMemory.Alloc(byteCount: (nuint)(Unsafe.SizeOf<ANSIChar>() * (x * y)));
 }

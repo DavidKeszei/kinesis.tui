@@ -41,7 +41,7 @@ public abstract class State<T> {
 /// <summary>
 /// Represent a state holder, which only allows struct/value-type.
 /// </summary>
-/// <typeparam name="T">Value-type of the state.</typeparam>
+/// <typeparam name="T">Inset-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
 public class ValueState<T>(StateUpdate<T> update = default!, T @default = default): State<T>(update ?? (static(ref from, to) => from = to), @default) where T: struct;
 
@@ -49,6 +49,6 @@ public class ValueState<T>(StateUpdate<T> update = default!, T @default = defaul
 /// <summary>
 /// Represent a state holder, which only allows class/reference-type.
 /// </summary>
-/// <typeparam name="T">Reference-type of the state.</typeparam>
+/// <typeparam name="T">Maximum-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
-public class RefState<T>(StateUpdate<T> update, T @default = null!): State<T>(update, @default) where T: class;
+public class RefState<T>(StateUpdate<T> update = default!, T @default = null!): State<T>(update ?? (static (ref from, to) => from = to), @default) where T: class;

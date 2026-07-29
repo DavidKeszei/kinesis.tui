@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Kinesis.Core.Utils;
 
 namespace Kinesis;
 
@@ -14,38 +15,47 @@ namespace Kinesis;
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
+    #region PREDEFINES
+    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h";
+    private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
+    #endregion
+
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
-    private readonly WorkerSystem m_worker = null!;
+    private readonly JobSystem m_worker = null!;
     private readonly NavigationSystem m_navigator = null!;
 
     private readonly LayoutSystem m_layoutSystem = null!;
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<WorkerSystemState> m_workSyncState = null!;
+    private readonly State<JobSystemStateInfo> m_workSyncState = null!;
 
     private readonly ConsoleSourceInfo m_consoleSourceInfoProvider = default!;
+    private readonly string m_title = string.Empty;
 
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
-        Console.Out.Write(title == null ? $"\e]0;KinesisTUI\a" : $"\e]0;{title}\a");
+        Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
+        Console.Out.Write(value: AnsiCommand.WrapDisable);
+
+        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
         m_consoleSourceInfoProvider = new ConsoleSourceInfo();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
+        m_workSyncState = new RefState<JobSystemStateInfo>(@default: new JobSystemStateInfo());
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
 
-        m_worker = WorkerSystem.Current;
+        m_worker = JobSystem.Current;
         m_navigator = new NavigationSystem(provider: this);
 
-        m_renderer = new Renderer(layout: m_layoutInfo, sync: m_workSyncState);
+        m_renderer = new Renderer(workState: m_workSyncState, layoutState: m_layoutInfo);
         m_customSystems = new List<SystemInvocationInfo>();
 
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
@@ -74,7 +84,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <param name="action">The system itself.</param>
     /// <param name="when">Time of the invocation of the system.</param>
-    public void AddSystem(SystemInvocationTime when, Func<ISystemProvider, ISystem> action)
+    public void RegisterSystem(SystemInvocationTime when, Func<ISystemProvider, ISystem> action)
         => m_customSystems.Add(item: new SystemInvocationInfo(action, null, when));
 
     /// <summary>
@@ -94,7 +104,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
         /* Run the starter systems. */
         await Run(invocation: SystemInvocationTime.ON_BEGIN);
-        WorkerSystem.Current.AddSyncState(sync: m_workSyncState);
+        JobSystem.Current.AddRenderSync(sync: m_workSyncState);
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
@@ -104,14 +114,21 @@ public sealed partial class KinesisEngine: ISystemProvider {
         while(!token.IsCancellationRequested) {
 
             /* Render the frame to the screen/terminal window. */
-            await m_renderer.Render(entities: m_navigator.Current?.Tree ?? []);
+            m_renderer.Run(calls: m_navigator.Current.Get<DrawCalls>()!);
 
-            if (!firstRun) m_worker.AddRenderMessage(new RenderMessage(m_renderer.FrameTime, (int)m_renderer.FPS, m_layoutInfo.Value.Scale));
-            else firstRun = false;
+            if (!firstRun) {
+                Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
+                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+            }
+            else {
+                Console.Out.Write(m_title);
+                firstRun = false;
+            }
         }
 
         /* Run the shutdown systems. */
         await Run(invocation: SystemInvocationTime.ON_END);
+        Console.Out.Write(UNUSE_ALTERNATE_BUFFER);
     }
 
     private Task Run(SystemInvocationTime invocation) {
@@ -129,13 +146,15 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
     private void RegisterBuiltInComponents() {
         this.RegisterComponent<RenderComponent>();
+        this.RegisterComponent<DrawCalls>();
 
-        this.RegisterComponent<Transform>();
+        this.RegisterComponent<Position>();
+        this.RegisterComponent<Scale>();
+
         this.RegisterComponent<Hierarchy>();
-
         this.RegisterComponent<Style>();
-        this.RegisterComponent<InteractionComponent>();
 
-        this.RegisterComponent<RenderHierarchy>();
+        this.RegisterComponent<JobComponent>();
+        this.RegisterComponent<ContentComponent>();
     }
 }

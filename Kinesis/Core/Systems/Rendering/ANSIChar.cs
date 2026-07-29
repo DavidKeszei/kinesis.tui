@@ -1,21 +1,22 @@
-﻿global using vtchar_t = Kinesis.Core.Rendering.VT100Char;
+﻿global using vtchar_t = Kinesis.Core.Rendering.ANSIChar;
+using System.Text;
 
 namespace Kinesis.Core.Rendering; 
 
 /// <summary>
-/// Represent a VT100 emulated character on the screen.
+/// Represent a VT100/ANSI emulated character on the screen.
 /// </summary>
-public struct VT100Char: IEquatable<vtchar_t> {
+public struct ANSIChar: IEquatable<vtchar_t> {
     private RGB m_bg = RGB.Black;
     private RGB m_fg = RGB.White;
 
     private char m_character = ' ';
-    private StyleFlag m_styles = StyleFlag.NONE;
+    private TextDecoration m_styles = TextDecoration.NONE;
 
     /// <summary>
     /// Character of the current buffer.
     /// </summary>
-    public char Character { get => m_character; set => m_character = value; }
+    public char Character { readonly get => m_character; set => m_character = value; }
 
     /// <summary>
     /// Background color of the current buffer piece.
@@ -30,13 +31,13 @@ public struct VT100Char: IEquatable<vtchar_t> {
     /// <summary>
     /// Applied font styles to the character.
     /// </summary>
-    public StyleFlag Styles { get => m_styles; set => m_styles = value; }
+    public TextDecoration Styles { get => m_styles; set => m_styles = value; }
 
-    public static bool operator ==(VT100Char l, VT100Char r) => l.Equals(r);
+    public static bool operator ==(ANSIChar l, ANSIChar r) => l.Equals(r);
 
-    public static bool operator !=(VT100Char l, VT100Char r) => !l.Equals(r);
+    public static bool operator !=(ANSIChar l, ANSIChar r) => !l.Equals(r);
 
-    public VT100Char(char character, RGB color) {
+    public ANSIChar(char character, RGB color) {
         m_character = character;
         m_bg = color;
     }
@@ -48,9 +49,9 @@ public struct VT100Char: IEquatable<vtchar_t> {
 
     public void Clear() {
         m_bg = RGB.Transparent;
-        m_fg = RGB.Black;
+        m_fg = RGB.Transparent;
 
-        m_styles = StyleFlag.NONE;
+        m_styles = TextDecoration.NONE;
         m_character = ' ';
     }
 }

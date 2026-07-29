@@ -1,219 +1,164 @@
-﻿using Kinesis.Core;
+﻿using Kinesis.Core.Utils;
 using Kinesis.UI;
 using Kinesis.UI.Components;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Represent the rendering engine of the library.
+/// Represent a IMGUI/immediate-mode based renderer.
 /// </summary>
 internal sealed class Renderer {
-    #region CONSTS
-    private const int MAX_STACK_BUFFER_LEN = 16_384;
-    private const float MAX_FPS = 8.3f;
+    #region PREDEFINES
+    private const float NS_TO_MS = 1000f;
+    private const float LIMIT = 1f;
 
-    private const int MAX_DIRTY_SEARCH_DEPTH = 1;
+    private const float FPS_CONVERT = 1000f;
+    private const int STRING_BUILDER_STACK_SPACE = 16_384;
+
+    private static readonly Vec2 USE_FULLSCREEN_AS_LIMIT = Vec2.One * float.MinValue;
     #endregion
 
-    private readonly State<WorkerSystemState> m_sync = null!;
-    private readonly State<LayoutInfo> m_layout = null!;
+    private ConsoleBuffer m_backbuffer = default;
+    private ConsoleBuffer m_frontbuffer = default;
 
-    private readonly StreamWriter m_output = null!;
-    private ConsoleBuffer m_frontBuffer = default!;
+    private readonly State<LayoutInfo> m_layoutState = null!;
+    private readonly State<JobSystemStateInfo> m_workState = null!;
 
-    private ConsoleBuffer m_backBuffer = default!;
-    private Vec2 m_scale = Vec2.Zero;
-
-    private float m_currentFrameTime = .0f;
-    private RGB m_background = RGB.Transparent;
+    private readonly StreamWriter m_out = null!;
+    private float m_delta = .0f;
 
     /// <summary>
-    /// Current frame/second value by the engine from the frame time.
+    /// Current frame generation time in ms.
     /// </summary>
-    public float FPS { get => 1000f / m_currentFrameTime; }
+    public float Time { get => m_delta / FPS_CONVERT; }
 
     /// <summary>
-    /// Indicates the elapsed time between two frames. Sometimes call this as "delta-time".
+    /// Current fps count of the renderer.
     /// </summary>
-    public float FrameTime { get => m_currentFrameTime / 1000f; }
+    public float FPS { get => FPS_CONVERT / m_delta; }
 
-    /// <summary>
-    /// Create a new <see cref="Renderer"/> instance with specific <paramref name="scale"/>.
-    /// </summary>
-    /// <param name="scale">Scale of the console screen.</param>
-    public Renderer(State<LayoutInfo> layout, State<WorkerSystemState> sync) {
-        m_scale = layout.Value.Scale;
-        m_sync = sync;
+    public Renderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
+        m_workState = workState;
+        m_layoutState = layoutState;
 
-        m_layout = layout;
-        m_frontBuffer = new ConsoleBuffer((int)m_scale.X, (int)m_scale.Y);
+        m_backbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
+        m_frontbuffer = new ConsoleBuffer(x: (int)layoutState.Value.Scale.X, (int)layoutState.Value.Scale.Y);
 
-        m_backBuffer = new ConsoleBuffer((int)m_scale.X, (int)m_scale.Y);
-        m_output = new StreamWriter(stream: Console.OpenStandardOutput());
-
-        m_output.AutoFlush = false;
-        Console.CursorVisible = false;
+        m_out = new StreamWriter(stream: Console.OpenStandardOutput(), encoding: Encoding.UTF8) {
+            AutoFlush = false
+        };
 
         Console.OutputEncoding = Encoding.UTF8;
+        Console.CursorVisible = false;
+    }
+        
+    public void Run(DrawCalls calls) {
+        long start = Stopwatch.GetTimestamp();
+
+        if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
+            bool fullRedrawRequested = OnLayoutChange();
+
+            foreach(Entity call in calls) {
+                Vec2 scale = call.Get<Scale>()!.Value;
+                Vec2 position = call.Get<Position>()!.Absolute;
+
+                if (!InBuffer(position: position, scale: scale)) 
+                    continue;
+
+                RenderComponent renderLogic = call.Get<RenderComponent>()!;
+                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
+
+                using StyleEnumerator style = new StyleEnumerator(entity: call);
+                renderLogic.Render(buffer: in canvas, version: call.Version, style);
+            }
+
+            Diffing(fullRedrawRequested);
+        }
+
+        m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
+        float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
+
+        if (delta <= LIMIT)
+            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - delta));
+
+        m_delta = float.Lerp(m_delta, delta, .1f);
+    }
+
+    public void Diffing(bool full) {
+        Console.Out.Write(value: AnsiCommand.StartBufferLoad);
+        ANSIStringBuilder builder = new ANSIStringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
+
+        for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
+            for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
+                ref ANSIChar backChar = ref m_backbuffer[x, y];
+                ref ANSIChar frontChar = ref m_frontbuffer[x, y];
+
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new ANSIChar()))) {
+                    builder.WritePosition(x, y)
+                           .WriteFontStyles(backChar.Styles)
+                                .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)
+                                .WriteColor(color: backChar.Foreground.A == 0 ? null : backChar.Foreground, isBackground: false)
+                           .WriteCharacter(backChar.Character);
+
+                    frontChar = backChar;
+                }
+
+                if (builder.BarrierReached) {
+                    builder.Build(destination: m_out);
+                    m_out.Flush();
+                };
+            }
+
+        }
+
+        builder.Build(destination: m_out);
+
+        m_out.Flush();
+        m_backbuffer.Clear();
+
+        Console.Out.Write(value: AnsiCommand.ResetStyles);
+        Console.Out.Write(value: AnsiCommand.Home);
+
+        Console.Out.Write(value: AnsiCommand.EndBufferLoad);
+        Console.Out.Write(value: AnsiCommand.ClearSavedLines);
+    }
+
+    private bool OnLayoutChange() {
+        if (!m_layoutState.Value.IsChanged)
+            return false;
+
+        Vec2 scale = m_layoutState.Value.Scale;
+
+        m_backbuffer = ConsoleBuffer.Reallocate(buffer: ref m_backbuffer, scale);
+        m_frontbuffer = ConsoleBuffer.Reallocate(buffer: ref m_frontbuffer, scale);
+
+        m_layoutState.Value = m_layoutState.Value with { IsChanged = false };
+        return true;
+    }
+
+    private bool InBuffer(Vec2 position, Vec2 scale) {
+        return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
+               (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
     }
 
     /// <summary>
-    /// Render one frame to the screen.
+    /// Create a safe area from the entire scale based on the scale and position.
     /// </summary>
-    /// <param name="entities">Renderable entities of the <see cref="Renderer"/>.</param>
-    public Task Render(IReadOnlyList<Entity> entities) {
-        DateTime start = DateTime.Now;
-        HandleLayoutChange(entities);
+    /// <param name="scale">Scale of the <see cref="Entity"/>.</param>
+    /// <param name="position">Position of the <see cref="Entity"/>.</param>
+    /// <returns>Returns a safe area scale.</returns>
+    private Vec2 SetSafeArea(Vec2 scale, Vec2 position) {
+        if ((scale.X + position.X) >= m_backbuffer.Scale.X) 
+            scale.X -= (scale.X + position.X) - (m_backbuffer.Scale.X - 1);
 
-        if (m_sync == WorkerSystemState.WAIT_FOR_RENDERER) {
-            for (int i = 0; i < entities.Count; ++i) {
+        if ((scale.Y + position.Y) >= m_backbuffer.Scale.Y) 
+            scale.Y -= (scale.Y + position.Y) - (m_backbuffer.Scale.Y - 1);
 
-                Transform? transform = entities[i].GetComponent<Transform>();
-                RenderComponent? renderLogic = entities[i].GetComponent<RenderComponent>();
-
-                Hierarchy? child = entities[i].GetComponent<Hierarchy>(index: Hierarchy.Parent);
-
-                if (renderLogic != null && transform != null && renderLogic.IsDirty) {
-                    Clear(canvas: ConsoleBuffer.Slice(ref m_backBuffer, transform.OldPosition, transform.OldScale), child == null ? null! : child.Attached);
-                    Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backBuffer, transform.Position, transform.Scale);
-
-                    using StyleEnumerator styles = new StyleEnumerator(entities[i]);
-                    renderLogic.Render(buffer: in canvas, version: entities[i].Version, styles);
-
-                    renderLogic.IsDirty = false;
-
-                    transform.OldScale = transform.Scale; /* <- Enforce update, when scale the same pervious frame, but content is changed */
-                    transform.OldPosition = transform.Position;
-
-                    DropDirtiness(entities[i], entities);
-                }
-            }
-
-            Diffing();
-            m_sync.Value = WorkerSystemState.OPEN_FOR_PROCESSING;
-        }
-
-        m_currentFrameTime = (float)(DateTime.Now - start).TotalMilliseconds;
-
-        if (m_currentFrameTime < MAX_FPS) {
-            Thread.Sleep(millisecondsTimeout: (int)(MAX_FPS - m_currentFrameTime));
-            m_currentFrameTime = MAX_FPS;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private void HandleLayoutChange(IReadOnlyList<Entity> entities) {
-        if (m_layout.Value.IsChanged)
-            return;
-
-        m_backBuffer = ConsoleBuffer.Reallocate(m_backBuffer, m_layout.Value.Scale);
-        m_frontBuffer = ConsoleBuffer.Reallocate(m_frontBuffer, m_layout.Value.Scale);
-
-        for (int i = 0; i < entities.Count; ++i) {
-            RenderComponent render = entities[i].GetComponent<RenderComponent>()!;
-            render.IsDirty = true;
-        }
-
-        m_scale = m_layout.Value.Scale;
-        m_layout.Value = new LayoutInfo() with { Scale = m_layout.Value.Scale, IsChanged = false };
-    }
-
-    /// <summary>
-    /// Check every "pixel" for changed behavior.
-    /// </summary>
-    private void Diffing() {
-        VT100StringBuilder builder = new VT100StringBuilder(buffer: stackalloc char[MAX_STACK_BUFFER_LEN]);
-        int written = 0;
-
-        for (int x = 0; x < m_scale.X; ++x) {
-            for (int y = 0; y < m_scale.Y; ++y) {
-
-                ref vtchar_t ch = ref m_frontBuffer[x, y];
-                ref vtchar_t b_ch = ref m_backBuffer[x, y];
-
-                if (!ch.Equals(b_ch)) {
-
-                    written += builder.WritePosition(x, y)
-                                      .WriteFontStyles(flags: b_ch.Styles)
-                                        .WriteColor(color: b_ch.Background, isBackground: true)
-                                        .WriteColor(color: b_ch.Foreground, isBackground: false)
-                                      .WriteCharacter(value: b_ch.Character)
-                                           .Build(destination: m_output);
-                }
-
-                if(MAX_STACK_BUFFER_LEN - written < VT100StringBuilder.MAX_COMMAND_LEN) {
-                    m_output.Flush();
-
-                    builder.Clear();
-                    written = 0;
-                }
-            }
-        }
-
-        m_output.Flush();
-        m_frontBuffer.Copy(from: in m_backBuffer);
-    }
-
-    private void Clear(in Canvas canvas, Entity entity) {
-        if (canvas.Scale.X == 0 || canvas.Scale.Y == 0)
-            return;
-
-        RGB bg = GetParentBG(entity);
-
-        for (int x = 0; x < canvas.Scale.X; ++x) {
-            for (int y = 0; y < canvas.Scale.Y; ++y) {
-                ref vtchar_t px = ref canvas[x, y];
-
-                px.Clear();
-                px.Background = bg;
-            }
-        }
-    }
-
-    private RGB GetParentBG(Entity? entity) {
-        RGB rgb = RGB.Transparent;
-        if (entity == null) return rgb;
-
-        Style? bg = entity.QueryStyle(tag: StyleTag.BACKGROUND);
-        if (bg != null) return bg.AsRGB;
-
-        Entity? parent = GetUpwardConnection(entity);
-
-        if (parent == null) return rgb;
-        else rgb = GetParentBG(parent);
-
-        return rgb;
-    }
-
-    private Entity? GetUpwardConnection(Entity entity) {
-        Hierarchy? connection = entity.GetComponent<Hierarchy>(index: Hierarchy.Parent);
-
-        if (connection == null || connection.Direction != ConnectionDir.UP) return null;
-        return connection?.Attached;
-    }
-
-    /// <summary>
-    /// Drop the dirtiness every <see cref="Entity"/> by one.
-    /// </summary>
-    /// <param name="current">Pivot of the drop.</param>
-    /// <param name="entities">All drawable entities.</param>
-    private void DropDirtiness(Entity current, IReadOnlyList<Entity> entities) {
-        if (current == null) return;
-
-        RenderHierarchy renderHierarchy = current.GetComponent<RenderHierarchy>()!;
-        int currentDepth = renderHierarchy.Depth;
-
-        while (renderHierarchy.Depth - currentDepth <= MAX_DIRTY_SEARCH_DEPTH && entities.Count > renderHierarchy.NextRenderElementIndex) {
-            RenderComponent render = entities[renderHierarchy.NextRenderElementIndex].GetComponent<RenderComponent>()!;
-            render.IsDirty = true;
-
-            current = entities[renderHierarchy.NextRenderElementIndex];
-            renderHierarchy = current.GetComponent<RenderHierarchy>()!;
-        }
+        return scale;
     }
 }

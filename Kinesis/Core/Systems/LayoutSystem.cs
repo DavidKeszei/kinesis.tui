@@ -1,5 +1,7 @@
 ﻿using Kinesis.Core;
+using Kinesis.Core.Utils;
 using Kinesis.Native;
+using Kinesis.UI.Components;
 using Kinesis.Utils;
 using System;
 using System.Collections.Generic;
@@ -13,8 +15,8 @@ namespace Kinesis.Core;
 /// This class observes changes in the current console windows dimension.
 /// </summary>
 internal partial class LayoutSystem: IDynamicSystem {
-    #region CONSTS
-    private const int POOLING_TIME = 8;
+    #region PREDEFINES
+    private const int POOLING_TIME = 1;
     #endregion
 
     private readonly State<LayoutInfo> m_info = null!;
@@ -33,7 +35,7 @@ internal partial class LayoutSystem: IDynamicSystem {
         m_info = state;
         m_source = provider.Windows;
 
-        m_info.Value = new LayoutInfo(scale, IsChanged: false);
+        m_info.Value = new LayoutInfo(scale, IsChanged: true);
     }
 
     /// <summary>
@@ -45,12 +47,24 @@ internal partial class LayoutSystem: IDynamicSystem {
     }
 
     private void RunOnWindows() {
-        while (true) {
-            Thread.Sleep(millisecondsTimeout: POOLING_TIME);
-            if (m_source.Read(out ConsoleScaleInfo info) && (m_info.Value.Scale.X != info.X || m_info.Value.Scale.Y != info.Y)) {
+        bool isFirst = true;
+        ConsoleScaleInfo info = default;
 
-                m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), true);
-                WorkerSystem.Current.AddLayoutMessage(message: new LayoutMessage(scale: m_info.Value.Scale));
+        while (true) {
+            if (m_source.Read(out ConsoleScaleInfo current) && (m_info.Value.Scale.X != info.X || m_info.Value.Scale.Y != info.Y)) {
+                info = current;
+                continue;
+            }
+
+            Thread.Sleep(millisecondsTimeout: POOLING_TIME);
+
+            if (!info.Equals(default)) {
+                if (!isFirst) {
+                    m_info.Value = new LayoutInfo(new Vec2(x: info.X, y: info.Y), IsChanged: true);
+                }
+
+                isFirst = false;
+                info = default;
             }
         }
     }
