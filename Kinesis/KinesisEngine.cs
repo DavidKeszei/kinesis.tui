@@ -16,8 +16,10 @@ namespace Kinesis;
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
     #region PREDEFINES
-    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h";
+
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
+    private const string USE_ALTERNATE_BUFFER   = $"\e[?1049h";
+
     #endregion
 
     private readonly Renderer m_renderer = null!;
@@ -32,7 +34,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private readonly State<LayoutInfo> m_layoutInfo = null!;
     private readonly State<JobSystemStateInfo> m_workSyncState = null!;
 
-    private readonly ConsoleSourceInfo m_consoleSourceInfoProvider = default!;
+    private readonly ConsoleInfoSource m_consoleSourceInfoProvider = default!;
     private readonly string m_title = string.Empty;
 
     /// <summary>
@@ -44,7 +46,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
         m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
-        m_consoleSourceInfoProvider = new ConsoleSourceInfo();
+        m_consoleSourceInfoProvider = new ConsoleInfoSource();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
         m_workSyncState = new RefState<JobSystemStateInfo>(@default: new JobSystemStateInfo());

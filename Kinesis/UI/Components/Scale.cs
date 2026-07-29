@@ -8,7 +8,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a dimension in the 2D space.
 /// </summary>
-public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Scale>, IDefault<Scale>, IPoolable {
+public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
     private const string TYPE_NAME = nameof(Scale);
 
     private Scale m_max = null!;
@@ -48,11 +48,11 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
     }
 
     /// <summary>
-    /// Indicates what axis was setted to <see cref="Scale.AUTO_ON_AXIS"/>.,
+    /// Indicates what axis was setted to <see cref="Vec2.Auto"/>.,
     /// </summary>
     /// <returns>Returns a <see cref="bool"/> tuple, which indicates the auto state each axis.</returns>
     public (bool X, bool Y) IsAuto()
-        => (m_scale.X == float.MinValue, m_scale.Y == float.MinValue);
+        => (m_scale.X == Vec2.Auto.X, m_scale.Y == Vec2.Auto.Y);
 
     /// <summary>
     /// Change an <paramref name="axis"/> <paramref name="value"/>.
@@ -62,19 +62,6 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
     public void ChangeAxisValue(float value, Axis axis) {
         if (axis == Axis.X) m_scale.X = value;
         if (axis == Axis.Y) m_scale.Y = value;
-    }
-
-    public void Copy(ref Scale from) {
-        if (from == null) return;
-        m_max = from.m_max;
-
-        if(m_scale.X == float.MinValue) m_scale.X = from.m_scale.X;
-        if(m_scale.Y == float.MinValue) m_scale.Y = from.m_scale.Y;
-    }
-
-    public static bool IsDefault(Scale? instance) {
-        if (instance == null) return false;
-        return (instance.m_scale.X == Vec2.Auto.X || instance.m_scale.Y == Vec2.Auto.Y) && instance.m_max == null;
     }
 
     private Vec2 Limit() {

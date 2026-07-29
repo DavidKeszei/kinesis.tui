@@ -16,11 +16,6 @@ internal interface IInputBackend {
     public const IInputBackend ERR = null;
 
     /// <summary>
-    /// Indicates has any buffer on the input.
-    /// </summary>
-    public bool HasInput { get; }
-
-    /// <summary>
     /// Read the current buffer from the input.
     /// </summary>
     /// <returns>Return the key and the modifiers as <see cref="InputInfo"/>.</returns>

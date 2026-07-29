@@ -10,7 +10,7 @@ using System.Text;
 namespace Kinesis.UI.Components;
 
 /// <summary>
-/// Represent a other container component.
+/// Represent style information on an <see cref="Entity"/>,
 /// </summary>
 public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Style>, IDefault<Style>, IPoolable {
     private const string TYPE_NAME = nameof(Style);

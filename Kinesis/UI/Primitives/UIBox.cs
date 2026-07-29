@@ -54,8 +54,8 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     }
 
     public void Copy(ref BuildContext from) {
-        from.Inherit<Style>(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
-        from.Inherit<Style>(this, @default: Style.CreateFromRGB(StyleTag.FOREGROUND, RGB.White), index: 1);
+        from.InheritStyle(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(StyleTag.FOREGROUND, RGB.White), index: 1);
 
         from.SetPivot<Scale>(this);
         from.SetPivot<Position>(this);

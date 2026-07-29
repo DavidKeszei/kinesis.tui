@@ -10,15 +10,14 @@ namespace Kinesis.Core;
 /// </summary>
 public readonly record struct InputMessage: IJobMessage {
     private readonly InputModifier m_modifiers = InputModifier.NONE;
-    private readonly char m_key = '\0';
 
-    private readonly InputAction m_action = InputAction.PRESS;
     private readonly bool m_isPressed = false;
+    private readonly char m_key = '\0';
 
     /// <summary>
     /// Represent a empty <see cref="InputMessage"/>.
     /// </summary>
-    public static InputMessage Empty { get => new InputMessage('\0', InputModifier.NONE, InputAction.PRESS, false); }
+    public static InputMessage Empty { get => new InputMessage('\0', InputModifier.NONE, false); }
 
     /// <summary>
     /// Target key of the input.
@@ -29,11 +28,6 @@ public readonly record struct InputMessage: IJobMessage {
     /// Pressed info.Modifiers of the input (SHIFT, ALT, CTR).
     /// </summary>
     public InputModifier Modifiers { get => m_modifiers; }
-
-    /// <summary>
-    /// Type of the input-action.
-    /// </summary>
-    public InputAction Action { get => m_action; }
 
     /// <summary>
     /// Indicates the current input was pressed.
@@ -49,11 +43,10 @@ public readonly record struct InputMessage: IJobMessage {
     /// <param name="key">Actual key value as <see cref="char"/>.</param>
     /// <param name="info.Modifiers">Currently pressed info.Modifiers with the <see cref="Key"/>.</param>
     /// <param name="action">Current action of the message.</param>
-    internal InputMessage(char key, InputModifier modifiers, InputAction action, bool isPress) {
+    internal InputMessage(char key, InputModifier modifiers, bool isPress) {
         m_key = key;
         m_modifiers = modifiers;
 
-        m_action = action;
         m_isPressed = isPress;
     }
 

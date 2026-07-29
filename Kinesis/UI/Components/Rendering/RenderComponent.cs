@@ -11,7 +11,9 @@ namespace Kinesis.Core.Rendering;
 /// Represent a helper component in the rendering.
 /// </summary>
 public abstract class RenderComponent: Component, IStaticType, IPoolable {
+    #region DEFINES
     private const string TYPE_NAME = nameof(RenderComponent);
+    #endregion
 
     protected readonly Dictionary<StyleTag, Style> m_cache = null!;
     protected int m_entityVersion = 0;

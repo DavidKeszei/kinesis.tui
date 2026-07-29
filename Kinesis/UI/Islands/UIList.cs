@@ -9,6 +9,11 @@ using System.Text;
 
 namespace Kinesis.UI;
 
+/// <summary>
+/// Represents a virtaulized list of elements on the screen.
+/// </summary>
+/// <typeparam name="TTemplate">Template object for each row.</typeparam>
+/// <typeparam name="TData">Encapsulated data target for each row.</typeparam>
 public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> where TTemplate: Entity, new() {
     private string m_list = null!;
 
@@ -26,12 +31,21 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
 
     private int m_maxRowCount = 0;
 
+    /// <summary>
+    /// Collection reference of data for the current <see cref="UIList{TTemplate, TData}"/> instance.
+    /// </summary>
     public List<TData> Source { init => m_contentSource = value; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public Action<TData, TTemplate, bool> Bind { init => m_bind = value; }
 
     public uint RowHeight { init => m_rowHeight = (int)(value == 0 ? 1 : value); }
 
+    /// <summary>
+    /// Create a new <see cref="UIList{TTemplate, TData}"/> instance.
+    /// </summary>
     public UIList(): base(count: 8) {
         _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
         _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
@@ -74,6 +88,12 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
         m_listRowHead = int.Clamp(m_listRowHead + changeValue, 0, m_contentSource.Count - 1);
     }
 
+    /* TODO(2026-07-08T23:21:21): Make the update "event-drive" based. (Status: Planned ⚠)
+     * 
+     * INSPECTIONS:
+     * 	- The continous update gives a small amount of CPU usage per UIList instance.
+     * 	  This leads to significant CPU usage, when multiple list on the screen.
+     */ 	
     private void Update(RenderMessage message, ref readonly IslandEntityVisitor tree) {
         Vec2 parentScale = Get<Scale>()?.Maximum.Value ?? message.Scale;
 
@@ -99,13 +119,13 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     }
 
     private void CreateRowViewports(float y) {
-        int count = (int)MathF.Round(y / m_rowHeight);
+        m_maxRowCount = (int)MathF.Round(y / m_rowHeight);
 
         UIStack stack = new UIStack(capacity: 64) {
             Name = (m_list ??= $"__list_{Guid.CreateVersion7()}__")
         };
 
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < m_maxRowCount; ++i) {
             TTemplate template = new TTemplate();
 
             _ = stack.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
@@ -117,8 +137,6 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
             template.Move(x: Get<Position>()!.Relative.X, y: i * m_rowHeight);
             template.Get<Hierarchy>(Hierarchy.Parent)!.Attached = stack;
         }
-
-        m_maxRowCount = count;
 
         Get<ContentComponent>()!.Content = new Viewport() { Content = stack };
         SetHeigthOfTheChildren(stack, maxHeigth: y);

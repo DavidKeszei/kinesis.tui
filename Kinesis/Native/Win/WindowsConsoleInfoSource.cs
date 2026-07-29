@@ -7,13 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Kinesis.Native;
-
-/* TODO(2026-06-16T01:50:54): Change implementation of the input at Windows side.
- * 
- * INSPECTIONS:
- * 	- Your inspections goes here...
- */ 	
+namespace Kinesis.Native;	
 
 /// <summary>
 /// Represents a Windows specific console information source.
@@ -47,7 +41,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
     private readonly Task m_watchman = null!;
     private readonly WindowsConsoleMsgTag[] m_tags = null!;
 
-    private volatile bool m_isLocked = false;
+    private bool m_isLocked = false;
 
     public WindowsConsoleInfoProvider() {
         m_inputs = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);
@@ -59,6 +53,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
 
     public bool Read(out ConsoleScaleInfo result) {
         result = default;
+
 
         if (Interlocked.CompareExchange<bool>(ref m_isLocked, true, false) != false) {
             return false;

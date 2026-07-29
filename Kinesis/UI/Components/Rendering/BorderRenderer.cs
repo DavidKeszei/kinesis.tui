@@ -24,15 +24,31 @@ internal sealed class BorderRenderer: RenderComponent {
             for(int x = 0; x < buffer.Scale.X; ++x) {
                 ref ANSIChar cell = ref buffer[x, y];
 
-                if (y == 0 && x == 0) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_LEFT].AsCharacter;
-                else if (y == 0 && x == buffer.Scale.X - 1) cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_RIGHT].AsCharacter;
-                else if (y == buffer.Scale.Y - 1 && x == 0) cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_LEFT].AsCharacter;
-                else if (y == buffer.Scale.Y - 1 && x == buffer.Scale.X - 1) cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_RIGHT].AsCharacter;
+                if (y == 0 && x == 0) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_LEFT].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
+                else if (y == 0 && x == buffer.Scale.X - 1) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_TOP_RIGHT].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
+                else if (y == buffer.Scale.Y - 1 && x == 0) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_LEFT].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
+                else if (y == buffer.Scale.Y - 1 && x == buffer.Scale.X - 1) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_BOTTOM_RIGHT].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
 
-                if (y >= 1 && y < buffer.Scale.Y - 1 && (x == 0 || x == buffer.Scale.X - 1)) cell.Character = m_cache[StyleTag.BORDER_CHAR_VERTICAL].AsCharacter;
-                else if (x >= 1 && x < buffer.Scale.X - 1 && (y == 0 || y == buffer.Scale.Y - 1)) cell.Character = m_cache[StyleTag.BORDER_CHAR_HORIZONTAL].AsCharacter;
-
-                cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                if (y >= 1 && y < buffer.Scale.Y - 1 && (x == 0 || x == buffer.Scale.X - 1)) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_VERTICAL].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
+                else if (x >= 1 && x < buffer.Scale.X - 1 && (y == 0 || y == buffer.Scale.Y - 1)) {
+                    cell.Character = m_cache[StyleTag.BORDER_CHAR_HORIZONTAL].AsCharacter;
+                    cell.Foreground = m_cache[StyleTag.FOREGROUND].AsRGB;
+                }
             }
         }
     }

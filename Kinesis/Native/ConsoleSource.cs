@@ -6,7 +6,7 @@ namespace Kinesis.Native;
 /// Represent a simple union of platform specific console info sources.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-internal readonly struct ConsoleSourceInfo {
+internal readonly struct ConsoleInfoSource {
     private const string ERR_NOT_SUPPORTED_PLATFORM = "The current OS platform not supported.";
 
     [FieldOffset(offset: 0)] private readonly WindowsConsoleInfoProvider m_windowsSource = null!;
@@ -16,7 +16,11 @@ internal readonly struct ConsoleSourceInfo {
     /// </summary>
     public WindowsConsoleInfoProvider Windows { get => m_windowsSource; }
 
-    public ConsoleSourceInfo() {
+    /// <summary>
+    /// Create a new <see cref="ConsoleInfoSource"/> instance, which hides the platform specific
+    /// </summary>
+    /// <exception cref="PlatformNotSupportedException"></exception>
+    public ConsoleInfoSource() {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) m_windowsSource = new WindowsConsoleInfoProvider();
         else throw new PlatformNotSupportedException(message: ERR_NOT_SUPPORTED_PLATFORM);
     }

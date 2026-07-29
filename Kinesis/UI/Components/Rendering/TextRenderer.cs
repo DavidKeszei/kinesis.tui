@@ -25,11 +25,16 @@ public class TextRenderer(): RenderComponent, IPoolable {
     }
 
     /// <summary>
+    /// Length of the current rendered text as <see cref="int"/>,
+    /// </summary>
+    public int Length { get => m_len; }
+
+    /// <summary>
     /// Remove characters from internal buffer.
     /// </summary>
     /// <param name="count">Amount of the remove.</param>
     public void Remove(int count) {
-        if (count > m_len) {
+        if (count > m_len || m_len - count < 0) {
             m_len = 0;
             return;
         }
@@ -41,20 +46,42 @@ public class TextRenderer(): RenderComponent, IPoolable {
     /// Write into the internal buffer a specific <paramref name="text"/>.
     /// </summary>
     /// <param name="text">New value of the internal buffer.</param>
-    public void Write(ReadOnlySpan<char> text) {
-        if ((m_buffer?.Length ?? m_len) < text.Length) {
-            m_len = text.Length;
+    /// <param name="from">Starting point of the write. (If you want replace the text, then leave it at zero.)</param>
+    /// <returns>Returns the write count of the call. This <b>always</b> equals with length of the <see cref="text"/>.</returns>
+    public int Write(ReadOnlySpan<char> text, int from = 0) {
+        if ((m_buffer?.Length ?? m_len) < from + text.Length) {
+            Span<char> temp = stackalloc char[from];
+            Span<char> bufferView = m_buffer;
+
+            bufferView[..from].CopyTo(destination: temp);
+            m_len = text.Length + from;
 
             if(m_buffer != null) ArrayPool<char>.Shared.Return(m_buffer, true);
             m_buffer = ArrayPool<char>.Shared.Rent(minimumLength: m_len);
+
+            bufferView = m_buffer;
+            if (from != 0)
+                temp.CopyTo(destination: bufferView[..from]);
         }
 
-        for (int i = 0; i < m_len; ++i) {
-            if (text.Length <= i) break;
-            else m_buffer![i] = text[i];
+        m_len = text.Length + (int)from;
+
+        for (int i = (int)from; i < m_len; ++i) {
+            if (text.Length + from <= i) break;
+            else m_buffer![i] = text[i - (int)from];
         }
 
-        m_len = text.Length;
+        return text.Length;
+    }
+
+    public int Read(Span<char> destination, int from = 0) {
+        if (from > m_len || from < 0) return -1;
+        int len = m_len > destination.Length ? destination.Length : m_len;
+
+        for (int i = from; i < from + len; ++i)
+            destination[i - from] = m_buffer[i];
+
+        return len - from;
     }
 
     public override void Reset() {
@@ -101,8 +128,13 @@ public class TextRenderer(): RenderComponent, IPoolable {
                 }
                 else {
                     ch.Character = m_buffer[x + (int)buffer.Start.X];
-
                     ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
+
+                    /* TODO(2026-07-25T00:49:06): Bad foreground blending (Status: Done✅)
+                     * 
+                     * Inspection(s):
+                     *  - Watch for not required foreground coloring, which brake the drawing logic.
+                     */ 	
                     ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
 
                     if (attr == null) ch.Styles = TextDecoration.NONE;

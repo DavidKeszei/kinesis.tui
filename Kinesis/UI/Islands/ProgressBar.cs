@@ -20,7 +20,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     private readonly Action<float, Entity> m_onUpdate = null!;
     private string m_progressIndicator = null!;
 
-    private float m_percent = -.01f;
+    private float m_percent = .0f;
 
     /// <summary>
     /// Decoration of the filled bar of the <see cref="ProgressBar"/>.
@@ -85,13 +85,11 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Update the underlying <paramref name="percent"/>.
     /// </summary>
     /// <param name="percent">New value of the percent.</param>
-    public void Update(float percent) => m_percent = float.Clamp(percent, min: .0f, max: 100f);
+    public void Update(float percent) 
+        => m_percent = float.Clamp(percent, min: .0f, max: 100f);
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        /* TODO(2026-05-21T19:00:32): Add chance to change the loading text to any loading animation.
-         * 
-         * State: Done✅
-         */ 	
+        /* TODO(2026-05-21T19:00:32): Add chance to change the loading text to any loading animation. (State: Done✅)*/ 	
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
                 Entity entity = tree.Visit<Viewport>(name: m_progressIndicator)?
@@ -99,6 +97,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
 
                 int len = 0;
                 if (entity != null) {
+
                     m_onUpdate?.Invoke(m_percent, entity);
                     len = (int)entity.Get<Scale>()!.Value.X + 1;
                 }
@@ -120,15 +119,15 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
 
                 float x = empty.Get<Scale>()!.Value.X;
 
-                /* Percent + Text length + Empty Space -> This makes the render flexible & correct */
+                /* Text length + (Maximum width * Percent) -> This makes the render flexible & correct */
                 filled.Get<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
             },
             Content = Get<ContentComponent>()?.Content ?? null!
         };
     }
 
-    private UIBox CreateContainer(Entity content) {
-        UIBox box = new UIBox() {
+    private Viewport CreateContainer(Entity content) {
+        Viewport box = new Viewport() {
             Content = new UIStack() {
                 Content = [
                         new UIBox() {
@@ -146,7 +145,6 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
             }
         };
 
-        box.Remove<RenderComponent>();
         return box;
     }
 }
