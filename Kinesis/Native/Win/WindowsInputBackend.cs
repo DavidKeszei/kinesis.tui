@@ -17,9 +17,11 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     #region DEFINES
 
     private const string KERNEL32_LIB = "kernel32.dll";
-    private const string USER32_LIB = "user32.dll";
+    private const string USER32_LIB   = "user32.dll";
 
-    private const uint MANUAL_PROCESSING = 0x0001;
+    private const uint ENABLE_ECHO_INPUT      = 0x0004;
+    private const uint ENABLE_PROCESSED_INPUT = 0x0004;
+
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread::windows";
 
     #endregion
@@ -28,6 +30,10 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
     [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
     private static partial bool SetMode(nint handle, uint flags);
+
+    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetConsoleMode")]
+    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
+    private static partial bool GetMode(nint handle, out uint flags);
 
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
@@ -47,11 +53,17 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
-    public static WindowsInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
+    public static IInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
         WindowsInputBackend backend = new WindowsInputBackend();
 
-        if(!SetMode(handle: StdHandle.Input, flags: MANUAL_PROCESSING))
-            return null!;
+        if (!GetMode(handle: StdHandle.Input, out uint flags))
+            return IInputBackend.ERR;
+
+        flags &= ~ENABLE_ECHO_INPUT;
+        flags &= ~ENABLE_PROCESSED_INPUT;
+
+        if(!SetMode(handle: StdHandle.Input, flags))
+            return IInputBackend.ERR;
 
         backend.m_source = source;
         return backend;

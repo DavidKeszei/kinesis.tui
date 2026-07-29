@@ -14,7 +14,7 @@ namespace Kinesis.UI.Components;
 /// Represent a component, which can drawing a box to the screen.
 /// </summary>
 public class BoxRenderer: RenderComponent, IPoolable {
-
+    
     /// <summary>
     /// Render a box to the specific <paramref name="buffer"/> area.
     /// </summary>
@@ -42,10 +42,11 @@ public class BoxRenderer: RenderComponent, IPoolable {
                 }
                 else {
                     ch.Background = RGB.Blend(top: bg.AsRGB, bottom: ch.Background);
-                    ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
 
-                    if (!isEmptyFiller) 
+                    if (!isEmptyFiller) {
                         ch.Character = m_cache[StyleTag.FILLER].AsCharacter;
+                        ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
+                    }
                 }
             }
         }

@@ -14,23 +14,23 @@ namespace Kinesis.Core.Rendering;
 /// </summary>
 internal sealed class Renderer {
     #region PREDEFINES
-    private const float NS_TO_MS = 1000f;
-    private const float LIMIT = 1f;
 
-    private const float FPS_CONVERT = 1000f;
+    private const float NS_TO_MS                 = 1000f;
+    private const float FRAME_TIME_LIMIT         = 1f;
+
+    private const float FPS_CONVERT              = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
 
-    private static readonly Vec2 USE_FULLSCREEN_AS_LIMIT = Vec2.One * float.MinValue;
     #endregion
 
-    private ConsoleBuffer m_backbuffer = default;
+    private ConsoleBuffer m_backbuffer  = default;
     private ConsoleBuffer m_frontbuffer = default;
 
-    private readonly State<LayoutInfo> m_layoutState = null!;
+    private readonly State<LayoutInfo> m_layoutState       = null!;
     private readonly State<JobSystemStateInfo> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
-    private float m_delta = .0f;
+    private float m_delta               = .0f;
 
     /// <summary>
     /// Current frame generation time in ms.
@@ -64,7 +64,7 @@ internal sealed class Renderer {
             bool fullRedrawRequested = OnLayoutChange();
 
             foreach(Entity call in calls) {
-                Vec2 scale = call.Get<Scale>()!.Value;
+                Vec2 scale    = call.Get<Scale>()!.Value;
                 Vec2 position = call.Get<Position>()!.Absolute;
 
                 if (!InBuffer(position: position, scale: scale)) 
@@ -83,8 +83,8 @@ internal sealed class Renderer {
 
         float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
 
-        if (delta <= LIMIT)
-            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - delta));
+        if (delta <= FRAME_TIME_LIMIT)
+            Thread.Sleep(millisecondsTimeout: (int)(FRAME_TIME_LIMIT - delta));
 
         m_delta = float.Lerp(m_delta, delta, amount: .1f);
     }
@@ -142,6 +142,8 @@ internal sealed class Renderer {
     }
 
     private bool InBuffer(Vec2 position, Vec2 scale) {
+        if (scale.X == 0 || scale.Y == 0) return false;
+
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
                (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
     }

@@ -16,8 +16,10 @@ namespace Kinesis;
 /// </summary>
 public sealed partial class KinesisEngine: ISystemProvider {
     #region PREDEFINES
-    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h";
+
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
+    private const string USE_ALTERNATE_BUFFER   = $"\e[?1049h";
+
     #endregion
 
     private readonly Renderer m_renderer = null!;

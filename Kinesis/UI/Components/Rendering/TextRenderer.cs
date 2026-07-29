@@ -128,8 +128,13 @@ public class TextRenderer(): RenderComponent, IPoolable {
                 }
                 else {
                     ch.Character = m_buffer[x + (int)buffer.Start.X];
-
                     ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
+
+                    /* TODO(2026-07-25T00:49:06): Bad foreground blending (Status: Done✅)
+                     * 
+                     * Inspection(s):
+                     *  - Watch for not required foreground coloring, which brake the drawing logic.
+                     */ 	
                     ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
 
                     if (attr == null) ch.Styles = TextDecoration.NONE;

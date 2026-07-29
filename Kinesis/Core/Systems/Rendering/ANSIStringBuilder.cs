@@ -56,6 +56,7 @@ internal ref struct ANSIStringBuilder {
         ++x;
         ++y;
 
+        /* We use the automatic cursor moving of the reminal in the X direction */
         if (m_lastWritePosition.Y == y && x - m_lastWritePosition.X == 1) {
             m_lastWritePosition.X = x;
             m_lastWritePosition.Y = y;

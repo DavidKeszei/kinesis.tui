@@ -10,13 +10,15 @@ namespace Kinesis.UI;
 /// Represent a segment on the screen. Acts like a zip for complex UI elemens.
 /// </summary>
 public abstract class Island: Entity {
+    private const int UNDEFINED_CHUNK_ID = -1;
+
     private readonly List<Entity> m_renderSet = null!;
     private readonly List<Entity> m_entities = null!;
 
     private Island m_root = null!;
     private BuildStackSnapshot m_buildSnapshot = null!;
 
-    private Vec2 m_boundries = Vec2.Zero;
+    private Vec2 m_boundries = Vec2.Zero; /* Indicates which region(s) belongs to it */
     private int m_chunkId = -1;
 
     private int m_builtCount = 0;
@@ -127,7 +129,7 @@ public abstract class Island: Entity {
                 context.CurrentIsland.m_buildSnapshot = context.CreateBuildSnapshot();
             }
 
-            if (context.CurrentIsland.m_chunkId == -1) {
+            if (context.CurrentIsland.m_chunkId == UNDEFINED_CHUNK_ID) {
                 context.CurrentIsland.m_chunkId = context.Root.Get<DrawCalls>()!.ChunkHolders.Count;                
                 context.Root.Get<DrawCalls>()!.Add(island);
             }
@@ -173,7 +175,7 @@ public abstract class Island: Entity {
             bool isTop = rebuildTarget.m_root == null!;
 
             if (rebuildTarget.Get<ContentComponent>()?.HasChange ?? false) {
-                rebuildTarget.m_chunkId = -1; // This must be changed, because we "generate" new id for the chunk in the BuildTree(context)
+                rebuildTarget.m_chunkId = UNDEFINED_CHUNK_ID; // This must be changed, because we "generate" new id for the chunk in the BuildTree(context)
 
                 BuildContext context = new BuildContext(current: rebuildTarget) { Root = isTop ? rebuildTarget : rebuildTarget.m_root!, IsTop = isTop };
                 context.LoadSnapshot(snapshot: rebuildTarget.m_buildSnapshot);

@@ -84,6 +84,31 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
         };
     }
 
+    /// <summary>
+    /// Create a spinner from <paramref name="states"/>.
+    /// </summary>
+    /// <param name="states">Simple collection of states as <see langword="char"/>s.</param>
+    /// <param name="durationPerCycle">Duration of a cycle.</param>
+    /// <param name="color">Foreground color of the <see cref="Spinner"/>.</param>
+    /// <returns>Returns a new <see cref="Spinner"/> instance.</returns>
+    public static Spinner Create(ReadOnlySpan<char> states, TimeSpan duration, RGB? color = null!) {
+        char[] copy = new char[states.Length];
+        states.CopyTo(destination: copy);
+
+        if (color != null) {
+            return new Spinner() {
+                States     = copy,
+                Duration   = duration,
+                Foreground = color.Value 
+            };
+        }
+
+        return new Spinner() {
+            States   = copy,
+            Duration = duration,
+        };
+    }
+
     public void Copy(ref BuildContext from) {
         from.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
 
