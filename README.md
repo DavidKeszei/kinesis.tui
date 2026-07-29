@@ -7,27 +7,27 @@ Kinesis is small & simple UI library for building terminal apps! It lets you bui
 If you ever touched some UI library (Flutter, React) this will be familiar to you. If you haven't, don't worry I'll (try to) show you! So let's see "the beast"!
 
 ```csharp
-public class App: Island {
-    private int m_counter = 0;
+KinesisEngine engine = new KinesisEngine(title: "Counter");
+engine.RegisterIsland<App>(name: nameof(App), static (provider) => new App());
 
-    protected override Entity? Build() {
-        return new OnUpdate<RenderMessage>(this) {
-            Child = new ListOf {
-                Children = new List<Entity> {
-                    new UIText {
-                        Name = "counter",
-                        Text = "Nothing happened! :/"
-                    }
-                }
+await engine.Start();
+
+public sealed class App: Island {
+    private readonly static string s_uiText = "__uiCounter__";
+    private static uint m_count = 0;
+
+    protected override Entity? Build(BuildContext context) {
+        return new OnUpdate<InputMessage>(context) {
+            On = static(message, ref tree) => {
+
+                if (message.IsPressed && message.Key == 0x20)
+                    tree.Visit<UIText>(name: s_uiText)?.Text = $"Press count: {m_count++}";
             },
-            /* Not required using the 'msg' value. But can be useful! */
-            On = (msg, visitor) => {
-                /* 
-                 * You can decide track each entity or just want read something from it.
-                 * But if you not found the entity (name is not correct mostly), then return NULL! (Very scary)
-                 */
-                UIText? text = visitor.Visit<UIText>(name: "counter");
-                text?.Text = $"Hey! Something is updated x {++m_counter}";
+            Child = new Center {
+                Child = new UIText {
+                    Name = s_uiText,
+                    Text = "Press any button to start..."
+                }
             }
         };
     }
