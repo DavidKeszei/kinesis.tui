@@ -19,9 +19,9 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
     private ConnectionDirection m_direction = ConnectionDirection.DOWN;
 
     /// <summary>
-    /// Name of the component.
+    /// Name of the component type.
     /// </summary>
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
 
     /// <summary>
     /// Index of the parent on every <see cref="Entity"/> instance.

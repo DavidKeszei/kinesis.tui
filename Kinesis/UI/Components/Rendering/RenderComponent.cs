@@ -15,13 +15,13 @@ public abstract class RenderComponent: Component, IStaticType, IPoolable {
     private const string TYPE_NAME = nameof(RenderComponent);
     #endregion
 
-    protected readonly Dictionary<StyleTag, Style> m_cache = null!;
+    protected readonly Dictionary<string, Style> m_cache = null!;
     protected int m_entityVersion = 0;
 
     /// <summary>
-    /// Name of the <see cref="RenderComponent"/>.
+    /// Name of the <see cref="RenderComponent"/> type.
     /// </summary>
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
 
     /// <summary>
     /// Version of the entity, which targeting the current <see cref="RenderComponent"/>.
@@ -29,7 +29,7 @@ public abstract class RenderComponent: Component, IStaticType, IPoolable {
     internal int EntityVersion { get => m_entityVersion; set => m_entityVersion = value; }
 
     protected RenderComponent(): base(id: ComponentRegistry.QueryComponent(TYPE_NAME)) 
-        => m_cache = new Dictionary<StyleTag, Style>(capacity: 8);
+        => m_cache = new Dictionary<string, Style>(capacity: 8);
 
     public virtual void Reset() {
         m_cache.Clear();

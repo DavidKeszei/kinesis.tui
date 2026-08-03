@@ -37,7 +37,7 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     public List<TData> Source { init => m_contentSource = value; }
 
     /// <summary>
-    /// 
+    /// Custom bindig logic for attach data to a <typeparamref name="TTemplate"/> instance. 
     /// </summary>
     public Action<TData, TTemplate, bool> Bind { init => m_bind = value; }
 

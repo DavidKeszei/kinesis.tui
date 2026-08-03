@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
-namespace Kinesis;
+namespace Kinesis.Core;
 
 /// <summary>
 /// Represent a vector in the 2D space.
 /// </summary>
-public struct Vec2: IInterpolatable<Vec2> {
+public struct Vec2: IInterpolatable<Vec2, Vec2, Vec2> {
     private float m_x = 0;
     private float m_y = 0;
 

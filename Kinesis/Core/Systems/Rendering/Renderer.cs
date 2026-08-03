@@ -15,11 +15,10 @@ namespace Kinesis.Core.Rendering;
 internal sealed class Renderer {
     #region PREDEFINES
 
-    private const float NS_TO_MS                 = 1000f;
-    private const float FRAME_TIME_LIMIT         = 1f;
-
-    private const float FPS_CONVERT              = 1000f;
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
+    private const float FRAME_TIME_LIMIT         = 8f;
+    private const float FPS_CONVERT              = 1000f;
+    private const float NS_TO_MS                 = 1000f;
 
     #endregion
 
@@ -67,9 +66,18 @@ internal sealed class Renderer {
                 Vec2 scale    = call.Get<Scale>()!.Value;
                 Vec2 position = call.Get<Position>()!.Absolute;
 
-                if (!InBuffer(position: position, scale: scale)) 
-                    continue;
+                if (!InBuffer(position: position, scale: scale)) continue;
 
+                /* TODO(2026-08-02T19:04:20): Fix parent based clipping at Renderer (Status: Doneg⚠✅)
+                 * 
+                 * INSPECTIONS:
+                 * 	- Scale.Value is chain of "limited" scale, but the limiting not check the parent position.
+                 * 	- Scale.Value limiting the scale from the relative (0; 0) anchor point. (Where [0; 0] -> itself.pos == parent.pos)
+                 * 	
+                 * 	- Scale.Value MUST show the limited value of the current Scale instance from the (0; 0) point without check the position.
+                 * 	- EntityExtension.Move(x, y) can give us good trade-off: hiding the complexity of the checking from the actual/absoulte, 
+                 * 	  but if required, we can work the limited scale from the (0; 0) point.
+                 */
                 RenderComponent renderLogic = call.Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
@@ -142,7 +150,7 @@ internal sealed class Renderer {
     }
 
     private bool InBuffer(Vec2 position, Vec2 scale) {
-        if (scale.X == 0 || scale.Y == 0) return false;
+        if (scale.X <= 0 || scale.Y <= 0) return false;
 
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
                (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);

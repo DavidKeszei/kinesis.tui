@@ -70,8 +70,8 @@ public class Entity: IDisposable {
         if (component == null) return false;
         bool hasEmptySlot = m_emptySpaces.TryDequeue(out int slot);
 
-        if(isUnique || component.TypeOf(type: RenderComponent.Name)) {
-            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.Name), !hasEmptySlot ? m_lastEntityIndex : slot))
+        if(isUnique || component.TypeOf(type: RenderComponent.TypeName)) {
+            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.TypeName), !hasEmptySlot ? m_lastEntityIndex : slot))
                 return false;
         }
 
@@ -95,14 +95,14 @@ public class Entity: IDisposable {
     public T? Get<T>(int index = 0) where T: Component, IStaticType {
         if (index < 0) return null!;
 
-        if (m_uniqueComponents.TryGetValue(ComponentRegistry.QueryComponent(T.Name), out int i))
+        if (m_uniqueComponents.TryGetValue(ComponentRegistry.QueryComponent(T.TypeName), out int i))
             return (T)m_components[i];
 
         int current = 0;
         for(; i < m_lastEntityIndex; ++i) {
             if (m_components[i] == null) continue;
 
-            if (m_components[i].TypeOf(T.Name) && current++ == index)
+            if (m_components[i].TypeOf(T.TypeName) && current++ == index)
                 return (T)m_components[i];
         }
 
@@ -117,12 +117,12 @@ public class Entity: IDisposable {
     public void Remove<T>(int index = 0) where T: Component, IStaticType {
         if (index < 0) return;
 
-        if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.Name), out int i)) {
+        if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.TypeName), out int i)) {
             if (m_components[i] is IPoolable reset) 
                 reset.Reset();
 
             m_components[i] = null!;
-            m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.Name));
+            m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.TypeName));
 
             m_emptySpaces.Enqueue(i);
             ++m_version;
@@ -133,7 +133,7 @@ public class Entity: IDisposable {
         for (; i < m_lastEntityIndex; ++i) {
             if (m_components[i] == null) continue;
 
-            if (m_components[i].TypeOf(type: T.Name) && indexOf++ == index) {
+            if (m_components[i].TypeOf(type: T.TypeName) && indexOf++ == index) {
 
                 if (m_components[i] is IPoolable reset) reset.Reset();
                 m_components[i] = null!;

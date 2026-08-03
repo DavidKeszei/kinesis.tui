@@ -14,7 +14,7 @@ namespace Kinesis;
 /// <summary>
 /// Represent the heart of the library: This connects all systems to one class.
 /// </summary>
-public sealed partial class KinesisEngine: ISystemProvider {
+public sealed class KinesisEngine: ISystemProvider {
     #region PREDEFINES
 
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
@@ -79,7 +79,7 @@ public sealed partial class KinesisEngine: ISystemProvider {
     }
 
     public bool RegisterComponent<T>() where T: Component, IStaticType
-        => ComponentRegistry.RegisterComponent<T>(name: T.Name);
+        => ComponentRegistry.RegisterComponent<T>(name: T.TypeName);
 
     /// <summary>
     /// Add a system to the engine.

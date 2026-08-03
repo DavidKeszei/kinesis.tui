@@ -178,7 +178,7 @@ public abstract class Island: Entity {
                 rebuildTarget.m_chunkId = UNDEFINED_CHUNK_ID; // This must be changed, because we "generate" new id for the chunk in the BuildTree(context)
 
                 BuildContext context = new BuildContext(current: rebuildTarget) { Root = isTop ? rebuildTarget : rebuildTarget.m_root!, IsTop = isTop };
-                context.LoadSnapshot(snapshot: rebuildTarget.m_buildSnapshot);
+                context.LoadBuildSnapshot(snapshot: rebuildTarget.m_buildSnapshot);
 
                 // Remove chunk, which not the handler/first, because these chunk changed during the rebuild
                 int deleteDeadEndsCount = (int)(m_boundries.Y - m_boundries.X);

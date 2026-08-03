@@ -20,7 +20,7 @@ public static class EntityExtension {
             foreach (Component comp in entity) {
                 if (comp == null) continue;
 
-                if (comp.TypeOf(T.Name) && comparand((T)comp))
+                if (comp.TypeOf(T.TypeName) && comparand((T)comp))
                     ++count;
             }
 
@@ -33,11 +33,33 @@ public static class EntityExtension {
         /// <param name="x">Move amount on the X axis.</param>
         /// <param name="y">Move amount on the Y axis.</param>
         /// <remarks>
-        /// <b>Remarks:</b> If the entity not has <see cref="Position"/> component, then the function does nothing.
+        /// <b>Remarks:</b> If the entity not has <see cref="Position"/> or <see cref="Scale"/> component, then the function does nothing.
         /// </remarks>
         public void Move(float x, float y) {
-            if (entity.Get<Position>() == null) return;
-            entity.Get<Position>()!.Relative = new Vec2(x, y);
+            if (entity.Get<Position>() == null || entity.Get<Scale>() == null) return;
+
+            Position position = entity.Get<Position>()!;
+            position.Relative = new Vec2(x, y);
+
+            Scale scale = entity.Get<Scale>()!;
+            scale.Inset = Vec2.Zero;
+
+            Vec2 currentScale   = scale.Value;
+            Vec2 currentPositon = position.Absolute; 
+
+            Vec2 parentScale    = scale.Maximum.Value;
+            Vec2 parentPosition = position.Origin.Absolute;
+
+            Vec2 allCurrent = currentScale + currentPositon;
+            Vec2 allParent  = parentScale  + parentPosition;
+
+            Vec2 limitedScaleWithInset = parentPosition - currentPositon;
+            Vec2 inset = Vec2.Zero;
+
+            if(allParent.X < allCurrent.X) inset.X = limitedScaleWithInset.X;
+            if(allParent.Y < allCurrent.Y) inset.Y = limitedScaleWithInset.Y;
+
+            scale.Inset = inset;
         }
     }
 }

@@ -39,7 +39,7 @@ public ref struct StyleEnumerator: IDisposable {
 
         foreach (Component component in entity) {
 
-            if (component.TypeOf(Style.Name))
+            if (component.TypeOf(Style.TypeName))
                 pooled[count++] = (Style)component;
         }
 

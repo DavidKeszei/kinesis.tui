@@ -48,10 +48,10 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
     public UIText(): base(count: 7) {
         base.InitRenderEntityWith<TextRenderer>();
 
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(StyleTag.BACKGROUND, null));
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(StyleTag.FOREGROUND, null));
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(Style.BACKGROUND, StyleDataType.COLOR, null));
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(Style.FOREGROUND, StyleDataType.COLOR, null));
 
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(StyleTag.FONT_ATTR, TextDecoration.NONE));
+        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(Style.FONT_ATTR, StyleDataType.FONT_ATTR, TextDecoration.NONE));
 
         Text = string.Empty;
     }
@@ -94,10 +94,10 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
     }
 
     public void Copy(ref BuildContext from) {
-        from.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.BACKGROUND, color: RGB.Transparent));
-        from.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White), index: 1);
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.BACKGROUND, tag: StyleDataType.COLOR, color: RGB.Transparent));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.FOREGROUND, tag: StyleDataType.COLOR, color: RGB.White), index: 1);
 
-        from.InheritStyle(this, @default: Style.CreateFromAttributes(tag: StyleTag.FONT_ATTR, flag: TextDecoration.NONE), index: 2);
+        from.InheritStyle(this, @default: Style.CreateFromAttributes(name: Style.FONT_ATTR, tag: StyleDataType.FONT_ATTR, flag: TextDecoration.NONE), index: 2);
 
         from.SetPivot<Position>(this);
         from.SetPivot<Scale>(this);

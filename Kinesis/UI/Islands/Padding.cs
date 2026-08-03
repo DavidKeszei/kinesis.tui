@@ -49,8 +49,8 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
         _ = base.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
         _ = base.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
-        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<int>(tag: StyleTag.PADDING, value: 0)));
+        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
+        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
 
         _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
         _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));

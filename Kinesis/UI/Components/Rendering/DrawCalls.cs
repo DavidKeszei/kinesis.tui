@@ -15,7 +15,7 @@ internal class DrawCalls: Component, IStaticType, IPoolable {
     private const string TYPE = nameof(DrawCalls);
     private readonly List<Island> m_islands = null!;
 
-    public static string Name { get => TYPE; }
+    public static string TypeName { get => TYPE; }
 
     /// <summary>
     /// Internal chunks of the draw-calls.

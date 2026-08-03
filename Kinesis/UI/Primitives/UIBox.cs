@@ -47,15 +47,15 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
         InitRenderEntityWith<BoxRenderer>();
 
         _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
 
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(tag: StyleTag.FILLER, value: ' ')));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(name: Style.FILLER, tag: StyleDataType.CHAR, value: ' ')));
     }
 
     public void Copy(ref BuildContext from) {
-        from.InheritStyle(this, @default: Style.CreateFromRGB(StyleTag.BACKGROUND, RGB.Transparent));
-        from.InheritStyle(this, @default: Style.CreateFromRGB(StyleTag.FOREGROUND, RGB.White), index: 1);
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.BACKGROUND, tag: StyleDataType.COLOR, RGB.Transparent));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.FOREGROUND, tag: StyleDataType.COLOR, RGB.White), index: 1);
 
         from.SetPivot<Scale>(this);
         from.SetPivot<Position>(this);
@@ -65,6 +65,8 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
 public readonly struct Filler {
     private readonly RGB m_foreground = RGB.Transparent;
     private readonly char m_character = ' ';
+
+    public static implicit operator Filler((RGB Color, char Fill) tuple) => new Filler(tuple.Color, tuple.Fill);
 
     public readonly RGB Color { get => m_foreground; }
 

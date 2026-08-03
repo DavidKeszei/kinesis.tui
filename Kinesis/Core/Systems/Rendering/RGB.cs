@@ -15,7 +15,7 @@ namespace Kinesis.Core.Rendering;
 /// Represent a <see cref="RGB"/> color on the screen.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-public struct RGB: IEquatable<RGB>, IInterpolatable<RGB> {
+public struct RGB: IEquatable<RGB>, IInterpolatable<RGB, RGB, RGB> {
     [FieldOffset(offset: 0)] private readonly uint m_color = 0x00;
     [FieldOffset(offset: 0)] private byte m_red = 0x0;
 

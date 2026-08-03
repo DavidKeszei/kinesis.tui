@@ -14,7 +14,7 @@ public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(n
     private Position m_origin = null!;
     private Vec2 m_offset = Vec2.Zero;
 
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
 
     /// <summary>
     /// Relative distance from a point in the 2D space.

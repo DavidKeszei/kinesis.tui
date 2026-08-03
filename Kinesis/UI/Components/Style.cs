@@ -12,19 +12,47 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent style information on an <see cref="Entity"/>,
 /// </summary>
-public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Style>, IDefault<Style>, IPoolable {
+public sealed class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Style>, IDefault<Style>, IPoolable {
+    #region __NAMES__
+
     private const string TYPE_NAME = nameof(Style);
+
+    public const string BACKGROUND = "BACKGROUND";
+    public const string FOREGROUND = "FOREGROUND";
+
+    public const string PADDING   = "PADDING";
+    public const string FONT_ATTR = "FONT_ATTR";
+
+    public const string BORDER_CHAR_TOP_RIGHT    = "BORDER_CHAR_TOP_RIGHT";
+    public const string BORDER_CHAR_TOP_LEFT     = "BORDER_CHAR_TOP_LEFT";
+
+    public const string BORDER_CHAR_BOTTOM_RIGHT = "BORDER_CHAR_BOTTOM_RIGHT";
+    public const string BORDER_CHAR_BOTTOM_LEFT  = "BORDER_CHAR_BOTTOM_LEFT";
+
+    public const string BORDER_CHAR_VERTICAL     = "BORDER_CHAR_VERTICAL";
+    public const string BORDER_CHAR_HORIZONTAL   = "BORDER_CHAR_HORIZONTAL";
+
+    public const string FILLER   = "FILLER";
+
+    #endregion
+
     private StyleUnion m_union = default;
+    private string m_name = null!;
 
     /// <summary>
-    /// Name of the <see cref="Style"/> component.
+    /// Name of the <see cref="Style"/> component type.
     /// </summary>
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
+
+    /// <summary>
+    /// Name of the current <see cref="Style"/> instance.
+    /// </summary>
+    public string Name { get => m_name; } 
 
     /// <summary>
     /// Tagging of the <see cref="Style"/>, which indicates what kind of other property is.
     /// </summary>
-    public StyleTag Tag { get => m_union.Tag; }
+    public StyleDataType Tag { get => m_union.Tag; }
 
     /// <summary>
     /// Interact the underlying value as <see cref="int"/>.
@@ -46,24 +74,32 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// </summary>
     public char AsCharacter { get => m_union.Character; set => m_union.Character = value; }
 
-    private Style(StyleTag tag, RGB? color): this() {
+    private Style(string name, StyleDataType tag, RGB? color): this() {
         m_union = new StyleUnion(tag);
         m_union.Color = color;
+
+        m_name = name;
     }
 
-    private Style(StyleTag tag, int value): this() {
+    private Style(string name, StyleDataType tag, int value): this() {
         m_union = new StyleUnion(tag);
         m_union.INumber = value;
+
+        m_name = name;
     }
 
-    private Style(StyleTag tag, TextDecoration flag): this() {
+    private Style(string name, StyleDataType tag, TextDecoration flag): this() {
         m_union = new StyleUnion(tag);
         m_union.Flag = flag;
+
+        m_name = name;
     }
 
-    private Style(StyleTag tag, char chr): this() {
+    private Style(string name, StyleDataType tag, char chr): this() {
         m_union = new StyleUnion(tag);
         m_union.Character = chr;
+
+        m_name = name;
     }
 
     /// <summary>
@@ -76,20 +112,18 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// <b>Remarks:</b> This method (now) can be run with any parameter types; so there is the supported types: <see langword="int"/>, <see langword="char"/>
     ///                 <see cref="RGB"/>, <see cref="TextDecoration"/>.
     /// </remarks>
-    public Style As<T>(StyleTag tag, T value) {
+    public Style As<T>(string name, StyleDataType tag, T value) {
         m_union = tag switch {
-            StyleTag.BACKGROUND or StyleTag.FOREGROUND => new StyleUnion(tag) { Color = value != null ? Unsafe.As<T, RGB>(ref value) : null! },
+            StyleDataType.COLOR => new StyleUnion(tag) { Color = value != null ? Unsafe.As<T, RGB>(ref value) : null! },
+            StyleDataType.CHAR  => new StyleUnion(tag) { Character = Unsafe.As<T, char>(ref value) },
 
-            StyleTag.BORDER_CHAR_TOP_RIGHT or StyleTag.BORDER_CHAR_TOP_LEFT or StyleTag.BORDER_CHAR_BOTTOM_RIGHT or
-            StyleTag.BORDER_CHAR_BOTTOM_LEFT or StyleTag.BORDER_CHAR_HORIZONTAL or StyleTag.BORDER_CHAR_VERTICAL or
-            StyleTag.FILLER => new StyleUnion(tag) { Character = Unsafe.As<T, char>(ref value) },
+            StyleDataType.FONT_ATTR => new StyleUnion(tag) { Flag = Unsafe.As<T, TextDecoration>(ref value) },
+            StyleDataType.NUMERIC_I => new StyleUnion(tag) { INumber = Unsafe.As<T, int>(ref value) },
 
-            StyleTag.FONT_ATTR => new StyleUnion(tag) { Flag = Unsafe.As<T, TextDecoration>(ref value) },
-
-            StyleTag.PADDING => new StyleUnion(tag) { INumber = Unsafe.As<T, int>(ref value) },
             _ => m_union
         };
 
+        m_name = name;
         return this;
     }
 
@@ -99,7 +133,7 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// <param name="tag">Tag of the other.</param>
     /// <param name="color">The color value itself.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromRGB(StyleTag tag, RGB? color) => new Style(tag, color);
+    public static Style CreateFromRGB(string name, StyleDataType tag, RGB? color) => new Style(name, tag, color);
 
     /// <summary>
     /// Create a new <see cref="Style"/> with <see cref="RGB"/> value.
@@ -107,7 +141,7 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// <param name="tag">Tag of the other.</param>
     /// <param name="value">The color value itself.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromInt(StyleTag tag, int value) => new Style(tag, value);
+    public static Style CreateFromInt(string name, StyleDataType tag, int value) => new Style(name, tag, value);
 
     /// <summary>
     /// Create a new <see cref="Style"/> with <see cref="TextDecoration"/> value.
@@ -115,7 +149,7 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// <param name="tag">Tag of the other.</param>
     /// <param name="flag">The flag value of the VT100 character.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromAttributes(StyleTag tag, TextDecoration flag) => new Style(tag, flag);
+    public static Style CreateFromAttributes(string name, StyleDataType tag, TextDecoration flag) => new Style(name, tag, flag);
 
     /// <summary>
     /// Create a new <see cref="Style"/> with <see cref="char"/> value.
@@ -123,20 +157,18 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
     /// <param name="tag">Tag of the other.</param>
     /// <param name="chr">Character value of the <see cref="Style"/> instance.</param>
     /// <returns>Return a <see cref="Style"/> instance.</returns>
-    public static Style CreateFromChar(StyleTag tag, char chr) => new Style(tag, chr);
+    public static Style CreateFromChar(string name, StyleDataType tag, char chr) => new Style(name, tag, chr);
 
     public static bool IsDefault(Style instance) {
         if (instance == null) return false;
 
         return instance.m_union.Tag switch {
-            StyleTag.BACKGROUND or StyleTag.FOREGROUND => instance.m_union.Color == null,
+            StyleDataType.COLOR => instance.m_union.Color == null,
 
-            StyleTag.PADDING => instance.m_union.INumber == int.MinValue,
-            StyleTag.FONT_ATTR => instance.m_union.Flag == TextDecoration.NONE,
+            StyleDataType.NUMERIC_I => instance.m_union.INumber == int.MinValue,
+            StyleDataType.FONT_ATTR => instance.m_union.Flag == TextDecoration.NONE,
 
-            StyleTag.BORDER_CHAR_TOP_RIGHT or StyleTag.BORDER_CHAR_TOP_LEFT or StyleTag.BORDER_CHAR_BOTTOM_RIGHT or
-            StyleTag.BORDER_CHAR_BOTTOM_LEFT or StyleTag.BORDER_CHAR_HORIZONTAL or StyleTag.BORDER_CHAR_VERTICAL or
-            StyleTag.FILLER => instance.m_union.Character == '\0',
+            StyleDataType.CHAR => instance.m_union.Character == '\0',
 
             _ => false
         };
@@ -157,26 +189,26 @@ public class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_
 /// Simple union for store <see cref="Style"/> values without generic.
 /// </summary>
 [StructLayout(LayoutKind.Explicit)]
-internal struct StyleUnion : IEquatable<StyleUnion> {
-    [FieldOffset(0)] private int m_integer = 0;
+internal struct StyleUnion: IEquatable<StyleUnion> {
     [FieldOffset(0)] private float m_floating = .0f;
+    [FieldOffset(0)] private int m_integer    = 0;
 
     [FieldOffset(0)] private TextDecoration m_flag = TextDecoration.NONE;
     [FieldOffset(0)] private RGB? m_color = null!;
 
     [FieldOffset(0)] private char m_char = '\0';
-    [FieldOffset(8)] private readonly StyleTag m_tag = StyleTag.BACKGROUND;
+    [FieldOffset(8)] private readonly StyleDataType m_tag = StyleDataType.COLOR;
 
     /// <summary>
     /// Delimiter tag of the <see cref="StyleUnion"/>.
     /// </summary>
-    public readonly StyleTag Tag { get => m_tag; }
+    public readonly StyleDataType Tag { get => m_tag; }
 
     /// <summary>
     /// Create a new <see cref="StyleUnion"/>.
     /// </summary>
     /// <param name="tag">Tag of the <see cref="StyleUnion"/> instance.</param>
-    public StyleUnion(StyleTag tag) => m_tag = tag;
+    public StyleUnion(StyleDataType tag) => m_tag = tag;
 
     public char Character { readonly get => m_char; set => m_char = value; }
 
@@ -190,30 +222,20 @@ internal struct StyleUnion : IEquatable<StyleUnion> {
 
     public bool Equals(StyleUnion union) {
         return m_tag == union.m_tag && m_tag switch {
-            StyleTag.BACKGROUND or StyleTag.FOREGROUND => m_color.Equals(union.m_color),
+            StyleDataType.COLOR => m_color.Equals(union.m_color),
+            StyleDataType.CHAR => m_char == union.m_char,
 
-            StyleTag.BORDER_CHAR_TOP_RIGHT or StyleTag.BORDER_CHAR_TOP_LEFT or StyleTag.BORDER_CHAR_BOTTOM_RIGHT or
-            StyleTag.BORDER_CHAR_BOTTOM_LEFT or StyleTag.BORDER_CHAR_HORIZONTAL or StyleTag.BORDER_CHAR_VERTICAL or
-            StyleTag.FILLER => m_char == union.m_char,
-
-            StyleTag.FONT_ATTR => m_flag == union.m_flag,
-
-            StyleTag.PADDING => m_integer == union.m_integer,
+            StyleDataType.FONT_ATTR => m_flag == union.m_flag,
+            StyleDataType.NUMERIC_I => m_integer == union.m_integer,
             _ => false
         };
     }
 }
 
-public enum StyleTag : byte {
-    BACKGROUND,
-    FOREGROUND,
-    PADDING,
-    FONT_ATTR,
-    BORDER_CHAR_TOP_RIGHT,
-    BORDER_CHAR_TOP_LEFT,
-    BORDER_CHAR_BOTTOM_RIGHT,
-    BORDER_CHAR_BOTTOM_LEFT,
-    BORDER_CHAR_HORIZONTAL,
-    BORDER_CHAR_VERTICAL,
-    FILLER,
+public enum StyleDataType: byte {
+    NUMERIC_F,
+    NUMERIC_I,
+    CHAR,
+    COLOR,
+    FONT_ATTR
 }

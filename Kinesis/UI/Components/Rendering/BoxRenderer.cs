@@ -13,7 +13,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a component, which can drawing a box to the screen.
 /// </summary>
-public class BoxRenderer: RenderComponent, IPoolable {
+public sealed class BoxRenderer: RenderComponent, IPoolable {
     
     /// <summary>
     /// Render a box to the specific <paramref name="buffer"/> area.
@@ -27,14 +27,14 @@ public class BoxRenderer: RenderComponent, IPoolable {
             CacheStyles(styles);
         }
 
-        bool isEmptyFiller = m_cache[StyleTag.FILLER].AsCharacter == ' ';
+        bool isEmptyFiller = m_cache[Style.FILLER].AsCharacter == ' ';
 
         for (int x = 0; x < buffer.Scale.X; ++x) {
             for (int y = 0; y < buffer.Scale.Y; ++y) {
                 ref ANSIChar ch = ref buffer[x, y];
 
                 /* Source-like visual debug, if the background as visual effect not exists or just wrong type/typo. */
-                if(!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out Style? bg) || bg is not Style) {
+                if(!m_cache.TryGetValue(key: Style.BACKGROUND, out Style? bg) || bg is not Style) {
                     if(y % 2 != 0) ch.Background = x % 2 != 0 ? RGB.Purple : RGB.Black;
                     else ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
 
@@ -44,8 +44,8 @@ public class BoxRenderer: RenderComponent, IPoolable {
                     ch.Background = RGB.Blend(top: bg.AsRGB, bottom: ch.Background);
 
                     if (!isEmptyFiller) {
-                        ch.Character = m_cache[StyleTag.FILLER].AsCharacter;
-                        ch.Foreground = RGB.Blend(top: m_cache[StyleTag.FOREGROUND].AsRGB, bottom: ch.Foreground);
+                        ch.Character = m_cache[Style.FILLER].AsCharacter;
+                        ch.Foreground = RGB.Blend(top: m_cache[Style.FOREGROUND].AsRGB, bottom: ch.Foreground);
                     }
                 }
             }
@@ -61,15 +61,15 @@ public class BoxRenderer: RenderComponent, IPoolable {
         m_cache.Clear();
 
         foreach(Style style in styles) {
-            switch (style.Tag) {
-                case StyleTag.BACKGROUND:
-                    m_cache.Add(style.Tag, style);
+            switch (style.Name) {
+                case Style.BACKGROUND:
+                    m_cache.Add(style.Name, style);
                     break;
-                case StyleTag.FOREGROUND:
-                    m_cache.Add(style.Tag, style);
+                case Style.FOREGROUND:
+                    m_cache.Add(style.Name, style);
                     break;
-                case StyleTag.FILLER:
-                    m_cache.Add(style.Tag, style);
+                case Style.FILLER:
+                    m_cache.Add(style.Name, style);
                     break;
             }
         }

@@ -10,7 +10,7 @@ namespace Kinesis.UI;
 /// Represents a simple container for primitive, numeric values.
 /// </summary>
 /// <typeparam name="T">The numeric value of the container.</typeparam>
-public readonly struct AnimatedNumber<T> : IInterpolatable<AnimatedNumber<T>> where T : struct, INumber<T> {
+public readonly struct AnimatedNumber<T>: IInterpolatable<AnimatedNumber<T>, AnimatedNumber<T>, AnimatedNumber<T>> where T: struct, INumber<T> {
     private readonly T m_value = default;
 
     public static implicit operator T(AnimatedNumber<T> number) => number.Value;

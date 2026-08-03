@@ -11,6 +11,7 @@ namespace Kinesis.UI;
 /// </summary>
 public sealed class InputField: Island, ICopyable<BuildContext> {
     private const int LAST_UNPRINTBALE_CHR = 31;
+    private const byte PLACEHOLDER_ALPHA   = 165;
 
     private readonly string m_textIdentifier = null!;
     private readonly string m_cursorIdentifier = null!;
@@ -66,7 +67,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
         _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(tag: StyleTag.BACKGROUND, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
 
         Guid guid        = Guid.CreateVersion7();
         m_textIdentifier = $"__input_box_text_{guid}__";
@@ -79,12 +80,12 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         context.SetPivot<Scale>(this);
         context.SetPivot<Position>(this);
 
-        context.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, RGB.White));
+        context.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.FOREGROUND, tag: StyleDataType.COLOR, RGB.White));
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
         if (m_placeholder.Length > m_maxLen) {
-            Debug.WriteLine(message: $"[Info] Placeholder text (value: {m_placeholder}) larger than the maximum length of the input field.");
+            Debug.WriteLine(message: $"[INFO] Placeholder text (value: {m_placeholder}) larger than the maximum length of the input field.");
             m_placeholder = m_placeholder[..m_maxLen];
         }
 
@@ -129,10 +130,12 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                     /* At the first run, we set the inherited color to the cursor & placeholder/text */
                     if (m_charCount == -1) {
                         m_charCount = 0;
+
                         RGB color = Get<Style>()!.AsRGB;
+                        color = color.Equals(rgb: RGB.Transparent) ? RGB.White : color;
 
                         UIText txt = tree.Visit<UIText>(name: m_textIdentifier)!;
-                        txt.Foreground = color with { A = 128 };
+                        txt.Foreground = color with { A = PLACEHOLDER_ALPHA };
 
                         AnimatedArea<RGB, UIBox> box = tree.Visit<AnimatedArea<RGB, UIBox>>(name: m_animatedAreaIdentifier)!;
                         box.To = color;
@@ -151,7 +154,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                             Text       = m_placeholder,
 
                             Decoration = TextDecoration.ITALIC,
-                            Foreground = Get<Style>()!.AsRGB with { A = 128 },
+                            Foreground = Get<Style>()!.AsRGB with { A = PLACEHOLDER_ALPHA },
                         },
                         new AnimatedArea<RGB, UIBox> {
                             Name       = m_animatedAreaIdentifier,
@@ -167,8 +170,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                                 Name       = m_cursorIdentifier,
                                 Scale      = Vec2.One,
                                 
-                                Background = RGB.Transparent,
-                                Filler     = new Filler(color: RGB.Black, character: ' ')
+                                Background = RGB.Transparent with { A = 1 },
                             }
                         }
                     ]
@@ -248,6 +250,6 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         text.Write(text: m_placeholder);
 
         text.Decoration = TextDecoration.ITALIC;
-        text.Foreground = text.Foreground with { A = 128 };
+        text.Foreground = text.Foreground with { A = PLACEHOLDER_ALPHA };
     }
 }

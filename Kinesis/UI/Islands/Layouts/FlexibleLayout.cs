@@ -48,8 +48,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 });
 
                 float max = m_direction == Axis.X ? 
-                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.X:
-                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.Y;
+                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.Y:
+                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.X;
 
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }

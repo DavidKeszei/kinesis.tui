@@ -18,7 +18,7 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
     /// <summary>
     /// Name of the <see cref="JobComponent"/>.
     /// </summary>
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
 
     /// <summary>
     /// Current status of the <see cref="JobComponent"/>.

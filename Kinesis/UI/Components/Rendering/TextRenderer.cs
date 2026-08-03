@@ -109,10 +109,10 @@ public class TextRenderer(): RenderComponent, IPoolable {
         Style? fg = null!;
         Style? attr = null!;
 
-        bool isMissing = (!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out bg) && !bg!.TypeOf(Style.Name)) ||
-                         (!m_cache.TryGetValue(key: StyleTag.FOREGROUND, out fg) && !fg!.TypeOf(Style.Name));
+        bool isMissing = (!m_cache.TryGetValue(key: Style.BACKGROUND, out bg) && !bg!.TypeOf(Style.TypeName)) ||
+                         (!m_cache.TryGetValue(key: Style.FOREGROUND, out fg) && !fg!.TypeOf(Style.TypeName));
 
-        _ = m_cache.TryGetValue(key: StyleTag.FONT_ATTR, out attr);
+        _ = m_cache.TryGetValue(key: Style.FONT_ATTR, out attr);
         Vec2 requiredScale = new Vec2(x: m_len / buffer.Scale.Y, y: m_len % buffer.Scale.Y);
 
         for(int x = 0; x < buffer.Scale.X && x <= requiredScale.X; ++x) {
@@ -148,17 +148,17 @@ public class TextRenderer(): RenderComponent, IPoolable {
         m_cache.Clear();
         foreach(Style style in styles) {
             
-            switch(style.Tag) {
-                case StyleTag.FOREGROUND:
-                    m_cache.Add(StyleTag.FOREGROUND, style);
+            switch(style.Name) {
+                case Style.FOREGROUND:
+                    m_cache.Add(Style.FOREGROUND, style);
                     break;
 
-                case StyleTag.BACKGROUND:
-                    m_cache.Add(StyleTag.BACKGROUND, style);
+                case Style.BACKGROUND:
+                    m_cache.Add(Style.BACKGROUND, style);
                     break;
 
-                case StyleTag.FONT_ATTR:
-                    m_cache.Add(StyleTag.FONT_ATTR, style);
+                case Style.FONT_ATTR:
+                    m_cache.Add(Style.FONT_ATTR, style);
                     break;
             }
         }

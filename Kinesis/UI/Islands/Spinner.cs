@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a simple loading indicator on the screen.
 /// </summary>
 public sealed class Spinner: Island, ICopyable<BuildContext> {
-    #region PREDEFINES
+    #region __PRESETS__
 
     private readonly static char[][] s_spinnerFrames = [
         ['|', '/', '-', '\\'],
@@ -56,7 +56,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
         _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
         _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One), isUnique: true);
 
-        _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)), isUnique: true);
+        _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)), isUnique: true);
     }
 
     /// <summary>
@@ -91,26 +91,26 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     /// <param name="durationPerCycle">Duration of a cycle.</param>
     /// <param name="color">Foreground color of the <see cref="Spinner"/>.</param>
     /// <returns>Returns a new <see cref="Spinner"/> instance.</returns>
-    public static Spinner Create(ReadOnlySpan<char> states, TimeSpan duration, RGB? color = null!) {
+    public static Spinner Create(ReadOnlySpan<char> states, TimeSpan durationPerCycle, RGB? color = null!) {
         char[] copy = new char[states.Length];
         states.CopyTo(destination: copy);
 
         if (color != null) {
             return new Spinner() {
                 States     = copy,
-                Duration   = duration,
+                Duration   = durationPerCycle,
                 Foreground = color.Value 
             };
         }
 
         return new Spinner() {
             States   = copy,
-            Duration = duration,
+            Duration = durationPerCycle,
         };
     }
 
     public void Copy(ref BuildContext from) {
-        from.InheritStyle(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.FOREGROUND, tag: StyleDataType.COLOR, color: RGB.White));
 
         from.SetPivot<Position>(this);
         from.SetPivot<Scale>(this);

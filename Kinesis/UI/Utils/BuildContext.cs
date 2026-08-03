@@ -16,19 +16,6 @@ namespace Kinesis.UI;
 /// Represent a state in the UI building process.
 /// </summary>
 public ref struct BuildContext {
-    #region PREDEFINES
-    public const int STYLE_STACK_FRAME_LEN = 6;
-
-    //private const int POSITION = 0;
-    //private const int SCALE = 1;
-
-    //private const int BACKGROUND = 2;
-    //private const int FOREGROUND = 3;
-
-    //private const int FONT_STYLE = 4;
-    //private const int PADDING = 5;
-    #endregion
-
     private readonly Island m_root = null!;
     private Island m_currentIsland = null!;
 
@@ -65,7 +52,7 @@ public ref struct BuildContext {
 
     internal BuildContext(Entity current) {
         m_current = current;
-        m_inheritanceTargets = new Stack<Component>[(int)BuildSnapshotComponents.__COUNT__]; /* Padding is largest index -> Count of inheritable components */
+        m_inheritanceTargets = new Stack<Component>[(int)BuildSnapshotComponents.__COUNT__];
 
         for (int i = 0; i < m_inheritanceTargets.Length; ++i)
             m_inheritanceTargets[i] = new Stack<Component>(capacity: 128);
@@ -138,7 +125,7 @@ public ref struct BuildContext {
         );
     }
 
-    internal readonly void LoadSnapshot(BuildStackSnapshot snapshot) {
+    internal readonly void LoadBuildSnapshot(BuildStackSnapshot snapshot) {
         if (snapshot == null!) return;
 
         if(snapshot.Scale != null)  m_inheritanceTargets[(int)BuildSnapshotComponents.SCALE].Push(item: snapshot.Scale);
@@ -162,11 +149,11 @@ public ref struct BuildContext {
         return component switch {
             Position => (int)BuildSnapshotComponents.POSITION,
             Scale    => (int)BuildSnapshotComponents.SCALE,
-            Style    => Unsafe.As<Component, Style>(ref component).Tag switch {
-                StyleTag.BACKGROUND => (int)BuildSnapshotComponents.BACKGROUND,
-                StyleTag.FOREGROUND => (int)BuildSnapshotComponents.FOREGROUND,
-                StyleTag.FONT_ATTR  => (int)BuildSnapshotComponents.FONT_STYLE,
-                StyleTag.PADDING    => (int)BuildSnapshotComponents.PADDING,
+            Style    => Unsafe.As<Component, Style>(ref component).Name switch {
+                Style.BACKGROUND => (int)BuildSnapshotComponents.BACKGROUND,
+                Style.FOREGROUND => (int)BuildSnapshotComponents.FOREGROUND,
+                Style.FONT_ATTR  => (int)BuildSnapshotComponents.FONT_STYLE,
+                Style.PADDING    => (int)BuildSnapshotComponents.PADDING,
                 _                   => -1
             },
             _        => -1,

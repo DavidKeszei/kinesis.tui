@@ -14,7 +14,7 @@ public sealed class ContentComponent(): Component(id: ComponentRegistry.QueryCom
     private Entity m_content = null!;
     private bool m_hasChanged = false;
 
-    public static string Name { get => TYPE; }
+    public static string TypeName { get => TYPE; }
 
     /// <summary>
     /// Current content of the <see cref="ContentComponent"/>

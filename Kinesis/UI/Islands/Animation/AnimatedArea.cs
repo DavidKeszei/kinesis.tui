@@ -15,21 +15,21 @@ namespace Kinesis.UI;
 /// Represents an area/conatiner, which holds target of the animation.
 /// </summary>
 /// <typeparam name="T">Target type of the animation on the <see cref="Entity"/>.</typeparam>
-public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T> where U: Entity {
+public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: notnull, IInterpolatable<T, T, T> where U: Entity {
     private string s_box = null!;
 
-    private readonly Func<U, T> m_selector = default!;
+    private readonly Func<U, T> m_selector  = default!;
     private readonly Action<U, T> m_applier = default!;
 
     private T m_start  = default!;
     private T m_target = default!;
 
-    private long m_startTimeStamp = 0;
     private long m_duration = TimeSpan.FromSeconds(seconds: 1).Ticks;
+    private long m_startTimeStamp = 0;
 
     private AnimationState m_state = AnimationState.Animate;
-
     private bool m_isFirstSet = true;
+
     private bool m_isPeriodic = false;
 
     /// <summary>
@@ -80,8 +80,6 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
             if ((scale = value.Get<Scale>()) != null) {
                 _ = Attach<Scale>(scale, isUnique: true);
             }
-
-            Rebuild();
         }
     }
 
@@ -103,11 +101,16 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
                 }
                 
                 float time = (currentTimeStamp - m_startTimeStamp) / (float)m_duration;
-                T interpolated =  T.Lerp(from: m_start, to: m_target, time);
+                T interpolated = T.Lerp(from: m_start, to: m_target, time);
 
                 m_applier((content as U)!, interpolated);
 
                 if (m_isPeriodic && time >= 1f) {
+                    T target = m_target;
+
+                    m_target = m_start;
+                    m_start  = target;
+
                     Reset();
                     Start();
 
