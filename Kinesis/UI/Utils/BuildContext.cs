@@ -121,6 +121,7 @@ public ref struct BuildContext {
                 m_inheritanceTargets[(int)BuildSnapshotComponents.BACKGROUND].TryPeek(out Component? bg) ? (Style)bg : null!,
                 m_inheritanceTargets[(int)BuildSnapshotComponents.FOREGROUND].TryPeek(out Component? fg) ? (Style)fg : null!,
                 m_inheritanceTargets[(int)BuildSnapshotComponents.FONT_STYLE].TryPeek(out Component? fontStyle) ? (Style)fontStyle : null!,
+                m_inheritanceTargets[(int)BuildSnapshotComponents.PADDING].TryPeek(out Component? padding)      ? (Style)padding : null!,
             ]
         );
     }

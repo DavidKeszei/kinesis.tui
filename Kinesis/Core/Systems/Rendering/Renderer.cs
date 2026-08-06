@@ -68,16 +68,6 @@ internal sealed class Renderer {
 
                 if (!InBuffer(position: position, scale: scale)) continue;
 
-                /* TODO(2026-08-02T19:04:20): Fix parent based clipping at Renderer (Status: Doneg⚠✅)
-                 * 
-                 * INSPECTIONS:
-                 * 	- Scale.Value is chain of "limited" scale, but the limiting not check the parent position.
-                 * 	- Scale.Value limiting the scale from the relative (0; 0) anchor point. (Where [0; 0] -> itself.pos == parent.pos)
-                 * 	
-                 * 	- Scale.Value MUST show the limited value of the current Scale instance from the (0; 0) point without check the position.
-                 * 	- EntityExtension.Move(x, y) can give us good trade-off: hiding the complexity of the checking from the actual/absoulte, 
-                 * 	  but if required, we can work the limited scale from the (0; 0) point.
-                 */
                 RenderComponent renderLogic = call.Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 

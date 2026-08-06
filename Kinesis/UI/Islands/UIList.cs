@@ -14,21 +14,22 @@ namespace Kinesis.UI;
 /// </summary>
 /// <typeparam name="TTemplate">Template object for each row.</typeparam>
 /// <typeparam name="TData">Encapsulated data target for each row.</typeparam>
-public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> where TTemplate: Entity, new() {
+public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> where TTemplate : Entity, new() {
     private string m_list = null!;
 
-    private readonly Action<TData, TTemplate, bool> m_bind = null!;
+    private readonly Action<TData, TTemplate> m_bind     = null!;
+    private readonly Action<TData, TTemplate> m_onSelect = null!;
+
     private readonly List<TData> m_contentSource = null!;
-
     private readonly int m_rowHeight = 1;
+
     private float m_maxYScale = .0f;
-
     private float m_currentYScale = .0f;
+
     private int m_scrollOffset = 0;
-
     private int m_listRowHead = 0;
-    private int m_visibleRowCount = 0;
 
+    private int m_visibleRowCount = 0;
     private int m_maxRowCount = 0;
 
     /// <summary>
@@ -37,10 +38,15 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     public List<TData> Source { init => m_contentSource = value; }
 
     /// <summary>
-    /// Custom bindig logic for attach data to a <typeparamref name="TTemplate"/> instance. 
+    /// Custom bindig logic for attach data to a <typeparamref name="TTemplate"/> instance.
     /// </summary>
-    public Action<TData, TTemplate, bool> Bind { init => m_bind = value; }
+    public Action<TData, TTemplate> Bind { init => m_bind = value; }
 
+    public Action<TData, TTemplate> OnSelect { init => m_onSelect = value; }
+
+    /// <summary>
+    /// Used heigth value of each row.
+    /// </summary>
     public uint RowHeight { init => m_rowHeight = (int)(value == 0 ? 1 : value); }
 
     /// <summary>
@@ -57,8 +63,9 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        if (m_bind == null || m_contentSource == null) return null!;
+        if (m_contentSource == null) return null!;
 
+        /* TODO(2026-08-05T21:40:05): Split the Bind method to OnSelect & Bind to do one thing per property (Status: Planned⚠️)*/ 	
         return new OnUpdate<InputMessage>(context) {
             On = HandleArrowKeys,
             Content = new OnUpdate<RenderMessage>(context) {
@@ -93,7 +100,7 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
      * INSPECTIONS:
      * 	- The continous update gives a small amount of CPU usage per UIList instance.
      * 	  This leads to significant CPU usage, when multiple list on the screen.
-     */ 	
+     */
     private void Update(RenderMessage message, ref readonly IslandEntityVisitor tree) {
         Vec2 parentScale = Get<Scale>()?.Maximum.Value ?? message.Scale;
 
@@ -109,7 +116,7 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
         }
 
         if (m_currentYScale != message.Scale.Y) {
-            m_scrollOffset += (m_listRowHead - m_scrollOffset);
+            m_scrollOffset  = m_listRowHead;
             m_currentYScale = message.Scale.Y;
         }
 
@@ -127,15 +134,14 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
 
         for (int i = 0; i < m_maxRowCount; ++i) {
             TTemplate template = new TTemplate();
+            Viewport viewport = new Viewport() { Name = $"__list_item_{Guid.CreateVersion7()}__", Content = template };
 
             _ = stack.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
-            stack.Get<Hierarchy>(index: Hierarchy.ChildrenStart + i)!.Attached = new Viewport() {
-                Name = $"__list_item_{Guid.CreateVersion7()}__",
-                Content = template,
-            };
 
-            template.Move(x: Get<Position>()!.Relative.X, y: i * m_rowHeight);
-            template.Get<Hierarchy>(Hierarchy.Parent)!.Attached = stack;
+            viewport.Move(x: Get<Position>()!.Relative.X, y: i * m_rowHeight);
+            viewport.Get<Hierarchy>(Hierarchy.Parent)!.Attached = stack;
+
+            stack.Get<Hierarchy>(index: Hierarchy.ChildrenStart + i)!.Attached = viewport;
         }
 
         Get<ContentComponent>()!.Content = new Viewport() { Content = stack };
@@ -159,13 +165,16 @@ public sealed class UIList<TTemplate, TData>: Island, ICopyable<BuildContext> wh
     private void SyncData(UIStack stack) {
         for (int i = 0; i < m_maxRowCount; ++i) {
             Viewport viewPort = (Viewport)stack.Get<Hierarchy>(index: i + Hierarchy.ChildrenStart)!.Attached;
+
             TTemplate child = (TTemplate)stack.Get<Hierarchy>(index: i + Hierarchy.ChildrenStart)!.Attached
                                               .Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached;
 
             int contentIndex = i + m_scrollOffset;
 
             if (i < m_visibleRowCount) {
-                m_bind(m_contentSource[contentIndex], child, i + m_scrollOffset == m_listRowHead);
+                m_bind(m_contentSource[contentIndex], child);
+
+                if (m_listRowHead == i + m_scrollOffset) m_onSelect(m_contentSource[contentIndex], child);
                 viewPort.Get<Scale>()!.ChangeAxisValue(value: m_rowHeight, axis: Axis.Y);
             }
             else {

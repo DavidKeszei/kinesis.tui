@@ -47,8 +47,8 @@ public static class EntityExtension {
             Vec2 currentScale   = scale.Value;
             Vec2 currentPositon = position.Absolute; 
 
-            Vec2 parentScale    = scale.Maximum.Value;
-            Vec2 parentPosition = position.Origin.Absolute;
+            Vec2 parentScale    = scale.Maximum?.Value      ?? Vec2.Zero;
+            Vec2 parentPosition = position.Origin?.Absolute ?? Vec2.Zero;
 
             Vec2 allCurrent = currentScale + currentPositon;
             Vec2 allParent  = parentScale  + parentPosition;
