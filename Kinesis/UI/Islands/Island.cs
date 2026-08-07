@@ -11,6 +11,7 @@ namespace Kinesis.UI;
 /// </summary>
 public abstract class Island: Entity {
     private const int UNDEFINED_CHUNK_ID = -1;
+    private const int MAX_STACK_LVL_LEN  = 64;
 
     private readonly List<Entity> m_renderSet = null!;
     private readonly List<Entity> m_entities = null!;
@@ -18,7 +19,7 @@ public abstract class Island: Entity {
     private Island m_root = null!;
     private BuildStackSnapshot m_buildSnapshot = null!;
 
-    private Vec2 m_boundries = Vec2.Zero; /* Indicates which region(s) belongs to it */
+    private Vec2 m_boundries = Vec2.Zero;
     private int m_chunkId = -1;
 
     private int m_builtCount = 0;
@@ -78,7 +79,7 @@ public abstract class Island: Entity {
         bool isTop = m_root == null;
         m_isBuilded = false;
 
-        Stack<Island> rebuildStack = new Stack<Island>(capacity: 32);
+        Stack<Island> rebuildStack = new Stack<Island>(capacity: MAX_STACK_LVL_LEN);
         DrawCalls draws = (isTop ? Get<DrawCalls>()! : m_root!.Get<DrawCalls>()!);
 
         IReadOnlyList<Island> chunks = draws.ChunkHolders;
@@ -87,7 +88,7 @@ public abstract class Island: Entity {
         for(int i = chunks.Count - 1; i >= m_boundries.X; --i) {
             if (m_boundries.X <= i && m_boundries.Y >= i) {
 
-                // The first entity each chunk the "chunk holder" itself
+                // The first entity each chunk the "chunk holder" itself; so we not disposing it
                 for (int j = m_boundries.X == i ? 1 : 0; j < chunks[i].m_entities.Count; ++j)
                     chunks[i].m_entities[j].Dispose();
             }

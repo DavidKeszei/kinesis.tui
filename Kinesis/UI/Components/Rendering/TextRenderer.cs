@@ -13,6 +13,8 @@ namespace Kinesis.UI.Components;
 /// Represent a text renderer component.
 /// </summary>
 public class TextRenderer(): RenderComponent, IPoolable {
+    private const string POINT_CLIP = "...";
+
     private char[] m_buffer = null!;
     private int m_len = 0;
 
@@ -116,31 +118,30 @@ public class TextRenderer(): RenderComponent, IPoolable {
         Vec2 requiredScale = new Vec2(x: m_len / buffer.Scale.Y, y: m_len % buffer.Scale.Y);
 
         for(int x = 0; x < buffer.Scale.X && x <= requiredScale.X; ++x) {
-            for(int y = 0; y < buffer.Scale.Y && y <= requiredScale.Y; ++y) {
+            ref ANSIChar ch = ref buffer[x, 0];
 
-                ref ANSIChar ch = ref buffer[x, y];
+            if (isMissing) {
+                if (x % 2 == 0) ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
+                else ch.Background = x % 2 != 0 ? RGB.Black : RGB.Purple;
 
-                if(isMissing) {
-                    if(y % 2 == 0) ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
-                    else ch.Background = x % 2 != 0 ? RGB.Black : RGB.Purple;
-
-                    ch.Character = ' ';
-                }
-                else {
-                    ch.Character = m_buffer[x + (int)buffer.Start.X];
-                    ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
-
-                    /* TODO(2026-07-25T00:49:06): Bad foreground blending (Status: Done✅)
-                     * 
-                     * Inspection(s):
-                     *  - Watch for not required foreground coloring, which brake the drawing logic.
-                     */ 	
-                    ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
-
-                    if (attr == null) ch.Styles = TextDecoration.NONE;
-                    else ch.Styles = ((Style)attr).AsAttribute;
-                }
+                ch.Character = ' ';
             }
+            else {
+                ch.Character = m_buffer[x + (int)buffer.Start.X];
+                ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
+
+                ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
+
+                if (attr == null) ch.Styles = TextDecoration.NONE;
+                else ch.Styles = ((Style)attr).AsAttribute;
+            }
+        }
+
+        if (requiredScale.X > buffer.Scale.X) {
+            int len = int.Clamp((int)(requiredScale.X - buffer.Scale.X), 0, POINT_CLIP.Length);
+
+            for (int i = 0; i < len; ++i)
+                buffer[(int)buffer.Scale.X - i, 0].Character = POINT_CLIP[(len - 1) - i];
         }
     }
 

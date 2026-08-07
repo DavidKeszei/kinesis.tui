@@ -15,11 +15,14 @@ namespace Kinesis.UI;
 /// <typeparam name="TTemplate">Template object for each row.</typeparam>
 /// <typeparam name="TData">Encapsulated data target for each row.</typeparam>
 public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> where TTemplate : Entity, new() {
+    private const byte KEY_ENTER = 13;
+
     private string m_list = null!;
 
     private readonly Action<TData, TTemplate> m_bind     = null!;
-    private readonly Action<TData, TTemplate> m_onSelect = null!;
+    private readonly Action<TData, TTemplate> m_onHighlight = null!;
 
+    private readonly Action<TData> m_onSelect = null!;
     private readonly List<TData> m_contentSource = null!;
     private readonly int m_rowHeight = 1;
 
@@ -42,7 +45,15 @@ public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> w
     /// </summary>
     public Action<TData, TTemplate> Bind { init => m_bind = value; }
 
-    public Action<TData, TTemplate> OnSelect { init => m_onSelect = value; }
+    /// <summary>
+    /// Simple callback for react to selecting on a row.
+    /// </summary>
+    public Action<TData> OnSelect { init => m_onSelect = value; }
+
+    /// <summary>
+    /// Simple callback for react to highlighting on a row.
+    /// </summary>
+    public Action<TData, TTemplate> OnHighlight { init => m_onHighlight = value; }
 
     /// <summary>
     /// Used heigth value of each row.
@@ -65,7 +76,6 @@ public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> w
     protected override Entity? Build(ref readonly BuildContext context) {
         if (m_contentSource == null) return null!;
 
-        /* TODO(2026-08-05T21:40:05): Split the Bind method to OnSelect & Bind to do one thing per property (Status: Planned⚠️)*/ 	
         return new OnUpdate<InputMessage>(context) {
             On = HandleArrowKeys,
             Content = new OnUpdate<RenderMessage>(context) {
@@ -78,6 +88,11 @@ public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> w
     private void HandleArrowKeys(InputMessage message, ref readonly IslandEntityVisitor tree) {
         if (m_contentSource.Count < 1) return;
 
+        if (message.Key == KEY_ENTER && m_onSelect != null) {
+            m_onSelect(m_contentSource[m_listRowHead + m_scrollOffset]);
+            return;
+        }
+
         ArrowKey key = message.ToArrowKey();
         if (!message.IsPressed || key == ArrowKey.INVALID_NONE) return;
 
@@ -89,6 +104,7 @@ public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> w
 
         int offset = changeValue - m_scrollOffset;
 
+        // If we are at the top ot bottom, then we de- or increase the `m_scrollOffset` value.
         if (m_listRowHead + offset < 0 || m_listRowHead + offset > m_visibleRowCount - 1)
             m_scrollOffset += changeValue;
 
@@ -174,7 +190,7 @@ public sealed class UIList<TTemplate, TData> : Island, ICopyable<BuildContext> w
             if (i < m_visibleRowCount) {
                 m_bind(m_contentSource[contentIndex], child);
 
-                if (m_listRowHead == i + m_scrollOffset) m_onSelect(m_contentSource[contentIndex], child);
+                if (m_listRowHead == i + m_scrollOffset) m_onHighlight(m_contentSource[contentIndex], child);
                 viewPort.Get<Scale>()!.ChangeAxisValue(value: m_rowHeight, axis: Axis.Y);
             }
             else {
