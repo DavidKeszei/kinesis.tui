@@ -18,7 +18,6 @@ public sealed class KinesisEngine: ISystemProvider {
     #region PREDEFINES
 
     private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
-    private const string USE_ALTERNATE_BUFFER   = $"\e[?1049h";
 
     #endregion
 
@@ -45,7 +44,7 @@ public sealed class KinesisEngine: ISystemProvider {
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
-        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
+        m_title = m_title == null ? $"\e]0;Untitled\a" : $"\e]0;{title}\a";
         m_consoleSourceInfoProvider = new ConsoleInfoSource();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
@@ -94,7 +93,7 @@ public sealed class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <param name="name">Name of the route.</param>
     /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
-    /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
+    /// <returns>Returns <see langword="true"/>, if the route is successfully registered, otherwise returns <see langword="false"/>.</returns>
     public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
         => m_navigator.Register(name, onCreate);
 
@@ -157,6 +156,6 @@ public sealed class KinesisEngine: ISystemProvider {
         this.RegisterComponent<Style>();
 
         this.RegisterComponent<JobComponent>();
-        this.RegisterComponent<ContentComponent>();
+        this.RegisterComponent<RebuildContent>();
     }
 }

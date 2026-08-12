@@ -26,9 +26,10 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
-            Get<ContentComponent>()!.Content = container;
+            Get<RebuildContent>()!.Content = container;
 
             m_childScale = value.Get<Scale>();
+            Debug.Assert(m_childScale != null, message: "Child of the Center element not has Scale component.");
             Rebuild();
         }
     }
@@ -66,7 +67,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
 
                 pos.Relative = center;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 }

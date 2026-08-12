@@ -50,7 +50,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     /// <summary>
     /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message.
     /// </summary>
-    /// <remarks><b>Remarks:</b> This proprety only works, if the message type is <see cref="InputMessage"/>, otherwise ignored by the library.</remarks>
+    /// <remarks><b>Remarks:</b> This proprety only works, if the message type is <see cref="InputMessage"/> Otherwise ignored by the library.</remarks>
     public bool IsFocusBased { get => m_inputFocus; init => m_inputFocus = value; }
 
     /// <summary>

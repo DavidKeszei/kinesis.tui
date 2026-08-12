@@ -93,10 +93,10 @@ internal sealed class Renderer {
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
             for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-                ref ANSIChar backChar = ref m_backbuffer[x, y];
-                ref ANSIChar frontChar = ref m_frontbuffer[x, y];
+                ref vtchar_t backChar = ref m_backbuffer[x, y];
+                ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
-                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new ANSIChar()))) {
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new vtchar_t()))) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)

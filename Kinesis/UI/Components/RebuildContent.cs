@@ -8,8 +8,8 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represents a content-container for rebuilding <see cref="Island"/> instances.
 /// </summary>
-public sealed class ContentComponent(): Component(id: ComponentRegistry.QueryComponent(name: TYPE)), IStaticType, IPoolable {
-    private const string TYPE = nameof(ContentComponent);
+public sealed class RebuildContent(): Component(id: ComponentRegistry.QueryComponent(name: TYPE)), IStaticType, IPoolable {
+    private const string TYPE = nameof(RebuildContent);
 
     private Entity m_content = null!;
     private bool m_hasChanged = false;
@@ -17,7 +17,7 @@ public sealed class ContentComponent(): Component(id: ComponentRegistry.QueryCom
     public static string TypeName { get => TYPE; }
 
     /// <summary>
-    /// Current content of the <see cref="ContentComponent"/>
+    /// Current content of the <see cref="RebuildContent"/>
     /// </summary>
     /// <remarks>
     /// <b>Remarks:</b> Calling this property setting a <see langword="true"/>/<see langword="false"/> value to <see cref="HasChange"/> property implicitly. 
@@ -39,10 +39,10 @@ public sealed class ContentComponent(): Component(id: ComponentRegistry.QueryCom
     /// </summary>
     public bool HasChange { get => m_hasChanged; set => m_hasChanged = true; }
 
-    public ContentComponent(Entity content): this() => m_content = content;
+    public RebuildContent(Entity content): this() => m_content = content;
 
     public void Reset() {
         m_content = null!;
-        ComponentPool<ContentComponent>.Instance.Return(this);
+        ComponentPool<RebuildContent>.Instance.Return(this);
     }
 }

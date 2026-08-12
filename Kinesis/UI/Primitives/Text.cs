@@ -10,8 +10,8 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple text on the screen.
 /// </summary>
-public sealed class UIText: Entity, ICopyable<BuildContext> {
-    /* TODO(2026-07-16T23:40:36): Add more controll over the text buffer through the UIText class. (Status: Done✅)
+public sealed class Text: Entity, ICopyable<BuildContext>, IContentable<string> {
+    /* TODO(2026-07-16T23:40:36): Add more control over the text buffer through the Text class. (Status: Done✅)
      * 
      * INSPECTIONS:
      * 	- TextRenderer already gives to us some "low-level" methods for manipulate the buffer.
@@ -19,9 +19,9 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
      */ 	
 
     /// <summary>
-    /// Underlying text value of the <see cref="UIText"/>.
+    /// Underlying text value of the <see cref="UI.Text"/>.
     /// </summary>
-    public string Text {
+    public string Content {
         get {
             return base.Get<TextRenderer>()!.Value;
         }
@@ -31,21 +31,21 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
     }
 
     /// <summary>
-    /// Background of the <see cref="UIText"/>.
+    /// Background of the <see cref="UI.Text"/>.
     /// </summary>
     public RGB Background { get => base.Get<Style>()!.AsRGB; set => base.Get<Style>()!.AsRGB = value; }
 
     /// <summary>
-    /// Foreground/Text color of the <see cref="UIText"/>.
+    /// Foreground/Text color of the <see cref="UI.Text"/>.
     /// </summary>
     public RGB Foreground { get => base.Get<Style>(index: 1)!.AsRGB; set => base.Get<Style>(index: 1)!.AsRGB = value; }
 
     /// <summary>
-    /// Style indicators of the <see cref="UIText"/>.
+    /// Style indicators of the <see cref="UI.Text"/>.
     /// </summary>
     public TextDecoration Decoration { get => base.Get<Style>(index: 2)!.AsAttribute; set => base.Get<Style>(index: 2)!.AsAttribute = value; }
 
-    public UIText(): base(count: 7) {
+    public Text(): base(count: 7) {
         base.InitRenderEntityWith<TextRenderer>();
 
         base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(Style.BACKGROUND, StyleDataType.COLOR, null));
@@ -53,7 +53,7 @@ public sealed class UIText: Entity, ICopyable<BuildContext> {
 
         base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(Style.FONT_ATTR, StyleDataType.FONT_ATTR, TextDecoration.NONE));
 
-        Text = string.Empty;
+        Content = string.Empty;
     }
 
     /// <summary>

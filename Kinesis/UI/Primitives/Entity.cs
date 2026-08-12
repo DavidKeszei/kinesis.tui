@@ -20,10 +20,10 @@ public class Entity: IDisposable {
     private readonly Dictionary<int, int> m_uniqueComponents = null!;
     private readonly Queue<int> m_emptySpaces = null!;
 
-    /* TODO(2026-07-16T23:44:03): Create a flexibale storage for components, which can be dynamic & fixed buffer. (Status: Planned⚠️)
+    /* TODO(2026-07-16T23:44:03): Create a flexible storage for components, which can be dynamic & fixed buffer. (Status: Planned⚠️)
      * 
      * INSPECTIONS:
-     * 	- The fixed array MUST be rented from the ArrayPool<T> for minimazing the garbage, when an entity disposed (by the user or .rebuild())
+     * 	- The fixed array MUST be rented from the ArrayPool<T> for minimizing the garbage, when an entity disposed (by the user or .Rebuild())
      */ 	
     private readonly Component[] m_components = null!;
     private readonly string m_name = string.Empty;
@@ -46,9 +46,8 @@ public class Entity: IDisposable {
     /// <summary>
     /// Create a new <see cref="Entity"/> instance.
     /// </summary>
-    public Entity(int count = MAX_COMPONENT_COUNT): this() {
-        m_components = ArrayPool<Component>.Shared.Rent(minimumLength: count);
-    }
+    public Entity(int count = MAX_COMPONENT_COUNT): this() 
+        => m_components = ArrayPool<Component>.Shared.Rent(minimumLength: count);
 
     protected Entity() {
         m_version = 0;

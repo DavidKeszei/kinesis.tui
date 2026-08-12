@@ -54,7 +54,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            Get<ContentComponent>()!.Content = new UIStack {
+            Get<RebuildContent>()!.Content = new Stack {
                 Name = m_list,
                 Content = boxes
             };
@@ -124,7 +124,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
                 m_previousScale = message.Scale;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 

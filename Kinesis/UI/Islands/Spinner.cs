@@ -117,7 +117,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        return new AnimatedArea<AnimatedNumber<int>, UIText>() {
+        return new AnimatedArea<AnimatedNumber<int>, Text>() {
             Selector = (_) => m_index,
             Applier = (text, value) => {
                 m_index = value;
@@ -128,9 +128,9 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
             To = m_spinnerStates.Length,
 
             IsPeriodic = true,
-            Content = new UIText {
+            Content = new Text {
                 Name = $"__{nameof(Spinner)}__{Guid.CreateVersion7()}__",
-                Text = $"{m_spinnerStates[m_index]}"
+                Content = $"{m_spinnerStates[m_index]}"
             }
         };
     }

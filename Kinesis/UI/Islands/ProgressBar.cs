@@ -44,7 +44,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     public Entity Content {
         set {
             if (value == null || value.Get<Scale>() == null) {
-                Get<ContentComponent>()!.Content = CreateContainer(null!);
+                Get<RebuildContent>()!.Content = CreateContainer(null!);
                 return;
             }
 
@@ -56,7 +56,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
-            Get<ContentComponent>()!.Content = CreateContainer(container);
+            Get<RebuildContent>()!.Content = CreateContainer(container);
             Rebuild();
         }
     }
@@ -102,8 +102,8 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
                     len = (int)entity.Get<Scale>()!.Value.X + 1;
                 }
 
-                UIBox filled = tree.Visit<UIBox>(name: m_progressFilled)!;
-                UIBox empty = tree.Visit<UIBox>(name: m_progressEmpty)!;
+                Box filled = tree.Visit<Box>(name: m_progressFilled)!;
+                Box empty = tree.Visit<Box>(name: m_progressEmpty)!;
 
                 empty.Filler  = m_empty;
                 filled.Filler = m_filled;
@@ -122,20 +122,20 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
                 /* Text length + (Maximum width * Percent) -> This makes the render flexible & correct */
                 filled.Get<Scale>()!.ChangeAxisValue(value: len + (x / 100f) * m_percent, axis: Axis.X);
             },
-            Content = Get<ContentComponent>()?.Content ?? null!
+            Content = Get<RebuildContent>()?.Content ?? null!
         };
     }
 
     private Viewport CreateContainer(Entity content) {
         Viewport box = new Viewport() {
-            Content = new UIStack() {
+            Content = new Stack() {
                 Content = [
-                        new UIBox() {
+                        new Box() {
                             Name = (m_progressEmpty ??= $"__progress_empty_{Guid.CreateVersion7()}__"),
                             Background = RGB.Transparent,
                             Filler = m_empty
                         },
-                        new UIBox() {
+                        new Box() {
                             Name = (m_progressFilled ??= $"__progress_filled_{Guid.CreateVersion7()}__"),
                             Background = RGB.Transparent,
                             Filler = m_filled

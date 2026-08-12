@@ -93,7 +93,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
             On = (message, ref readonly tree) => {
                 if (!message.IsPressed || (message.Key != '\b' && message.Key < LAST_UNPRINTBALE_CHR)) return;
 
-                UIText text = tree.Visit<UIText>(name: m_textIdentifier)!;
+                Text text = tree.Visit<Text>(name: m_textIdentifier)!;
                 int currentLen = (int)text.Get<Scale>()!.Value.X;
 
                 if (message.ToArrowKey() != ArrowKey.INVALID_NONE) {
@@ -134,29 +134,29 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                         RGB color = Get<Style>()!.AsRGB;
                         color = color.Equals(rgb: RGB.Transparent) ? RGB.White : color;
 
-                        UIText txt = tree.Visit<UIText>(name: m_textIdentifier)!;
+                        Text txt = tree.Visit<Text>(name: m_textIdentifier)!;
                         txt.Foreground = color with { A = PLACEHOLDER_ALPHA };
 
-                        AnimatedArea<RGB, UIBox> box = tree.Visit<AnimatedArea<RGB, UIBox>>(name: m_animatedAreaIdentifier)!;
+                        AnimatedArea<RGB, Box> box = tree.Visit<AnimatedArea<RGB, Box>>(name: m_animatedAreaIdentifier)!;
                         box.To = color;
                     }
 
                     int width = (int)Get<Scale>()!.Value.X; 
-                    UIBox cursor = tree.Visit<UIBox>(name: m_cursorIdentifier)!;
+                    Box cursor = tree.Visit<Box>(name: m_cursorIdentifier)!;
 
                     if (m_headPosition < width && m_charCount >= 0) 
                         cursor.Move(x: m_headPosition, y: 0);
                 },
-                Content = new UIStack {
+                Content = new Stack {
                     Content = [
-                        new UIText {
+                        new Text {
                             Name       = m_textIdentifier,
-                            Text       = m_placeholder,
+                            Content       = m_placeholder,
 
                             Decoration = TextDecoration.ITALIC,
                             Foreground = Get<Style>()!.AsRGB with { A = PLACEHOLDER_ALPHA },
                         },
-                        new AnimatedArea<RGB, UIBox> {
+                        new AnimatedArea<RGB, Box> {
                             Name       = m_animatedAreaIdentifier,
 
                             Selector   = static(box)        => box.Background,
@@ -166,7 +166,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                             Duration   = TimeSpan.FromSeconds(value: m_blinkTime),
 
                             IsPeriodic = true,
-                            Content = new UIBox {
+                            Content = new Box {
                                 Name       = m_cursorIdentifier,
                                 Scale      = Vec2.One,
                                 
@@ -198,9 +198,9 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         return len;
     }
 
-    private void AddChar(UIText text, char letter) {
+    private void AddChar(Text text, char letter) {
         if (m_headPosition >= m_maxLen) return;
-        int len = text.Text.Length;
+        int len = text.Content.Length;
 
         Span<char> left = stackalloc char[m_headPosition + 1];
         Span<char> rigth = stackalloc char[len - m_headPosition];
@@ -218,9 +218,9 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         ++m_charCount;
     }
 
-    private void RemoveChar(UIText text) {
+    private void RemoveChar(Text text) {
         if (m_headPosition - 1 < 0 || m_charCount == 0) return;
-        int len = text.Text.Length;
+        int len = text.Content.Length;
 
         Span<char> left  = stackalloc char[m_headPosition - 1];
         Span<char> rigth = stackalloc char[len - m_headPosition];
@@ -235,7 +235,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
         --m_charCount;
     }
 
-    private void ShowPlaceholder(UIText text, bool inputAdded) {
+    private void ShowPlaceholder(Text text, bool inputAdded) {
         if (inputAdded) {
 
             //[0][...] -> First: Real input; From the seocnd: Placeholder

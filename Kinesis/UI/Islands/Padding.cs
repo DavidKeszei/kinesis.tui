@@ -40,7 +40,7 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
             this.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = container;
             container.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
-            Get<ContentComponent>()!.Content = container;
+            Get<RebuildContent>()!.Content = container;
             Rebuild();
         }
     }
@@ -77,7 +77,7 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.X - scale.Inset.X, axis: Axis.X);
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.Y - scale.Inset.Y, axis: Axis.Y);
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 }
