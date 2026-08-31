@@ -38,7 +38,6 @@ public static class EntityExtension {
         /// </summary>
         /// <param name="x">Move amount on the X axis.</param>
         /// <param name="y">Move amount on the Y axis.</param>
-        /// <param name="preserveParentArea">Indicates the moving process watch the parent scale.</param>
         /// <remarks>
         /// <b>Remarks:</b> If the entity not has <see cref="Position"/> or <see cref="Scale"/> component, then the function does nothing.
         /// </remarks>

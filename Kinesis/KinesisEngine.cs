@@ -12,15 +12,9 @@ using Kinesis.Core.Utils;
 namespace Kinesis;
 
 /// <summary>
-/// Represent the heart of the library: This connects all systems to one class.
+/// Represent the heart of the library: this connects all systems to one class.
 /// </summary>
 public sealed class KinesisEngine: ISystemProvider {
-    #region PREDEFINES
-
-    private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
-
-    #endregion
-
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
@@ -62,7 +56,7 @@ public sealed class KinesisEngine: ISystemProvider {
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();
     }
-
+    
     public T? GetSystem<T>() where T: class, ISystem {
         for (int i = 0; i < m_customSystems.Count; ++i) {
             if (m_customSystems[i].When == SystemInvocationTime.ON_CALL && m_customSystems[i].System is T) {
@@ -129,14 +123,12 @@ public sealed class KinesisEngine: ISystemProvider {
 
         /* Run the shutdown systems. */
         await Run(invocation: SystemInvocationTime.ON_END);
-        Console.Out.Write(UNUSE_ALTERNATE_BUFFER);
+        Console.Out.Write(AnsiCommand.DisableAlternateBuffering);
     }
 
     private Task Run(SystemInvocationTime invocation) {
-        ISystem system = null!;
-
         foreach (SystemInvocationInfo systemInfo in m_customSystems.Where(x => x.When == invocation)) {
-            system = systemInfo.System ?? systemInfo.Creation(this);
+            ISystem system = systemInfo.System ?? systemInfo.Creation(this);
 
             if (system.Behavior == SystemBehavior.DYNAMIC && systemInfo.System is IDynamicSystem dynamic)
                 dynamic.Run();

@@ -9,13 +9,13 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a local visitor on the entity-tree to the bottom.
 /// </summary>
-public readonly ref struct IslandEntityVisitor {
+public readonly ref struct Visitor {
     private const int MAX_USE_ENTITY_COUNT = 32;
 
     private static Dictionary<string, Entity> s_mostUsed = null!;
     private readonly Entity? m_pivot = null!;
 
-    internal IslandEntityVisitor(Entity? pivot) {
+    internal Visitor(Entity? pivot) {
         m_pivot = pivot;
         s_mostUsed ??= new Dictionary<string, Entity>();
     }

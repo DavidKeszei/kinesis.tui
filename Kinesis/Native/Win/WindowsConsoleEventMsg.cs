@@ -11,9 +11,9 @@ namespace Kinesis.Native;
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
 internal readonly struct WindowsConsoleEventMsg {
-    [MarshalAs(unmanagedType: UnmanagedType.U2), FieldOffset(0)] readonly WindowsConsoleMsgTag m_tag = WindowsConsoleMsgTag.INPUT;
-    [FieldOffset(4)] readonly InputKeyEventInfo m_inputInfo = default;
-    [FieldOffset(4)] readonly ConsoleScaleInfo m_windowScale = default;
+    [MarshalAs(unmanagedType: UnmanagedType.U2), FieldOffset(0)] private readonly WindowsConsoleMsgTag m_tag = WindowsConsoleMsgTag.INPUT;
+    [FieldOffset(4)] private readonly InputKeyEventInfo m_inputInfo = default;
+    [FieldOffset(4)] private readonly ConsoleScaleInfo m_windowScale = default;
 
     /// <summary>
     /// Delimiter

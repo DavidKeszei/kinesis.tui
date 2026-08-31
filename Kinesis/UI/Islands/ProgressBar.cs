@@ -36,7 +36,7 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Provides simple update logic to the indicator of the <see cref="ProgressBar"/>.
     /// </summary>
     /// <remarks><b>Remarks:</b> This property can be <see langword="null"/>, if progress indicator (<see cref="ProgressBar.Content"/>) is not requiring it.</remarks>
-    public Action<float, Entity> On { init => m_onUpdate = value; }
+    public Action<float, Entity> OnChange { init => m_onUpdate = value; }
 
     /// <summary>
     /// Setting up the loading indicator of the <see cref="ProgressBar"/>.

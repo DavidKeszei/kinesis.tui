@@ -26,8 +26,7 @@ public abstract class Island: Entity {
     private bool m_isActive = false;
 
     private bool m_isBuild = false;
-
-
+    
     /// <summary>
     /// Current "drawable" entities of the <see cref="Island"/> insatance.
     /// </summary>
@@ -39,7 +38,7 @@ public abstract class Island: Entity {
     internal bool IsActive { get => m_isActive; set => m_isActive = value; }
 
     /// <summary>
-    /// Indicates the current <see cref="Island"/> was built. This only <see cref="true"/>, if the island a root island.
+    /// Indicates the current <see cref="Island"/> was built. This only <see langword="true"/>, if the island a root island.
     /// </summary>
     internal bool IsBuilt { get => m_isBuild; }
 
@@ -69,11 +68,11 @@ public abstract class Island: Entity {
     /// </summary>
     /// <remarks>
     /// This method is destructive and marks an intent-driven layout shift. 
-    /// It immediately invalidates and structural-deconstructs the current UI sub-tree.
+    /// It immediately invalidates and structural-deconstructs the current UI subtree.
     /// </remarks>
     protected void Rebuild() {
         // We only rebuild the Island, if that builded or has any change
-        if (!m_isBuild || !(Get<RebuildContent>()?.HasChange ?? false))
+        if (!m_isBuild || (!Get<RebuildContent>()?.HasChange ?? false))
             return;
 
         bool isTop = m_root == null;
@@ -171,7 +170,6 @@ public abstract class Island: Entity {
     }
 
     private void AcceptRebuild(Stack<Island> rebuildStack, DrawCalls draws) {
-
         while (rebuildStack.TryPop(out Island? rebuildTarget)) {
             bool isTop = rebuildTarget.m_root == null!;
 

@@ -21,7 +21,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
     private const uint READ_COUNT = 1;
 
     #endregion
-    #region P/INVOKE
+    #region NATIVE
 
     [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "ReadConsoleInputW")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

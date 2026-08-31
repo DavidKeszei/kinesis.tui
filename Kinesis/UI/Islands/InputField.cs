@@ -10,7 +10,7 @@ namespace Kinesis.UI;
 /// Represent an textual input on the screen.
 /// </summary>
 public sealed class InputField: Island, ICopyable<BuildContext> {
-    private const int LAST_UNPRINTBALE_CHR = 31;
+    private const int LAST_UNPRINTABLE_CHR = 31;
     private const byte PLACEHOLDER_ALPHA   = 165;
 
     private readonly string m_textIdentifier = null!;
@@ -91,7 +91,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
 
         return new OnUpdate<InputMessage>(context) {
             On = (message, ref readonly tree) => {
-                if (!message.IsPressed || (message.Key != '\b' && message.Key < LAST_UNPRINTBALE_CHR)) return;
+                if (!message.IsPressed || (message.Key != '\b' && message.Key < LAST_UNPRINTABLE_CHR)) return;
 
                 Text text = tree.Visit<Text>(name: m_textIdentifier)!;
                 int currentLen = (int)text.Get<Scale>()!.Value.X;

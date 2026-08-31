@@ -23,7 +23,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private int m_childCount = 0;
     private int m_sumOfRatios = 0;
 
-    private Axis m_direction = Axis.X;
+    private readonly Axis m_direction = Axis.X;
 
     public List<Entity> Content {
         set {
@@ -37,8 +37,6 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             m_childCount = value.Count;
 
             for (int i = 0; i < value.Count; ++i) {
-                Scale? scale = value[i].Get<Scale>();
-
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
 
@@ -67,7 +65,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     /// Weigths/Ratios of the elements for the dividing.
     /// </summary>
     /// <remarks>
-    /// Remark: If given list less than the content count, then remained content weigths is equals with 1.
+    /// If given list less than the content count, then remained content weigths is equals with 1.
     /// </remarks>
     public List<uint> Ratios {
         set {
@@ -152,8 +150,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
     private float CalculateRatio(Vec2 scale) {
         float divideAxisValue = m_direction switch {
-            Axis.Y => scale!.Y,
-            Axis.X => scale!.X,
+            Axis.Y => scale.Y,
+            Axis.X => scale.X,
             _ => .0f
         };
 

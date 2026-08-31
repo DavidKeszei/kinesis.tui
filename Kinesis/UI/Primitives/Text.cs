@@ -11,20 +11,12 @@ namespace Kinesis.UI;
 /// Represent a simple text on the screen.
 /// </summary>
 public sealed class Text: Entity, ICopyable<BuildContext>, IContentable<string> {
-    /* TODO(2026-07-16T23:40:36): Add more control over the text buffer through the Text class. (Status: Done✅)
-     * 
-     * INSPECTIONS:
-     * 	- TextRenderer already gives to us some "low-level" methods for manipulate the buffer.
-     * 	- The Scale component must be syncronized with these "low-level" manipulation.
-     */ 	
-
+    
     /// <summary>
     /// Underlying text value of the <see cref="UI.Text"/>.
     /// </summary>
     public string Content {
-        get {
-            return base.Get<TextRenderer>()!.Value;
-        }
+        get => base.Get<TextRenderer>()!.Value;
         set {
             if (value != null) Write(text: value);
         }

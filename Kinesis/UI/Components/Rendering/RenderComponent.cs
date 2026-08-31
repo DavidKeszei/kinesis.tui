@@ -40,6 +40,7 @@ public abstract class RenderComponent: Component, IStaticType, IPoolable {
     /// Render the component to the screen.
     /// </summary>
     /// <param name="buffer">Portion of the screen buffer.</param>
+    /// <param name="version">Current version number of the <see cref="Entity"/>.</param>
     /// <param name="styles">Decoration of the renderer.</param>
     internal protected abstract void Render(in Canvas buffer, int version, StyleEnumerator styles);
 

@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 namespace Kinesis.Core;
 
 /// <summary>
-/// Represent smallest unit of work.
+/// Represents the smallest unit of work.
 /// </summary>
 /// <param name="Action">Callback of the work.</param>
 /// <param name="Island">Container of the changed entities.</param>
@@ -91,6 +91,8 @@ internal sealed class JobSystem: IDynamicSystem {
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
+    /// <param name="island">Root <see cref="Island"/> instance of the work.</param>
+    /// <param name="isFocusBased">Indicates the job requires some focus-based behavior.</param>
     /// <returns>Returns a <see cref="State{T}"/> instance, which helps request and track state of the job.</returns>
     public State<JobRequestIntent> AddCallback<T>(Action<T> work, Island island, bool isFocusBased) where T: IJobMessage {
         if (work == null || island == null) return null!;
@@ -112,13 +114,7 @@ internal sealed class JobSystem: IDynamicSystem {
             throw new InvalidOperationException(message: ERR_SYNC_NOT_FOUND);
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
-
-        /* TODO(2026-07-04T10:55:36): Fix focus based job handling by indexes (remove & add) (Status: Done✅)
-         * 
-         * INSPECTIONS:
-         * 	- Register & Remove method don't remove all unused/invalid jobs -> This leads "ghost" jobs, but application not crashing from it.
-         * 	- Revisit Island.Rebuild(), because after this method the focus management became broken.
-         */ 	
+        
         while(true) {
             if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
@@ -139,11 +135,7 @@ internal sealed class JobSystem: IDynamicSystem {
         if (!messages.Read(out T message)) return;
 
         for(int i = 0; i < m_targets.Count; ++i) {
-            /*
-             * We not run anything, which requested as 'SUSPEND'. If a Job was reuqested as 'REMOVE', then we run it one more time before
-             * we remove it in the next round.
-             */
-        if (!m_targets[i].Island.IsActive || m_targets[i].Status != JobRequestIntent.ACTIVE || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
+            if (!m_targets[i].Island.IsActive || m_targets[i].Status != JobRequestIntent.ACTIVE || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
                 continue;
 
             Delegate _ref = m_targets[i].Action;
@@ -151,8 +143,7 @@ internal sealed class JobSystem: IDynamicSystem {
                 Unsafe.As<Delegate, Action<T>>(ref _ref)(message);
         }
     }
-
-    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+    
     private void RemoveJobs() {
         for (int i = m_targets.Count - 1; i >= 0; --i)
             if (m_targets[i].Status == JobRequestIntent.REMOVE) {
@@ -196,7 +187,7 @@ internal sealed class JobSystem: IDynamicSystem {
     private bool MoveFocusIndex(InputMessage input) {
         if (input.IsPressed && input.Key == '\t' && input.Modifiers == InputModifier.L_SHIFT) {
 
-            m_focusIndex = (m_focusIndex + 1) % m_focusTargetIndexes.Count;
+            m_focusIndex = ++m_focusIndex % m_focusTargetIndexes.Count;
             return true;
         }
 

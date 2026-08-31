@@ -10,7 +10,7 @@ namespace Kinesis.Core;
 /// </summary>
 /// <typeparam name="T">Type of the component.</typeparam>
 public sealed class ComponentPool<T> where T: Component, IStaticType {
-    private readonly static int s_preAllocationCount = 1024;
+    private const int s_preAllocationCount = 512;
     private static ComponentPool<T> s_instance = null!;
 
     private readonly List<T> m_components = null!;

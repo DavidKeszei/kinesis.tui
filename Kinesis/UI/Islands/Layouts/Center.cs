@@ -17,7 +17,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
     private Scale? m_childScale = null!;
     private readonly Axis m_axis = Axis.X | Axis.Y;
 
-    public Entity Content {
+    public required Entity Content {
         set {
             if (value == null) return;
 
