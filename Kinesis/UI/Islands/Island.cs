@@ -53,12 +53,7 @@ public abstract class Island: Entity {
 
         this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.UP));
         this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.DOWN));
-
-        /* TODO(2026-07-09T21:08:53): Make more ergonomic the rebuild process, when the target the root UI Island itself. (Status: Planned⚠️)
-         * 
-         * INSPECTIONS:
-         * 	- The rebuild shortcutted by the RebuildContent.HasChange & m_built field.
-         */ 	
+	
         this.Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Instance.Rent<RebuildContent>(), isUnique: true);
         this.Attach<DrawCalls>(component: new DrawCalls(), isUnique: true);
     }

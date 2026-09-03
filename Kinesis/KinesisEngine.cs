@@ -25,7 +25,7 @@ public sealed class KinesisEngine: ISystemProvider {
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<JobSystemStateInfo> m_workSyncState = null!;
+    private readonly State<WorkerSystemState> m_workSyncState = null!;
 
     private readonly ConsoleInfoSource m_consoleSourceInfoProvider = default!;
     private readonly string m_title = string.Empty;
@@ -33,6 +33,7 @@ public sealed class KinesisEngine: ISystemProvider {
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
+    /// <param name="title">Title of the window.</param>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
@@ -42,7 +43,7 @@ public sealed class KinesisEngine: ISystemProvider {
         m_consoleSourceInfoProvider = new ConsoleInfoSource();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new RefState<JobSystemStateInfo>(@default: new JobSystemStateInfo());
+        m_workSyncState = new ValueState<WorkerSystemState>(@default: new WorkerSystemState());
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -103,6 +104,8 @@ public sealed class KinesisEngine: ISystemProvider {
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
+
+        //TODO: Try to remove unneccessary VSD overhead
         _ = Task.Run(action: () => m_input.Run(), token);
 
         _ = Task.Run(action: () => m_layoutSystem.Run(), token);

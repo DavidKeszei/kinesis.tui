@@ -143,7 +143,6 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
             int diff = m_currentYScale < message.Scale.Y ? -1 : 1;
             
             if (m_relativeCursorPosition - diff >= 0 && m_visibleRowCount != m_contentSource.Count) {
-                
                 m_scrollOffset += diff;
                 m_relativeCursorPosition -= diff;
             }

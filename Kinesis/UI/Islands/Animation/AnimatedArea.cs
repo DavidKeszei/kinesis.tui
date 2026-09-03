@@ -88,7 +88,7 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
             On = (message, ref readonly tree) => {
                 if (m_state != AnimationState.Animate) return;
                 Entity content = tree.Visit<Viewport>(name: s_box)?
-                                     .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
+                                     .Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!;
 
                 if(content == null || m_selector == null || m_applier == null!) return;
                 long currentTimeStamp = Stopwatch.GetTimestamp();

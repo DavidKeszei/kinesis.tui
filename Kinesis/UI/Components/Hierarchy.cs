@@ -34,12 +34,6 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
     public static int ChildrenStart { get => CHILDREN_START_INDEX; }
 
     /// <summary>
-    /// Simply implicit cast between <see cref="Hierarchy"/> and <see cref="Entity"/> classes.
-    /// </summary>
-    /// <param name="hierarchy">Holder of the child <see cref="Entity"/> instance. This can be <see langword="null"/>.</param>
-    public static implicit operator Entity(Hierarchy hierarchy) => hierarchy.Attached;
-
-    /// <summary>
     /// Next <see cref="Entity"/> instance from this <see cref="Entity"/>.
     /// </summary>
     public Entity Attached { get => m_child; set => m_child = value; }

@@ -43,7 +43,7 @@ public abstract class State<T> {
 /// </summary>
 /// <typeparam name="T">Inset-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
-public class ValueState<T>(StateUpdate<T> update = default!, T @default = default): State<T>(update ?? (static(ref from, to) => from = to), @default) where T: struct;
+public sealed class ValueState<T>(StateUpdate<T> update = default!, T @default = default): State<T>(update ?? (static(ref from, to) => from = to), @default) where T: struct;
 
 
 /// <summary>
@@ -51,4 +51,4 @@ public class ValueState<T>(StateUpdate<T> update = default!, T @default = defaul
 /// </summary>
 /// <typeparam name="T">Maximum-type of the state.</typeparam>
 /// <param name="update">Update logic of state.</param>
-public class RefState<T>(StateUpdate<T> update = default!, T @default = null!): State<T>(update ?? (static (ref from, to) => from = to), @default) where T: class;
+public sealed class RefState<T>(StateUpdate<T> update = default!, T @default = null!): State<T>(update ?? (static (ref from, to) => from = to), @default) where T: class;

@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 
+using RenderSyncContext = Kinesis.Core.State<Kinesis.Core.WorkerSystemState>;
+
 namespace Kinesis.Core;
 
 /// <summary>
@@ -37,7 +39,7 @@ internal sealed class JobSystem: IDynamicSystem {
     private readonly RingBuffer<RenderMessage> m_renderMessages = null!;
 
     private readonly ConcurrentQueue<JobTarget> m_addIntents = null!;
-    private State<JobSystemStateInfo> m_workState = null!;
+    private RenderSyncContext m_renderSync = null!;
 
     private readonly List<int> m_focusTargetIndexes = null!;
     private int m_focusIndex = 0;
@@ -52,9 +54,9 @@ internal sealed class JobSystem: IDynamicSystem {
     /// </summary>
     public static JobSystem Current { get => s_instance ??= new JobSystem(); }
 
-    public JobSystem() {
-        m_focusTargetIndexes = new List<int>();
+    private JobSystem() {
         m_targets = new List<JobTarget>(capacity: PRE_ALLOC_INTERACTION_COUNT);
+        m_focusTargetIndexes = new List<int>();
 
         m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND_COUNT);
         m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_INPUT_COUNT);
@@ -67,7 +69,7 @@ internal sealed class JobSystem: IDynamicSystem {
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
     /// <remarks>Remarks: If the state wasn't set, then the <see cref="JobSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
-    public void AddRenderSync(State<JobSystemStateInfo> sync) => m_workState ??= sync;
+    public void AddRenderSync(RenderSyncContext sync) => m_renderSync ??= sync;
 
     /// <summary>
     /// Add new <see cref="InputMessage"/> to the workers.
@@ -97,12 +99,6 @@ internal sealed class JobSystem: IDynamicSystem {
     public State<JobRequestIntent> AddCallback<T>(Action<T> work, Island island, bool isFocusBased) where T: IJobMessage {
         if (work == null || island == null) return null!;
 
-        /* TODO(2026-05-29T23:27:05): Refactor to request based job register. (Status: ✅)
-         * 
-         * INSPECTIONS:
-         * 	- Plan to migrate this to thread-safe version with ConcurrentQueue<T> to register the intent for job registration.
-         * 	- Always the "JobSystem" run we: register/remove & send messages to the registered job holders.
-         */
         JobTarget target = new JobTarget(work, island, T.Target, new ValueState<JobRequestIntent>(@default: JobRequestIntent.ACTIVE), isFocusBased);
         m_addIntents.Enqueue(target);
 
@@ -110,13 +106,13 @@ internal sealed class JobSystem: IDynamicSystem {
     }
 
     public void Run() {
-        if (m_workState == null)
+        if (m_renderSync == null)
             throw new InvalidOperationException(message: ERR_SYNC_NOT_FOUND);
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
         
         while(true) {
-            if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
+            if (m_renderSync.Value != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
@@ -127,7 +123,7 @@ internal sealed class JobSystem: IDynamicSystem {
             Send<InputMessage>(messages: m_inputMessages);
             Send<RenderMessage>(messages: m_renderMessages);
 
-            m_workState.Value.State = WorkerSystemState.WAIT_FOR_RENDERER;
+            m_renderSync.Value = WorkerSystemState.WAIT_FOR_RENDERER;
         }
     }
 
@@ -172,7 +168,6 @@ internal sealed class JobSystem: IDynamicSystem {
             }
     }
 
-    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
     private void AddJobs() {
         if (m_addIntents.IsEmpty) return;
 
@@ -207,10 +202,4 @@ public enum WorkerSystemState: byte {
     /// Indicates for the <see cref="JobSystem"/> wait to the <see cref="Renderer"/>.
     /// </summary>
     WAIT_FOR_RENDERER
-}
-
-internal class JobSystemStateInfo {
-    private WorkerSystemState m_state = WorkerSystemState.WAIT_FOR_RENDERER;
-
-    public WorkerSystemState State { get => m_state; set => m_state = value; }
 }
