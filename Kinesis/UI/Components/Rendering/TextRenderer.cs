@@ -95,7 +95,7 @@ public class TextRenderer(): RenderComponent, IPoolable {
             m_buffer = null!;
         }
 
-        ComponentPool<TextRenderer>.Instance.Return(this);
+        ComponentPool<TextRenderer>.Shared.Return(this);
     }
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
@@ -138,10 +138,10 @@ public class TextRenderer(): RenderComponent, IPoolable {
         }
 
         if (requiredScale.X > buffer.Scale.X) {
-            int len = int.Clamp((int)(requiredScale.X - buffer.Scale.X), 0, POINT_CLIP.Length);
+            int len = int.Clamp((int)(requiredScale.X - buffer.Scale.X), 0, int.Min(POINT_CLIP.Length, (int)(buffer.Scale.X)));
 
             for (int i = 0; i < len; ++i)
-                buffer[(int)buffer.Scale.X - i, 0].Character = POINT_CLIP[(len - 1) - i];
+                buffer[(int)buffer.Scale.X - 1 - i, 0].Character = POINT_CLIP[len - 1 - i];
         }
     }
 

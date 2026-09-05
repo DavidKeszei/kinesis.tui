@@ -17,9 +17,9 @@ internal readonly struct ConsoleInfoSource {
     public WindowsConsoleInfoProvider Windows { get => m_windowsSource; }
 
     /// <summary>
-    /// Create a new <see cref="ConsoleInfoSource"/> instance, which hides the platform specific
+    /// Create a new <see cref="ConsoleInfoSource"/> instance, which hides the platform specific information from other systems.
     /// </summary>
-    /// <exception cref="PlatformNotSupportedException"></exception>
+    /// <exception cref="PlatformNotSupportedException"/>
     public ConsoleInfoSource() {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) m_windowsSource = new WindowsConsoleInfoProvider();
         else throw new PlatformNotSupportedException(message: ERR_NOT_SUPPORTED_PLATFORM);

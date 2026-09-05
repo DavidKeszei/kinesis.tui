@@ -26,10 +26,10 @@ internal sealed class Renderer {
     private ConsoleBuffer m_frontbuffer = default;
 
     private readonly State<LayoutInfo> m_layoutState       = null!;
-    private readonly State<JobSystemStateInfo> m_workState = null!;
+    private readonly State<WorkerSystemState> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
-    private float m_delta               = .0f;
+    private float m_delta = .0f;
 
     /// <summary>
     /// Current frame generation time in ms.
@@ -41,7 +41,7 @@ internal sealed class Renderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public Renderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
+    public Renderer(State<WorkerSystemState> workState, State<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -59,7 +59,7 @@ internal sealed class Renderer {
     public void Run(DrawCalls calls) {
         long start = Stopwatch.GetTimestamp();
 
-        if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
+        if (m_workState.Value == WorkerSystemState.WAIT_FOR_RENDERER) {
             bool fullRedrawRequested = OnLayoutChange();
 
             foreach(Entity call in calls) {
@@ -76,7 +76,7 @@ internal sealed class Renderer {
             }
 
             Diffing(fullRedrawRequested);
-            m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
+            m_workState.Value = WorkerSystemState.OPEN_FOR_PROCESSING;
         }
 
         float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
@@ -93,10 +93,10 @@ internal sealed class Renderer {
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
             for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-                ref ANSIChar backChar = ref m_backbuffer[x, y];
-                ref ANSIChar frontChar = ref m_frontbuffer[x, y];
+                ref vtchar_t backChar = ref m_backbuffer[x, y];
+                ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
-                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new ANSIChar()))) {
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new vtchar_t()))) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)

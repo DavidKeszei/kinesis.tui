@@ -11,7 +11,7 @@ namespace Kinesis.Core.Rendering;
 /// Represent a <see cref="ConsoleBuffer"/> on the screen.
 /// </summary>
 internal readonly struct ConsoleBuffer: IDisposable {
-    private readonly unsafe ANSIChar* m_buffer = null!;
+    private readonly unsafe vtchar_t* m_buffer = null!;
     private readonly Vec2 m_scale = new Vec2(-1, -1);
 
     private readonly Vec2 m_startScale = new Vec2(-1, -1);
@@ -28,11 +28,8 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// <param name="y">Y position of the reference.</param>
     /// <returns>Return a <see cref="ANSIChar"/> struct by reference.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
-    public ref ANSIChar this[int x, int y] { 
+    public ref vtchar_t this[int x, int y] { 
         get {
-            if ((x < 0 || y < 0) || (x >= m_startScale.X || y >= m_startScale.Y))
-                throw new IndexOutOfRangeException(message: $"The {nameof(ConsoleBuffer)} was out of bound by the paramters. (Parameter: x = {x}; y = {y})");
-
             unsafe { 
                 return ref m_buffer[x + (int)m_startScale.X * y]; 
             }
@@ -62,7 +59,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// <summary>
     /// Copy <paramref name="from"/> to this from.
     /// </summary>
-    /// <param name="from">Source from.</param>
+    /// <param name="from">Content from.</param>
     public void Copy(in Canvas from) {
         int rangeX = (int)(from.Scale.X < m_scale.X ? from.Scale.X : m_scale.X);
         int rangeY = (int)(from.Scale.Y < m_scale.Y ? from.Scale.Y : m_scale.Y);
@@ -80,7 +77,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
     public void Clear() {
         for (int x = 0; x < m_scale.X; ++x) {
             for (int y = 0; y < m_scale.Y; ++y) {
-                ref ANSIChar ch = ref this[x, y];
+                ref vtchar_t ch = ref this[x, y];
                 ch.Clear();
             }
         }
@@ -93,7 +90,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// <summary>
     /// Create a slice from the current <see cref="ConsoleBuffer"/>.
     /// </summary>
-    /// <param name="buffer">Source of the from.</param>
+    /// <param name="buffer">Content of the from.</param>
     /// <param name="from">Absolute index of the <see cref="Canvas"/> instance on the <paramref name="buffer"/>.</param>
     /// <param name="scale">Requested scale.</param>
     /// <returns>Return a <see cref="Canvas"/> instance.</returns>
@@ -135,7 +132,7 @@ internal readonly struct ConsoleBuffer: IDisposable {
         /* 
          * Force clear & copy; This forcing the diff for check the new/old cells.
          * If we not do this, then we just cut it out, but if resize back, then the diff
-         * was not see any differences (because the not saw cells not changed), but we on the screen see the not rendered objects.
+         * was not seen any differences (because the not saw cells not changed), but we on the screen see the not rendered objects.
          */
         buffer.Clear();
         buffer.Copy(Slice(ref temp, from: Vec2.Zero, scale));

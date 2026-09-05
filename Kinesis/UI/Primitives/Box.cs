@@ -11,15 +11,15 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a simple, plain box on the screen with background.
 /// </summary>
-public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity> {
+public sealed class Box: Entity, ICopyable<BuildContext>, IContentable<Entity> {
 
     /// <summary>
-    /// Size of the <see cref="UIBox"/>.
+    /// Size of the <see cref="Box"/>.
     /// </summary>
     public Vec2 Scale { get => base.Get<Scale>()!.Value; set => base.Get<Scale>()!.Value = value; }
 
     /// <summary>
-    /// Background color of the <see cref="UIBox"/>.
+    /// Background color of the <see cref="Box"/>.
     /// </summary>
     public RGB Background { get => base.Get<Style>()!.AsRGB; set => base.Get<Style>()!.AsRGB = value; }
 
@@ -41,16 +41,16 @@ public sealed class UIBox: Entity, ICopyable<BuildContext>, IContentable<Entity>
     }
 
     /// <summary>
-    /// Create an <see cref="UIBox"/> instance.
+    /// Create an <see cref="Box"/> instance.
     /// </summary>
-    public UIBox(): base(count: 8) {
+    public Box(): base(count: 8) {
         InitRenderEntityWith<BoxRenderer>();
 
-        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
 
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(name: Style.FILLER, tag: StyleDataType.CHAR, value: ' ')));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(name: Style.FILLER, tag: StyleDataType.CHAR, value: ' ')));
     }
 
     public void Copy(ref BuildContext from) {
@@ -77,7 +77,7 @@ public readonly struct Filler {
         m_foreground = color;
     }
 
-    public void ToComponents(UIBox box) {
+    public void ToComponents(Box box) {
         box.Get<Style>(index: 1)!.AsRGB = m_foreground;
         box.Get<Style>(index: 2)!.AsCharacter = m_character;
     }

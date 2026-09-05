@@ -70,7 +70,7 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
             box.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = box;
 
-            Get<ContentComponent>()!.Content = box;
+            Get<RebuildContent>()!.Content = box;
 
             /*
              * The scale contstraints is different here: the AnimatedArea<TSelf> is not animate a value on the parent;
@@ -88,7 +88,7 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
             On = (message, ref readonly tree) => {
                 if (m_state != AnimationState.Animate) return;
                 Entity content = tree.Visit<Viewport>(name: s_box)?
-                                     .Get<Hierarchy>(Hierarchy.ChildrenStart) ?? null!;
+                                     .Get<Hierarchy>(Hierarchy.ChildrenStart)?.Attached ?? null!;
 
                 if(content == null || m_selector == null || m_applier == null!) return;
                 long currentTimeStamp = Stopwatch.GetTimestamp();
@@ -120,7 +120,7 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
                 if (m_state == AnimationState.Animate && time >= 1f)
                     m_state = AnimationState.End;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 

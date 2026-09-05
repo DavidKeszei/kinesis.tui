@@ -6,13 +6,18 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 
+using RenderSyncContext = Kinesis.Core.State<Kinesis.Core.WorkerSystemState>;
+
 namespace Kinesis.Core;
 
 /// <summary>
-/// Represent smallest unit of work.
+/// Represents the smallest unit of work.
 /// </summary>
 /// <param name="Action">Callback of the work.</param>
 /// <param name="Island">Container of the changed entities.</param>
+/// <param name="Tag">Indicates the type of the target.</param>
+/// <param name="Status">Connection middle-object of the target.</param>
+/// <param name="IsFocusBased">Indicates the job is global or local based.</param>
 internal record JobTarget(Delegate Action, Island Island, JobTag Tag, State<JobRequestIntent> Status, bool IsFocusBased);
 
 /// <summary>
@@ -37,7 +42,7 @@ internal sealed class JobSystem: IDynamicSystem {
     private readonly RingBuffer<RenderMessage> m_renderMessages = null!;
 
     private readonly ConcurrentQueue<JobTarget> m_addIntents = null!;
-    private State<JobSystemStateInfo> m_workState = null!;
+    private RenderSyncContext m_renderSync = null!;
 
     private readonly List<int> m_focusTargetIndexes = null!;
     private int m_focusIndex = 0;
@@ -52,9 +57,9 @@ internal sealed class JobSystem: IDynamicSystem {
     /// </summary>
     public static JobSystem Current { get => s_instance ??= new JobSystem(); }
 
-    public JobSystem() {
-        m_focusTargetIndexes = new List<int>();
+    private JobSystem() {
         m_targets = new List<JobTarget>(capacity: PRE_ALLOC_INTERACTION_COUNT);
+        m_focusTargetIndexes = new List<int>();
 
         m_renderMessages = new RingBuffer<RenderMessage>(capacity: MAX_MSG_RND_COUNT);
         m_inputMessages = new RingBuffer<InputMessage>(capacity: MAX_MSG_INPUT_COUNT);
@@ -67,7 +72,7 @@ internal sealed class JobSystem: IDynamicSystem {
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
     /// <remarks>Remarks: If the state wasn't set, then the <see cref="JobSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
-    public void AddRenderSync(State<JobSystemStateInfo> sync) => m_workState ??= sync;
+    public void AddRenderSync(RenderSyncContext sync) => m_renderSync ??= sync;
 
     /// <summary>
     /// Add new <see cref="InputMessage"/> to the workers.
@@ -91,16 +96,12 @@ internal sealed class JobSystem: IDynamicSystem {
     /// Add <paramref name="work"/> to the queue.
     /// </summary>
     /// <param name="work">Current work item.</param>
+    /// <param name="island">Root <see cref="Island"/> instance of the work.</param>
+    /// <param name="isFocusBased">Indicates the job requires some focus-based behavior.</param>
     /// <returns>Returns a <see cref="State{T}"/> instance, which helps request and track state of the job.</returns>
     public State<JobRequestIntent> AddCallback<T>(Action<T> work, Island island, bool isFocusBased) where T: IJobMessage {
         if (work == null || island == null) return null!;
 
-        /* TODO(2026-05-29T23:27:05): Refactor to request based job register. (Status: ✅)
-         * 
-         * INSPECTIONS:
-         * 	- Plan to migrate this to thread-safe version with ConcurrentQueue<T> to register the intent for job registration.
-         * 	- Always the "JobSystem" run we: register/remove & send messages to the registered job holders.
-         */
         JobTarget target = new JobTarget(work, island, T.Target, new ValueState<JobRequestIntent>(@default: JobRequestIntent.ACTIVE), isFocusBased);
         m_addIntents.Enqueue(target);
 
@@ -108,19 +109,13 @@ internal sealed class JobSystem: IDynamicSystem {
     }
 
     public void Run() {
-        if (m_workState == null)
+        if (m_renderSync == null)
             throw new InvalidOperationException(message: ERR_SYNC_NOT_FOUND);
 
         Thread.CurrentThread.Name = DEDICATED_THREAD_NAME;
-
-        /* TODO(2026-07-04T10:55:36): Fix focus based job handling by indexes (remove & add) (Status: Done✅)
-         * 
-         * INSPECTIONS:
-         * 	- Register & Remove method don't remove all unused/invalid jobs -> This leads "ghost" jobs, but application not crashing from it.
-         * 	- Revisit Island.Rebuild(), because after this method the focus management became broken.
-         */ 	
+        
         while(true) {
-            if (m_workState.Value.State != WorkerSystemState.OPEN_FOR_PROCESSING) {
+            if (m_renderSync.Value != WorkerSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
@@ -131,7 +126,7 @@ internal sealed class JobSystem: IDynamicSystem {
             Send<InputMessage>(messages: m_inputMessages);
             Send<RenderMessage>(messages: m_renderMessages);
 
-            m_workState.Value.State = WorkerSystemState.WAIT_FOR_RENDERER;
+            m_renderSync.Value = WorkerSystemState.WAIT_FOR_RENDERER;
         }
     }
 
@@ -139,11 +134,7 @@ internal sealed class JobSystem: IDynamicSystem {
         if (!messages.Read(out T message)) return;
 
         for(int i = 0; i < m_targets.Count; ++i) {
-            /*
-             * We not run anything, which requested as 'SUSPEND'. If a Job was reuqested as 'REMOVE', then we run it one more time before
-             * we remove it in the next round.
-             */
-        if (!m_targets[i].Island.IsActive || m_targets[i].Status != JobRequestIntent.ACTIVE || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
+            if (!m_targets[i].Island.IsActive || m_targets[i].Status != JobRequestIntent.ACTIVE || (m_targets[i].IsFocusBased && m_focusTargetIndexes[m_focusIndex] != i))
                 continue;
 
             Delegate _ref = m_targets[i].Action;
@@ -151,8 +142,7 @@ internal sealed class JobSystem: IDynamicSystem {
                 Unsafe.As<Delegate, Action<T>>(ref _ref)(message);
         }
     }
-
-    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+    
     private void RemoveJobs() {
         for (int i = m_targets.Count - 1; i >= 0; --i)
             if (m_targets[i].Status == JobRequestIntent.REMOVE) {
@@ -181,7 +171,6 @@ internal sealed class JobSystem: IDynamicSystem {
             }
     }
 
-    [MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
     private void AddJobs() {
         if (m_addIntents.IsEmpty) return;
 
@@ -196,7 +185,7 @@ internal sealed class JobSystem: IDynamicSystem {
     private bool MoveFocusIndex(InputMessage input) {
         if (input.IsPressed && input.Key == '\t' && input.Modifiers == InputModifier.L_SHIFT) {
 
-            m_focusIndex = (m_focusIndex + 1) % m_focusTargetIndexes.Count;
+            m_focusIndex = ++m_focusIndex % m_focusTargetIndexes.Count;
             return true;
         }
 
@@ -216,10 +205,4 @@ public enum WorkerSystemState: byte {
     /// Indicates for the <see cref="JobSystem"/> wait to the <see cref="Renderer"/>.
     /// </summary>
     WAIT_FOR_RENDERER
-}
-
-internal class JobSystemStateInfo {
-    private WorkerSystemState m_state = WorkerSystemState.WAIT_FOR_RENDERER;
-
-    public WorkerSystemState State { get => m_state; set => m_state = value; }
 }

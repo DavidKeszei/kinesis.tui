@@ -23,7 +23,7 @@ public interface IPoolable {
     ///     //After that you can return the actual instance to the pool. If not pooled, then method do nothing.
     ///     //
     ///     //The T parameter the current component type of the method.
-    ///     ComponentPool{T}.Instance.Return(component: this)
+    ///     ComponentPool{T}.Shared.Return(component: this)
     /// }
     /// 
     /// </code>

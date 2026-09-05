@@ -40,6 +40,6 @@ public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(n
         m_offset = Vec2.Zero;
         m_origin = null!;
 
-        ComponentPool<Position>.Instance.Return(this);
+        ComponentPool<Position>.Shared.Return(this);
     }
 }

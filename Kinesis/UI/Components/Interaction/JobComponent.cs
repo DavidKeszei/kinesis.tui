@@ -13,7 +13,6 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
     private const string TYPE_NAME = nameof(JobComponent);
 
     private State<JobRequestIntent> m_status = null!;
-    private bool m_focusBased = true;
 
     /// <summary>
     /// Name of the <see cref="JobComponent"/>.
@@ -29,18 +28,21 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
     /// Create a new <see cref="JobComponent"/>, which fires every input.
     /// </summary>
     /// <param name="onInput">Callback for the inputs.</param>
-    public JobComponent(Action<InputMessage> onInput, Island island, bool focusBased) : this()
-        => m_status = JobSystem.Current.AddCallback(work: onInput, island, isFocusBased: (m_focusBased = focusBased));
+    /// <param name="island">Root island instance of the callback.</param>
+    /// <param name="focusBased">Indcates the current callback globally listening input messages or not.</param>
+    public JobComponent(Action<InputMessage> onInput, Island island, bool focusBased): this()
+        => m_status = JobSystem.Current.AddCallback(onInput, island, focusBased);
 
     /// <summary>
     /// Create a new <see cref="JobComponent"/>, which fires every render frame ends.
     /// </summary>
     /// <param name="onRender">Callback for the end of the frame.</param>
+    /// <param name="island">Root island instance of the callback.</param>
     public JobComponent(Action<RenderMessage> onRender, Island island): this()
-        => m_status = JobSystem.Current.AddCallback(work: onRender, island, isFocusBased: (m_focusBased = false));
+        => m_status = JobSystem.Current.AddCallback(onRender, island, false);
 
     /// <summary>
-    /// Requets remove from the <see cref="JobSystem"/>.
+    /// Request a intent to the <see cref="JobSystem"/>.
     /// </summary>
     public void Request(JobRequestIntent status) {
         if (status == m_status.Value) return;
@@ -51,6 +53,6 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
         Request(JobRequestIntent.REMOVE);
         m_status = null!;
 
-        ComponentPool<JobComponent>.Instance.Return(this);
+        ComponentPool<JobComponent>.Shared.Return(this);
     }
 }

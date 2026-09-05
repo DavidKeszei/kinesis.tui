@@ -9,15 +9,15 @@ namespace Kinesis.UI;
 /// <summary>
 /// Represent a local visitor on the entity-tree to the bottom.
 /// </summary>
-public ref struct IslandEntityVisitor {
+public readonly ref struct Visitor {
     private const int MAX_USE_ENTITY_COUNT = 32;
 
-    private static Dictionary<string, Entity> m_mostUsed = null!;
+    private static Dictionary<string, Entity> s_mostUsed = null!;
     private readonly Entity? m_pivot = null!;
 
-    internal IslandEntityVisitor(Entity? pivot) {
+    internal Visitor(Entity? pivot) {
         m_pivot = pivot;
-        m_mostUsed ??= new Dictionary<string, Entity>();
+        s_mostUsed ??= new Dictionary<string, Entity>();
     }
 
     /// <summary>
@@ -25,30 +25,31 @@ public ref struct IslandEntityVisitor {
     /// </summary>
     /// <typeparam name="T">Type of the entity.</typeparam>
     /// <param name="name">Unique name of the entity.</param>
-    /// <returns>Return a entity as <typeparamref name="T"/>. If not in the tree, then return <see langword="null"/>.</returns>
+    /// <returns>Returns an entity as <typeparamref name="T"/>. If not in the tree, then return <see langword="null"/>.</returns>
     public T? Visit<T>(string name) where T: Entity {
         if (string.IsNullOrEmpty(name) || m_pivot == null) return null!;
         else if (IsSequenceEqual(m_pivot.Name, name) && m_pivot is T ret) return ret;
 
-        if (m_mostUsed.TryGetValue(name, out Entity? result))
+        if (s_mostUsed.TryGetValue(name, out Entity? result))
             return (T)result;
 
         result = RecursiveVisit(current: m_pivot, name);
 
-        if (m_mostUsed.Count >= MAX_USE_ENTITY_COUNT)
-            m_mostUsed.Clear();
+        if (s_mostUsed.Count >= MAX_USE_ENTITY_COUNT)
+            s_mostUsed.Clear();
 
-        if(result != null) _ = m_mostUsed.TryAdd(name, result!);
+        if(result != null) _ = s_mostUsed.TryAdd(name, result!);
         return result as T;
     }
 
-    internal readonly void ClearCache() => m_mostUsed.Clear();
+    internal void ClearCache() => s_mostUsed.Clear();
 
     private Entity? RecursiveVisit(Entity? current, string name) {
         if (current == null) return null!;
 
         int childrenCount = current.CountComponent<Hierarchy>();
-        for (int i = 1; i < childrenCount; ++i) {
+
+        for (int i = Hierarchy.ChildrenStart; i < childrenCount; ++i) {
             Entity? child = current.Get<Hierarchy>(index: i)?.Attached;
 
             if (child != null) {
@@ -56,8 +57,7 @@ public ref struct IslandEntityVisitor {
                 else {
                     child = RecursiveVisit(child, name);
 
-                    if (child != null)
-                        return child;
+                    if (child != null) return child;
                 }
             }
         }

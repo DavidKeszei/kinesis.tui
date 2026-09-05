@@ -33,7 +33,7 @@ public sealed class BoxRenderer: RenderComponent, IPoolable {
             for (int y = 0; y < buffer.Scale.Y; ++y) {
                 ref ANSIChar ch = ref buffer[x, y];
 
-                /* Source-like visual debug, if the background as visual effect not exists or just wrong type/typo. */
+                /* Content-like visual debug, if the background as visual effect not exists or just wrong type/typo. */
                 if(!m_cache.TryGetValue(key: Style.BACKGROUND, out Style? bg) || bg is not Style) {
                     if(y % 2 != 0) ch.Background = x % 2 != 0 ? RGB.Purple : RGB.Black;
                     else ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
@@ -54,7 +54,7 @@ public sealed class BoxRenderer: RenderComponent, IPoolable {
 
     public override void Reset() {
         base.Reset();
-        ComponentPool<BoxRenderer>.Instance.Return(this);
+        ComponentPool<BoxRenderer>.Shared.Return(this);
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

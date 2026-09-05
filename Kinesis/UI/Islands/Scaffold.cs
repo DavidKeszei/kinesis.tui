@@ -28,7 +28,7 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
             scaffold.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
 
-            Get<ContentComponent>()!.Content = scaffold;
+            Get<RebuildContent>()!.Content = scaffold;
             Rebuild();
         }
     }
@@ -49,11 +49,11 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
     public TextDecoration TextDecoration { init => Get<Style>(index: 2)!.AsAttribute = value; }
 
     public Scaffold(): base(count: 4) {
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
 
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<TextDecoration>(name: Style.FONT_ATTR, tag: StyleDataType.FONT_ATTR, value: TextDecoration.NONE)));
-        _ = Attach<ContentComponent>(component: ComponentPool<ContentComponent>.Instance.Rent<ContentComponent>(), isUnique: true);
+        _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static (x) => x.As<TextDecoration>(name: Style.FONT_ATTR, tag: StyleDataType.FONT_ATTR, value: TextDecoration.NONE)));
+        _ = Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Shared.Rent(), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -68,7 +68,7 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
             On = (message, ref readonly tree) => {
                 tree.Visit<Viewport>(name: m_scaffoldName)?.Scale = message.Scale;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 }

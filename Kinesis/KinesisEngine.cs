@@ -12,16 +12,9 @@ using Kinesis.Core.Utils;
 namespace Kinesis;
 
 /// <summary>
-/// Represent the heart of the library: This connects all systems to one class.
+/// Represent the heart of the library: this connects all systems to one class.
 /// </summary>
 public sealed class KinesisEngine: ISystemProvider {
-    #region PREDEFINES
-
-    private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
-    private const string USE_ALTERNATE_BUFFER   = $"\e[?1049h";
-
-    #endregion
-
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
@@ -32,7 +25,7 @@ public sealed class KinesisEngine: ISystemProvider {
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<JobSystemStateInfo> m_workSyncState = null!;
+    private readonly State<WorkerSystemState> m_workSyncState = null!;
 
     private readonly ConsoleInfoSource m_consoleSourceInfoProvider = default!;
     private readonly string m_title = string.Empty;
@@ -40,16 +33,17 @@ public sealed class KinesisEngine: ISystemProvider {
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
+    /// <param name="title">Title of the window.</param>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
-        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
+        m_title = m_title == null ? $"\e]0;Untitled\a" : $"\e]0;{title}\a";
         m_consoleSourceInfoProvider = new ConsoleInfoSource();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new RefState<JobSystemStateInfo>(@default: new JobSystemStateInfo());
+        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -63,7 +57,7 @@ public sealed class KinesisEngine: ISystemProvider {
         m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();
     }
-
+    
     public T? GetSystem<T>() where T: class, ISystem {
         for (int i = 0; i < m_customSystems.Count; ++i) {
             if (m_customSystems[i].When == SystemInvocationTime.ON_CALL && m_customSystems[i].System is T) {
@@ -94,7 +88,7 @@ public sealed class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <param name="name">Name of the route.</param>
     /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
-    /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
+    /// <returns>Returns <see langword="true"/>, if the route is successfully registered, otherwise returns <see langword="false"/>.</returns>
     public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
         => m_navigator.Register(name, onCreate);
 
@@ -110,6 +104,8 @@ public sealed class KinesisEngine: ISystemProvider {
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
+
+        //TODO: Try to remove unneccessary VSD overhead
         _ = Task.Run(action: () => m_input.Run(), token);
 
         _ = Task.Run(action: () => m_layoutSystem.Run(), token);
@@ -130,14 +126,12 @@ public sealed class KinesisEngine: ISystemProvider {
 
         /* Run the shutdown systems. */
         await Run(invocation: SystemInvocationTime.ON_END);
-        Console.Out.Write(UNUSE_ALTERNATE_BUFFER);
+        Console.Out.Write(AnsiCommand.DisableAlternateBuffering);
     }
 
     private Task Run(SystemInvocationTime invocation) {
-        ISystem system = null!;
-
         foreach (SystemInvocationInfo systemInfo in m_customSystems.Where(x => x.When == invocation)) {
-            system = systemInfo.System ?? systemInfo.Creation(this);
+            ISystem system = systemInfo.System ?? systemInfo.Creation(this);
 
             if (system.Behavior == SystemBehavior.DYNAMIC && systemInfo.System is IDynamicSystem dynamic)
                 dynamic.Run();
@@ -157,6 +151,6 @@ public sealed class KinesisEngine: ISystemProvider {
         this.RegisterComponent<Style>();
 
         this.RegisterComponent<JobComponent>();
-        this.RegisterComponent<ContentComponent>();
+        this.RegisterComponent<RebuildContent>();
     }
 }

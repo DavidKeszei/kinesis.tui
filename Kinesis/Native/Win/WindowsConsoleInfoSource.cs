@@ -21,7 +21,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
     private const uint READ_COUNT = 1;
 
     #endregion
-    #region P/INVOKE
+    #region NATIVE
 
     [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "ReadConsoleInputW")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -38,22 +38,20 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
     private readonly Queue<InputKeyEventInfo> m_inputs = null!;
     private readonly Queue<ConsoleScaleInfo> m_layouts = null!;
 
-    private readonly Task m_watchman = null!;
     private readonly WindowsConsoleMsgTag[] m_tags = null!;
 
     private bool m_isLocked = false;
 
     public WindowsConsoleInfoProvider() {
-        m_inputs = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);
+        m_inputs  = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);
         m_layouts = new Queue<ConsoleScaleInfo>(capacity: QUEUE_COUNT);
 
         m_tags = Enum.GetValues<WindowsConsoleMsgTag>();
-        m_watchman = Task.Run(async() => await Watch());
+        _ = Task.Run(async() => await Watch());
     }
 
     public bool Read(out ConsoleScaleInfo result) {
         result = default;
-
 
         if (Interlocked.CompareExchange<bool>(ref m_isLocked, true, false) != false) {
             return false;

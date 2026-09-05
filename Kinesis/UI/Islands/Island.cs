@@ -25,9 +25,8 @@ public abstract class Island: Entity {
     private int m_builtCount = 0;
     private bool m_isActive = false;
 
-    private bool m_isBuilded = false;
-
-
+    private bool m_isBuild = false;
+    
     /// <summary>
     /// Current "drawable" entities of the <see cref="Island"/> insatance.
     /// </summary>
@@ -39,28 +38,23 @@ public abstract class Island: Entity {
     internal bool IsActive { get => m_isActive; set => m_isActive = value; }
 
     /// <summary>
-    /// Indicates the current <see cref="Island"/> was built. This only <see cref="true"/>, if the island a root island.
+    /// Indicates the current <see cref="Island"/> was built. This only <see langword="true"/>, if the island a root island.
     /// </summary>
-    internal bool IsBuilt { get => m_isBuilded; }
+    internal bool IsBuilt { get => m_isBuild; }
 
     /// <summary>
     /// Built count of the current <see cref="Island"/> during his lifetime.
     /// </summary>
     internal int BuiltCount { get => m_builtCount; }
 
-    public Island(int count = MAX_COMPONENT_COUNT): base(count != MAX_COMPONENT_COUNT ? count + 3 : MAX_COMPONENT_COUNT) {
+    protected Island(int count = MAX_COMPONENT_COUNT): base(count != MAX_COMPONENT_COUNT ? count + 3 : MAX_COMPONENT_COUNT) {
         m_renderSet = new List<Entity>(capacity: 32);
         m_entities = new List<Entity>(capacity: 32);
 
-        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.UP));
-        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.DOWN));
-
-        /* TODO(2026-07-09T21:08:53): Make more ergonomic the rebuild process, when the target the root UI Island itself. (Status: Planned⚠️)
-         * 
-         * INSPECTIONS:
-         * 	- The rebuild shortcutted by the ContentComponent.HasChange & m_built field.
-         */ 	
-        this.Attach<ContentComponent>(component: ComponentPool<ContentComponent>.Instance.Rent<ContentComponent>(), isUnique: true);
+        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static (x) => x.Direction = ConnectionDirection.UP));
+        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static (x) => x.Direction = ConnectionDirection.DOWN));
+	
+        this.Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Shared.Rent(), isUnique: true);
         this.Attach<DrawCalls>(component: new DrawCalls(), isUnique: true);
     }
 
@@ -69,15 +63,15 @@ public abstract class Island: Entity {
     /// </summary>
     /// <remarks>
     /// This method is destructive and marks an intent-driven layout shift. 
-    /// It immediately invalidates and structural-deconstructs the current UI sub-tree.
+    /// It immediately invalidates and structural-deconstructs the current UI subtree.
     /// </remarks>
     protected void Rebuild() {
         // We only rebuild the Island, if that builded or has any change
-        if (!m_isBuilded || !(Get<ContentComponent>()?.HasChange ?? false))
+        if (!m_isBuild || (!Get<RebuildContent>()?.HasChange ?? false))
             return;
 
         bool isTop = m_root == null;
-        m_isBuilded = false;
+        m_isBuild = false;
 
         Stack<Island> rebuildStack = new Stack<Island>(capacity: MAX_STACK_LVL_LEN);
         DrawCalls draws = (isTop ? Get<DrawCalls>()! : m_root!.Get<DrawCalls>()!);
@@ -167,15 +161,14 @@ public abstract class Island: Entity {
             context.CurrentIsland.m_boundries.Y = context.Root.Get<DrawCalls>()!.ChunkHolders.Count - 1;
 
         context.DropCurrentLevelStyles();
-        context.CurrentIsland.m_isBuilded = true;
+        context.CurrentIsland.m_isBuild = true;
     }
 
     private void AcceptRebuild(Stack<Island> rebuildStack, DrawCalls draws) {
-
         while (rebuildStack.TryPop(out Island? rebuildTarget)) {
             bool isTop = rebuildTarget.m_root == null!;
 
-            if (rebuildTarget.Get<ContentComponent>()?.HasChange ?? false) {
+            if (rebuildTarget.Get<RebuildContent>()?.HasChange ?? false) {
                 rebuildTarget.m_chunkId = UNDEFINED_CHUNK_ID; // This must be changed, because we "generate" new id for the chunk in the BuildTree(context)
 
                 BuildContext context = new BuildContext(current: rebuildTarget) { Root = isTop ? rebuildTarget : rebuildTarget.m_root!, IsTop = isTop };

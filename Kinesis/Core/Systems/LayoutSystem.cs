@@ -11,6 +11,8 @@ using System.Text;
 
 namespace Kinesis.Core;
 
+internal record struct LayoutInfo(Vec2 Scale, bool IsChanged);
+
 /// <summary>
 /// This class observes changes in the current console windows dimension.
 /// </summary>
@@ -20,7 +22,12 @@ internal partial class LayoutSystem: IDynamicSystem {
     #endregion
 
     private readonly State<LayoutInfo> m_info = null!;
-    private readonly IConsoleSource<ConsoleScaleInfo> m_source = null!;
+
+#if WIN_NT
+    private readonly WindowsConsoleInfoProvider m_source = null!;
+#elif LINUX
+    private readonly LinuxConsoleInfoProvider m_source   = null!;
+#endif
 
     /// <summary>
     /// Behavior of the <see cref="LayoutSystem"/>.
@@ -33,7 +40,12 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// <param name="scale">Start scale of the application. This is going be the pivot point of the observing.</param>
     public LayoutSystem(ConsoleInfoSource provider, State<LayoutInfo> state, Vec2 scale) {
         m_info = state;
+
+#if WIN_NT
         m_source = provider.Windows;
+#elif LINUX
+        m_source = provider.Linux;
+#endif
 
         m_info.Value = new LayoutInfo(scale, IsChanged: true);
     }
@@ -42,8 +54,9 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Start watching of changes of the console window.
     /// </summary>
     public void Run() {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            RunOnWindows();
+#if WIN_NT
+        RunOnWindows();
+#endif
     }
 
     private void RunOnWindows() {
@@ -69,5 +82,3 @@ internal partial class LayoutSystem: IDynamicSystem {
         }
     }
 }
-
-internal record struct LayoutInfo(Vec2 Scale, bool IsChanged);

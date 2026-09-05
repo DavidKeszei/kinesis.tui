@@ -15,13 +15,15 @@ namespace Kinesis.UI;
 /// <typeparam name="T">Type of the message of the callback.</typeparam>
 /// <param name="message">Current message instance from a source.</param>
 /// <param name="visitor">Hierarchy visitor of the current callback.</param>
-public delegate void JobCallback<T>(T message, ref readonly IslandEntityVisitor visitor) where T: IJobMessage;
+public delegate void JobCallback<T>(T message, ref readonly Visitor visitor) where T: IJobMessage;
 
 /// <summary>
 /// Interacts, when a frame was rendered.
 /// </summary>
-public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
+public sealed class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     private readonly Island m_island = null!;
+    private readonly Entity m_pivot  = null!;
+    
     private readonly bool m_inputFocus = true;
 
     /// <summary>
@@ -50,8 +52,16 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     /// <summary>
     /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message.
     /// </summary>
-    /// <remarks><b>Remarks:</b> This proprety only works, if the message type is <see cref="InputMessage"/>, otherwise ignored by the library.</remarks>
+    /// <remarks>This proprety only works, if the message type is <see cref="InputMessage"/>. Otherwise ignored by the library.</remarks>
     public bool IsFocusBased { get => m_inputFocus; init => m_inputFocus = value; }
+    
+    /// <summary>
+    /// Pivot element of the tree searching at the <see cref="OnUpdate{T}.On"/> callback.
+    /// </summary>
+    /// <remarks>
+    /// If the pivot is <see langword="null"/>, then the current <see cref="OnUpdate{T}"/> instance became the pivot point.
+    /// </remarks>
+    public Entity Pivot { init => m_pivot = value; }
 
     /// <summary>
     /// Attached child of the <see cref="OnUpdate{T}"/>.
@@ -87,7 +97,7 @@ public class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessage {
     private void SetCallback(JobCallback<T> func, T message) {
         if (func == null) return;
 
-        IslandEntityVisitor visitor = new IslandEntityVisitor(pivot: this);
+        Visitor visitor = new Visitor(pivot: m_pivot ?? this);
         func(message, ref visitor);
         visitor.ClearCache();
     }

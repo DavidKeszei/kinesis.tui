@@ -17,7 +17,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
     private Scale? m_childScale = null!;
     private readonly Axis m_axis = Axis.X | Axis.Y;
 
-    public Entity Content {
+    public required Entity Content {
         set {
             if (value == null) return;
 
@@ -26,9 +26,10 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
             container.Get<Hierarchy>(Hierarchy.Parent)!.Attached = this;
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = container;
 
-            Get<ContentComponent>()!.Content = container;
+            Get<RebuildContent>()!.Content = container;
 
             m_childScale = value.Get<Scale>();
+            Debug.Assert(m_childScale != null, message: "Child of the Center element not has Scale component.");
             Rebuild();
         }
     }
@@ -36,8 +37,8 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
     public Axis Axis { init => m_axis = value; }
 
     public Center(): base(count: 3) {
-        _ = this.Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = this.Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -66,7 +67,7 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
 
                 pos.Relative = center;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 }

@@ -44,7 +44,7 @@ public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name
         m_inset = Vec2.Zero;
 
         m_scale = Vec2.Zero;
-        ComponentPool<Scale>.Instance.Return(this);
+        ComponentPool<Scale>.Shared.Return(this);
     }
 
     /// <summary>

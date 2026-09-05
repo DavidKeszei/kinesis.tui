@@ -35,7 +35,7 @@ internal class DrawCalls: Component, IStaticType, IPoolable {
 
     public void Reset() {
         m_islands.Clear();
-        ComponentPool<DrawCalls>.Instance.Return(this);
+        ComponentPool<DrawCalls>.Shared.Return(this);
     }
 
     /// <summary>

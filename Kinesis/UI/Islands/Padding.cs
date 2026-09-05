@@ -40,20 +40,20 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
             this.Get<Hierarchy>(index: Hierarchy.ChildrenStart)!.Attached = container;
             container.Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
-            Get<ContentComponent>()!.Content = container;
+            Get<RebuildContent>()!.Content = container;
             Rebuild();
         }
     }
 
     public Padding(): base(count: 7) {
-        _ = base.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = base.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = base.Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = base.Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
-        _ = base.Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
+        _ = base.Attach<Style>(ComponentPool<Style>.Shared.Rent(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
+        _ = base.Attach<Style>(ComponentPool<Style>.Shared.Rent(static(x) => x.As<int>(Style.PADDING, tag: StyleDataType.NUMERIC_I, value: 0)));
 
-        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
-        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.UP));
+        _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
     }
 
     public void Copy(ref BuildContext context) {
@@ -77,7 +77,7 @@ public sealed class Padding: Island, IContentable<Entity>, ICopyable<BuildContex
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.X - scale.Inset.X, axis: Axis.X);
                 container.Get<Scale>()!.ChangeAxisValue(value: savedScale.Y - scale.Inset.Y, axis: Axis.Y);
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 }
