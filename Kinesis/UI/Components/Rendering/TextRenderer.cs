@@ -95,7 +95,7 @@ public class TextRenderer(): RenderComponent, IPoolable {
             m_buffer = null!;
         }
 
-        ComponentPool<TextRenderer>.Instance.Return(this);
+        ComponentPool<TextRenderer>.Shared.Return(this);
     }
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {

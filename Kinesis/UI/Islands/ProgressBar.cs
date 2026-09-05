@@ -65,8 +65,8 @@ public sealed class ProgressBar: Island, ICopyable<BuildContext>, IContentable<E
     /// Create a new <see cref="ProgressBar"/> instance.
     /// </summary>
     public ProgressBar(): base(count: 3) {
-        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
         m_filled = new Filler(color: RGB.White, character: '━');
         m_empty = new Filler(color: RGB.White with { A = 25 }, character: '━');

@@ -40,10 +40,10 @@ public sealed class Text: Entity, ICopyable<BuildContext>, IContentable<string> 
     public Text(): base(count: 7) {
         base.InitRenderEntityWith<TextRenderer>();
 
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(Style.BACKGROUND, StyleDataType.COLOR, null));
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<RGB?>(Style.FOREGROUND, StyleDataType.COLOR, null));
+        base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent().As<RGB?>(Style.BACKGROUND, StyleDataType.COLOR, null));
+        base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent().As<RGB?>(Style.FOREGROUND, StyleDataType.COLOR, null));
 
-        base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>().As<TextDecoration>(Style.FONT_ATTR, StyleDataType.FONT_ATTR, TextDecoration.NONE));
+        base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent().As<TextDecoration>(Style.FONT_ATTR, StyleDataType.FONT_ATTR, TextDecoration.NONE));
 
         Content = string.Empty;
     }

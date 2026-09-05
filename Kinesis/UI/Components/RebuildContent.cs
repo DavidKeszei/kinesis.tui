@@ -43,6 +43,6 @@ public sealed class RebuildContent(): Component(id: ComponentRegistry.QueryCompo
 
     public void Reset() {
         m_content = null!;
-        ComponentPool<RebuildContent>.Instance.Return(this);
+        ComponentPool<RebuildContent>.Shared.Return(this);
     }
 }

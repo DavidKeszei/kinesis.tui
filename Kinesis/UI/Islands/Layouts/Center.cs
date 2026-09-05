@@ -37,8 +37,8 @@ public sealed class Center: Island, ICopyable<BuildContext>, IContentable<Entity
     public Axis Axis { init => m_axis = value; }
 
     public Center(): base(count: 3) {
-        _ = this.Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = this.Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {

@@ -53,6 +53,6 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
         Request(JobRequestIntent.REMOVE);
         m_status = null!;
 
-        ComponentPool<JobComponent>.Instance.Return(this);
+        ComponentPool<JobComponent>.Shared.Return(this);
     }
 }

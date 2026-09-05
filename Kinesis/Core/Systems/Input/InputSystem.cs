@@ -36,11 +36,16 @@ internal sealed class InputSystem: IDynamicSystem {
 
     public SystemBehavior Behavior { get => SystemBehavior.DYNAMIC; }
 
-    private readonly IInputBackend m_backend = null!;
+#if WIN_NT
+    private readonly WindowsInputBackend m_backend = null!;
+#endif
+
     private (char Key, InputModifier Modifier, TimeSpan When, bool isPress) m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
     public InputSystem(ConsoleInfoSource provider) {
-        m_backend = RuntimeInformation.IsOSPlatform(osPlatform: OSPlatform.Windows) ? WindowsInputBackend.Init(source: provider.Windows) : null!;
+#if WIN_NT
+        m_backend = (WindowsInputBackend)WindowsInputBackend.Init(source: provider.Windows);
+#endif
         Console.InputEncoding = Encoding.UTF8;
     }
 
@@ -60,7 +65,6 @@ internal sealed class InputSystem: IDynamicSystem {
         DateTime lastTime = DateTime.MinValue;
 
         while (true) {
-            /* TODO(2026-06-27T00:17:06): Key up event not fired at the end of the input. (Status: Done✅) */
             DateTime now = DateTime.UtcNow;
 
             if (m_backend.ReadInput(out InputInfo info) && info.IsPress) {

@@ -89,8 +89,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
     public FlexibleLayout(): base(count: 3) {
-        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static (x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {

@@ -12,6 +12,7 @@
     <IsAotCompatible>True</IsAotCompatible>
 	<VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
 	<PlatformTarget>x64</PlatformTarget>
+	<DefineConstants>$(DefineConstants);WIN_NT</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

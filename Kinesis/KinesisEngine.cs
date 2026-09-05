@@ -43,7 +43,7 @@ public sealed class KinesisEngine: ISystemProvider {
         m_consoleSourceInfoProvider = new ConsoleInfoSource();
 
         m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new ValueState<WorkerSystemState>(@default: new WorkerSystemState());
+        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));

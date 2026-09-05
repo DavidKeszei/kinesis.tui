@@ -9,7 +9,7 @@ namespace Kinesis.Core;
 /// Represents a bunch of reusable <see cref="T"/> instances.
 /// </summary>
 /// <typeparam name="T">Type of the component.</typeparam>
-public sealed class ComponentPool<T> where T: Component, IStaticType {
+public sealed class ComponentPool<T> where T: Component, IStaticType, IPoolable, new() {
     private const int s_preAllocationCount = 512;
     private static ComponentPool<T> s_instance = null!;
 
@@ -19,7 +19,7 @@ public sealed class ComponentPool<T> where T: Component, IStaticType {
     private readonly Queue<int> m_freeSpaces = null!;
     private bool m_interlock = false;
 
-    public static ComponentPool<T> Instance { get => s_instance ??= new ComponentPool<T>(s_preAllocationCount); }
+    public static ComponentPool<T> Shared { get => s_instance ??= new ComponentPool<T>(s_preAllocationCount); }
 
     public ComponentPool(int allocationSize) {
         m_components = new List<T>(allocationSize);
@@ -33,17 +33,18 @@ public sealed class ComponentPool<T> where T: Component, IStaticType {
     /// </summary>
     /// <typeparam name="U">Type of the instance. This must a(n) <typeparamref name="T"/> instance with new() constraint.</typeparam>
     /// <returns>Returns a pooled object as <typeparamref name="U"/>.</returns>
-    public U Rent<U>(Action<U> settingUp = null!) where U: T, IPoolable, new() {
+    /// <remarks></remarks>
+    public T Rent(Action<T> settingUp = null!) {
         while (Interlocked.CompareExchange<bool>(ref m_interlock, true, false) != false)
             Thread.Sleep(millisecondsTimeout: 1);
 
         bool hasUnused = m_freeSpaces.TryDequeue(out int slot);
         if (!hasUnused) {
-            m_components.Add(item: new U());
+            m_components.Add(item: new T());
             slot = m_components.Count - 1;
         }
 
-        U component = (U)m_components[slot];
+        T component = m_components[slot];
         m_rentedComponents.Add(key: component.GetHashCode(), value: slot);
 
         settingUp?.Invoke(component);

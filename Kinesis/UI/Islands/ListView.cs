@@ -15,7 +15,7 @@ namespace Kinesis.UI;
 /// </summary>
 /// <typeparam name="TEntity">Template object for each row.</typeparam>
 /// <typeparam name="TData">Encapsulated data target for each row.</typeparam>
-public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, IContentable<IEnumerable<TData>> where TEntity: Entity {
+public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, IContentable<IEnumerable<TData>> where TEntity: Entity, new() {
     private const byte KEY_ENTER = 13;
     
     private readonly string m_stackContainerName = null!;
@@ -24,30 +24,24 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
     private readonly Action<TEntity> m_onFocus   = null!;
     private readonly Func<TEntity, TData, TData> m_onSelect = null!;
     
-    private readonly Func<TEntity> m_prototypeBuild = null!;
     private readonly Action<TEntity> m_onUnfocus = null!;
-    
     private List<TData> m_contentSource = null!;
-    private readonly int m_contentHeight = 1;
-    
-    private float m_maxYScale = .0f;
-    private float m_currentYScale = .0f;
 
+    private readonly int m_contentHeight = 1;
+    private float m_maxYScale = .0f;
+
+    private float m_currentYScale = .0f;
     private int m_scrollOffset = 1;
-    private int m_relativeCursorPosition = -1;
-    
+
+    private int m_relativeCursorPosition = -1; 
     private int m_visibleRowCount = 0;
+
     private int m_maxRowCount = 0;
 
     /// <summary>
     /// Collection of the row data, which assigned to the <b>visible</b> rows.
     /// </summary>
     public IEnumerable<TData> Content { get => m_contentSource; set => m_contentSource = new List<TData>(value ?? []); }
-
-    /// <summary>
-    /// Prototype function for creating <typeparamref name="TEntity"/> instances for the <see cref="ListView{T, U}"/>.
-    /// </summary>
-    public Func<TEntity> Prototype { init => m_prototypeBuild = value; }
 
     /// <summary>
     /// Represents a callback function, which controls the data binding at each row.
@@ -78,8 +72,8 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
     /// Create a new <see cref="ListView{TTemplate,TData}"/> instance.
     /// </summary>
     public ListView(): base(count: 8) {
-        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
         m_stackContainerName = $"__list_{Guid.CreateVersion7()}__";
         m_contentSource = new List<TData>();
@@ -91,9 +85,6 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        if (m_prototypeBuild == null)
-            throw new ArgumentNullException(paramName: nameof(Prototype), message: "The .Prototype property of the list can't NULL.");
-
         return new OnUpdate<InputMessage>(context) {
             On = HandleArrowKeys,
             Content = new OnUpdate<RenderMessage>(context) {
@@ -162,10 +153,10 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
         Stack stack = new Stack(capacity: 64) { Name = m_stackContainerName };
 
         for (int i = 0; i < m_maxRowCount; ++i) {
-            TEntity template = m_prototypeBuild();
+            TEntity template = new TEntity();
             Viewport viewport = new Viewport() { Name = $"__list_item_{Guid.CreateVersion7()}__", Content = template, Scale = Vec2.Auto with { Y = 0 } };
 
-            _ = stack.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+            _ = stack.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
 
             viewport.Move(x: Get<Position>()!.Relative.X, y: i * m_contentHeight);
             viewport.Get<Hierarchy>(Hierarchy.Parent)!.Attached = stack;

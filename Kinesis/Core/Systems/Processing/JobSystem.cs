@@ -15,6 +15,9 @@ namespace Kinesis.Core;
 /// </summary>
 /// <param name="Action">Callback of the work.</param>
 /// <param name="Island">Container of the changed entities.</param>
+/// <param name="Tag">Indicates the type of the target.</param>
+/// <param name="Status">Connection middle-object of the target.</param>
+/// <param name="IsFocusBased">Indicates the job is global or local based.</param>
 internal record JobTarget(Delegate Action, Island Island, JobTag Tag, State<JobRequestIntent> Status, bool IsFocusBased);
 
 /// <summary>

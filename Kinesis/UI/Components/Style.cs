@@ -176,7 +176,7 @@ public sealed class Style(): Component(id: ComponentRegistry.QueryComponent(name
 
     public void Reset() {
         m_union = default!;
-        ComponentPool<Style>.Instance.Return(this);
+        ComponentPool<Style>.Shared.Return(this);
     }
 
     public void Copy(ref Style from) {

@@ -55,7 +55,7 @@ internal sealed class BorderRenderer: RenderComponent {
 
     public override void Reset() {
         base.Reset();
-        ComponentPool<RenderComponent>.Instance.Return(this);
+        ComponentPool<BorderRenderer>.Shared.Return(this);
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

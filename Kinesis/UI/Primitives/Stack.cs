@@ -25,13 +25,13 @@ public sealed class Stack: Entity, IContentable<List<Entity>> {
 
                 value[i].Get<Hierarchy>(index: Hierarchy.Parent)!.Attached = this;
 
-                if(childCount <= i) _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
+                if(childCount <= i) _ = base.Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
                 Get<Hierarchy>(Hierarchy.ChildrenStart + i)!.Attached = value[i];
             }
         }
     }
 
     public Stack(int capacity = MAX_COMPONENT_COUNT * 2): base(capacity) {
-        _ = Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.UP));
+        _ = Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static (x) => x.Direction = ConnectionDirection.UP));
     }
 }

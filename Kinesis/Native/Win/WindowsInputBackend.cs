@@ -41,20 +41,22 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     #endregion
 
     private readonly RingBuffer<InputInfo> m_infoBuffer = null!;
-    private IConsoleSource<InputKeyEventInfo> m_source = null!;
+    private WindowsConsoleInfoProvider m_source = null!;
 
     private InputInfo m_info = default;
     private bool m_isPressedLastTime = false;
 
-    public WindowsInputBackend()
-        => m_infoBuffer = new RingBuffer<InputInfo>(capacity: 64);
+    private WindowsInputBackend(WindowsConsoleInfoProvider source) {
+        m_infoBuffer = new RingBuffer<InputInfo>(capacity: 64);
+        m_source = source;
+    }
 
     /// <summary>
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
-    public static IInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
-        WindowsInputBackend backend = new WindowsInputBackend();
+    public static IInputBackend Init(WindowsConsoleInfoProvider source) {
+        WindowsInputBackend backend = new WindowsInputBackend(source);
 
         if (!GetMode(handle: StdHandle.Input, out uint flags))
             return IInputBackend.ERR;

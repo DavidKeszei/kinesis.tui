@@ -64,10 +64,10 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
     /// Create a new <see cref="InputField"/> instance.
     /// </summary>
     public InputField(): base(count: MAX_COMPONENT_COUNT) {
-        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
 
         Guid guid        = Guid.CreateVersion7();
         m_textIdentifier = $"__input_box_text_{guid}__";

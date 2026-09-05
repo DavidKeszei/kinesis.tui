@@ -54,7 +54,7 @@ public sealed class BoxRenderer: RenderComponent, IPoolable {
 
     public override void Reset() {
         base.Reset();
-        ComponentPool<BoxRenderer>.Instance.Return(this);
+        ComponentPool<BoxRenderer>.Shared.Return(this);
     }
 
     protected override void CacheStyles(StyleEnumerator styles) {

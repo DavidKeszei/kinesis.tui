@@ -47,7 +47,7 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
         m_child = null!;
         m_direction = ConnectionDirection.DOWN;
 
-        ComponentPool<Hierarchy>.Instance.Return(this);
+        ComponentPool<Hierarchy>.Shared.Return(this);
     }
 }
 

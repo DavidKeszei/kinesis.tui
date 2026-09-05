@@ -29,8 +29,8 @@ public class Border: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     public Border(): base(count: MAX_COMPONENT_COUNT) {
         InitRenderEntityWith<BorderRenderer>();
 
-        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
-        _ = Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null)));
+        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null)));
 
         BorderDecoration.None.CreateStyles(to: this, init: true);
     }
@@ -140,14 +140,14 @@ public readonly struct BorderDecoration {
 
     internal void CreateStyles(Border to, bool init = false) {
         if (init) {
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_TOP_RIGHT, StyleDataType.CHAR, ' ')));
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_TOP_LEFT, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_TOP_RIGHT, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_TOP_LEFT, StyleDataType.CHAR, ' ')));
 
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_BOTTOM_RIGHT, StyleDataType.CHAR, ' ')));
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_BOTTOM_LEFT, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_BOTTOM_RIGHT, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_BOTTOM_LEFT, StyleDataType.CHAR, ' ')));
 
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_HORIZONTAL, StyleDataType.CHAR, ' ')));
-            to.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(Style.BORDER_CHAR_VERTICAL, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_HORIZONTAL, StyleDataType.CHAR, ' ')));
+            to.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(Style.BORDER_CHAR_VERTICAL, StyleDataType.CHAR, ' ')));
         }
 
         to.Get<Style>(index: OFFSET)!.AsCharacter = m_topRight;

@@ -157,11 +157,11 @@ public class Entity: IDisposable {
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
     protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IPoolable, new() {
-        _ = this.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = this.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = this.Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = this.Attach<T>(ComponentPool<T>.Instance.Rent<T>(), isUnique: true);
-        _ = this.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
+        _ = this.Attach<T>(ComponentPool<T>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.UP));
     }
 
     private void ReturnRendtedComponents() {

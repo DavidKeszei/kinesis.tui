@@ -51,10 +51,10 @@ public abstract class Island: Entity {
         m_renderSet = new List<Entity>(capacity: 32);
         m_entities = new List<Entity>(capacity: 32);
 
-        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.UP));
-        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static (x) => x.Direction = ConnectionDirection.DOWN));
+        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static (x) => x.Direction = ConnectionDirection.UP));
+        this.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static (x) => x.Direction = ConnectionDirection.DOWN));
 	
-        this.Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Instance.Rent<RebuildContent>(), isUnique: true);
+        this.Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Shared.Rent(), isUnique: true);
         this.Attach<DrawCalls>(component: new DrawCalls(), isUnique: true);
     }
 

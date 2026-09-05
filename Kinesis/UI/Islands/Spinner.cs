@@ -53,10 +53,10 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     public TimeSpan Duration { init => m_changeTime = value.Ticks; }
 
     public Spinner(): base(count: 3) {
-        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One), isUnique: true);
+        _ = Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static (x) => x.Value = Vec2.One), isUnique: true);
 
-        _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)), isUnique: true);
+        _ = Attach<Style>(ComponentPool<Style>.Shared.Rent(static (x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)), isUnique: true);
     }
 
     /// <summary>

@@ -46,11 +46,11 @@ public sealed class Box: Entity, ICopyable<BuildContext>, IContentable<Entity> {
     public Box(): base(count: 8) {
         InitRenderEntityWith<BoxRenderer>();
 
-        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.DOWN));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = base.Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.DOWN));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.BACKGROUND, tag: StyleDataType.COLOR, value: null!)));
 
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
-        _ = base.Attach<Style>(component: ComponentPool<Style>.Instance.Rent<Style>(static(x) => x.As<char>(name: Style.FILLER, tag: StyleDataType.CHAR, value: ' ')));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
+        _ = base.Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<char>(name: Style.FILLER, tag: StyleDataType.CHAR, value: ' ')));
     }
 
     public void Copy(ref BuildContext from) {
