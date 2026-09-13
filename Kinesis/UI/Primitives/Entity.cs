@@ -117,7 +117,7 @@ public class Entity: IDisposable {
         if (index < 0) return;
 
         if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.TypeName), out int i)) {
-            if (m_components[i] is IPoolable reset) 
+            if (m_components[i] is IResetable reset) 
                 reset.Reset();
 
             m_components[i] = null!;
@@ -134,7 +134,7 @@ public class Entity: IDisposable {
 
             if (m_components[i].TypeOf(type: T.TypeName) && indexOf++ == index) {
 
-                if (m_components[i] is IPoolable reset) reset.Reset();
+                if (m_components[i] is IResetable reset) reset.Reset();
                 m_components[i] = null!;
 
                 m_emptySpaces.Enqueue(i);
@@ -156,7 +156,7 @@ public class Entity: IDisposable {
     /// Initialize the current <see cref="Entity"/> instance with some basic render properties.
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
-    protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IPoolable, new() {
+    protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IResetable, new() {
         _ = this.Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
         _ = this.Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
@@ -169,7 +169,7 @@ public class Entity: IDisposable {
 
         m_disposed = true;
         foreach (Component comp in m_components) {
-            if (comp is IPoolable rent)
+            if (comp is IResetable rent)
                 rent.Reset();
         }
 

@@ -27,7 +27,6 @@ internal readonly struct ConsoleBuffer: IDisposable {
     /// <param name="x">X position of the reference.</param>
     /// <param name="y">Y position of the reference.</param>
     /// <returns>Return a <see cref="ANSIChar"/> struct by reference.</returns>
-    /// <exception cref="IndexOutOfRangeException"/>
     public ref vtchar_t this[int x, int y] { 
         get {
             unsafe { 

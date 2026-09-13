@@ -9,7 +9,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a interactive component on an <see cref="Entity"/>.
 /// </summary>
-public sealed class JobComponent(): Component(id: ComponentRegistry.QueryComponent(TYPE_NAME)), IStaticType, IPoolable {
+public sealed class JobComponent(): Component(id: ComponentRegistry.QueryComponent(TYPE_NAME)), IStaticType, IResetable {
     private const string TYPE_NAME = nameof(JobComponent);
 
     private State<JobRequestIntent> m_status = null!;

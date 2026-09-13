@@ -26,7 +26,7 @@ internal record JobTarget(Delegate Action, Island Island, JobTag Tag, State<JobR
 internal sealed class JobSystem: IDynamicSystem {
     #region PREDEFINES
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::job_thread";
-    private const string ERR_SYNC_NOT_FOUND = "The synchronization context/state wasn't found.";
+    private const string ERR_SYNC_NOT_FOUND    = "The synchronization context/state wasn't found.";
 
     private const int MAX_MSG_RND_COUNT   = 1;
     private const int MAX_MSG_INPUT_COUNT = 32;
@@ -131,7 +131,8 @@ internal sealed class JobSystem: IDynamicSystem {
     }
 
     private void Send<T>(RingBuffer<T> messages) where T: struct, IJobMessage {
-        if (!messages.Read(out T message)) return;
+        if (!messages.Read(out T message))
+            return;
 
         for(int i = 0; i < m_targets.Count; ++i) {
 
@@ -152,12 +153,13 @@ internal sealed class JobSystem: IDynamicSystem {
             if (m_targets[i].Status == JobRequestIntent.REMOVE) {
                 JobTarget target = m_targets[i];
 
-                if (m_targets[^1].IsFocusBased) {
-                    if (IsFocused(target, i) && m_focusIndex - 1 >= 0)
-                        --m_focusIndex;
+                // Check if the last job is focus-based: if it is true, then
+                // we remove the last focus index, because we swap 2 focus based element
+                // insted of one, and remove target became the last focusable job.
+                if (m_targets[^1].IsFocusBased) m_focusTargetIndexes.RemoveAt(m_focusTargetIndexes.Count - 1);
+                else m_focusTargetIndexes.Remove(i);
 
-                    m_focusTargetIndexes.RemoveAt(m_focusTargetIndexes.Count - 1);
-                }
+                if (IsFocused(target, i) && m_focusIndex - 1 >= 0) --m_focusIndex;
 
                 (m_targets[i], m_targets[^1]) = (m_targets[^1], m_targets[i]);
                 m_targets.RemoveAt(m_targets.Count - 1);

@@ -12,7 +12,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a text renderer component.
 /// </summary>
-public class TextRenderer(): RenderComponent, IPoolable {
+public class TextRenderer(): RenderComponent, IResetable {
     private const string POINT_CLIP = "...";
 
     private char[] m_buffer = null!;

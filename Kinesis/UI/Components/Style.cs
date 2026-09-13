@@ -12,7 +12,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent style information on an <see cref="Entity"/>,
 /// </summary>
-public sealed class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Style>, IDefault<Style>, IPoolable {
+public sealed class Style(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, ICopyable<Style>, IDefault<Style>, IResetable {
     #region __NAMES__
 
     private const string TYPE_NAME = nameof(Style);

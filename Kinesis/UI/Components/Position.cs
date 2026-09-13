@@ -8,7 +8,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a point in the 2D space.
 /// </summary>
-public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
+public sealed class Position(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IResetable {
     private const string TYPE_NAME = nameof(Position);
 
     private Position m_origin = null!;

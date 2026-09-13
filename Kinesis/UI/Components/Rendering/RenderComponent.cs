@@ -10,7 +10,7 @@ namespace Kinesis.Core.Rendering;
 /// <summary>
 /// Represent a helper component in the rendering.
 /// </summary>
-public abstract class RenderComponent: Component, IStaticType, IPoolable {
+public abstract class RenderComponent: Component, IStaticType, IResetable {
     #region DEFINES
     private const string TYPE_NAME = nameof(RenderComponent);
     #endregion

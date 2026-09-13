@@ -9,7 +9,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent connection information between two <see cref="Entity"/> instances.
 /// </summary>
-public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
+public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IResetable {
     private const string TYPE_NAME = nameof(Hierarchy);
     private const int PARENT_INDEX = 0;
 

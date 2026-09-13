@@ -11,7 +11,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a collection of "draw-calls" as separated <see cref="Island"/>s.
 /// </summary>
-internal class DrawCalls: Component, IStaticType, IPoolable {
+internal class DrawCalls: Component, IStaticType, IResetable {
     private const string TYPE = nameof(DrawCalls);
     private readonly List<Island> m_islands = null!;
 

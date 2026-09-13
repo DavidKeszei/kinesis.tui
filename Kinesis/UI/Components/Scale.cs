@@ -8,7 +8,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a dimension in the 2D space.
 /// </summary>
-public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
+public sealed class Scale(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IResetable {
     private const string TYPE_NAME = nameof(Scale);
 
     private Scale m_max = null!;

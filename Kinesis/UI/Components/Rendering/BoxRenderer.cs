@@ -13,7 +13,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a component, which can drawing a box to the screen.
 /// </summary>
-public sealed class BoxRenderer: RenderComponent, IPoolable {
+public sealed class BoxRenderer: RenderComponent, IResetable {
     
     /// <summary>
     /// Render a box to the specific <paramref name="buffer"/> area.

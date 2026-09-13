@@ -7,7 +7,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Provides reset behavior for pooling.
 /// </summary>
-public interface IPoolable {
+public interface IResetable {
 
     /// <summary>
     /// Reset the component to default state (like <i><b>new T()</b></i>). This method used by the <see cref="Entity"/> class, to reset

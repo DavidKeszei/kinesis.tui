@@ -8,7 +8,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represents a content-container for rebuilding <see cref="Island"/> instances.
 /// </summary>
-public sealed class RebuildContent(): Component(id: ComponentRegistry.QueryComponent(name: TYPE)), IStaticType, IPoolable {
+public sealed class RebuildContent(): Component(id: ComponentRegistry.QueryComponent(name: TYPE)), IStaticType, IResetable {
     private const string TYPE = nameof(RebuildContent);
 
     private Entity m_content = null!;

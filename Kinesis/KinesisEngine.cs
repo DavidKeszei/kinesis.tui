@@ -104,8 +104,6 @@ public sealed class KinesisEngine: ISystemProvider {
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
         _ = Task.Run(action: () => m_worker.Run(), token);
-
-        //TODO: Try to remove unneccessary VSD overhead
         _ = Task.Run(action: () => m_input.Run(), token);
 
         _ = Task.Run(action: () => m_layoutSystem.Run(), token);
