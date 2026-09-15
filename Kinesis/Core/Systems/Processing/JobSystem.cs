@@ -153,13 +153,15 @@ internal sealed class JobSystem: IDynamicSystem {
             if (m_targets[i].Status == JobRequestIntent.REMOVE) {
                 JobTarget target = m_targets[i];
 
-                // Check if the last job is focus-based: if it is true, then
-                // we remove the last focus index, because we swap 2 focus based element
-                // insted of one, and remove target became the last focusable job.
-                if (m_targets[^1].IsFocusBased) m_focusTargetIndexes.RemoveAt(m_focusTargetIndexes.Count - 1);
-                else m_focusTargetIndexes.Remove(i);
+                if (target.IsFocusBased) {
+                    if (m_focusTargetIndexes[m_focusIndex] == i && m_focusIndex - 1 >= 0) --m_focusIndex;
 
-                if (IsFocused(target, i) && m_focusIndex - 1 >= 0) --m_focusIndex;
+                    // Check if the last job is focus-based: if it is true, then
+                    // we remove the last focus index, because we swap 2 focus based element
+                    // insted of one, and remove target became the last focusable job.
+                    if (m_targets[^1].IsFocusBased) m_focusTargetIndexes.RemoveAt(m_focusTargetIndexes.Count - 1);
+                    else m_focusTargetIndexes.Remove(i);
+                }
 
                 (m_targets[i], m_targets[^1]) = (m_targets[^1], m_targets[i]);
                 m_targets.RemoveAt(m_targets.Count - 1);
