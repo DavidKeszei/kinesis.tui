@@ -74,7 +74,7 @@ internal sealed class InputSystem: IDynamicSystem {
                     holdTime = (float)(now - lastTime).TotalMilliseconds;
 
                     if (holdTime >= HOLD_ZONE)
-                        JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
+                        JobSystem.Current.AddMessage<InputMessage>(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
 
                     Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                     continue;
@@ -83,7 +83,7 @@ internal sealed class InputSystem: IDynamicSystem {
                 /* 1.1 If not: do fast swap between the new & current keys */
                 if (m_startInputInfo.When != TimeSpan.Zero) {
 
-                    JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
+                    JobSystem.Current.AddMessage<InputMessage>(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
                     deadZoneTime = DEAD_ZONE;
                 }
 
@@ -100,7 +100,7 @@ internal sealed class InputSystem: IDynamicSystem {
 
             /* 2. Send it after the DEAD_ZONE. (Only, if the action is not HOLD)*/
             if (deadZoneTime <= .0f) {
-                JobSystem.Current.AddInputMessage(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
+                JobSystem.Current.AddMessage<InputMessage>(message: new InputMessage(key: m_startInputInfo.Key, modifiers: m_startInputInfo.Modifier, isPress: m_startInputInfo.isPress));
                 m_startInputInfo = ('\0', InputModifier.NONE, TimeSpan.Zero, false);
 
                 deadZoneTime = DEAD_ZONE;

@@ -114,7 +114,7 @@ public sealed class KinesisEngine: ISystemProvider {
 
             if (!firstRun) {
                 Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
-                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                m_worker.AddMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else {
                 Console.Out.Write(m_title);

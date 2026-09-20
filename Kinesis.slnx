@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Kinesis/Kinesis.csproj" />
+  <Project Path="Showcase/Showcase.csproj" Id="761b05d0-9d47-4b0d-927f-d00f1daa101a" />
 </Solution>
