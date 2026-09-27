@@ -118,8 +118,8 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
 
     protected override Entity? Build(ref readonly BuildContext context) {
         return new AnimatedArea<AnimatedNumber<int>, Text>() {
-            Selector = (_) => m_index,
-            Applier = (text, value) => {
+            Getter = (_) => m_index,
+            Setter = (text, value) => {
                 m_index = value;
                 text.Get<TextRenderer>()!.Write(text: [ m_spinnerStates[m_index % m_spinnerStates.Length] ]);
             },

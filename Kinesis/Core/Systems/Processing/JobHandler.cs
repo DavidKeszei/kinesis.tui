@@ -60,8 +60,7 @@ internal sealed class JobHandler<T, V> where T: struct, IJobMessage, IEquatable<
             return;
 
         foreach (V target in m_targets) {
-            if (!target.IsActive)
-                continue;
+            if (!target.IsActive) continue;
             target.Callback(message);
         }
     }

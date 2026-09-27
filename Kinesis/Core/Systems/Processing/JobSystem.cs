@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 
-using RenderSyncContext = Kinesis.Core.State<Kinesis.Core.WorkerSystemState>;
+using RenderSyncContext = Kinesis.Core.State<Kinesis.Core.JobSystemState>;
 using Kinesis.Core.Processing;
 
 namespace Kinesis.Core;
@@ -19,10 +19,6 @@ internal sealed class JobSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::job_thread";
     private const string ERR_SYNC_NOT_FOUND    = "The synchronization context/state wasn't found.";
 
-    private const int MAX_MSG_RND_COUNT   = 1;
-    private const int MAX_MSG_INPUT_COUNT = 32;
-
-    private const int PRE_ALLOC_INTERACTION_COUNT = 2048;
     private const int POOLING_TIME = 8;
     #endregion
 
@@ -55,7 +51,7 @@ internal sealed class JobSystem: IDynamicSystem {
     /// Add synchronization context/state to the <see cref="JobSystem"/> from the <see cref="Renderer"/>.
     /// </summary>
     /// <param name="sync">Synchronization state of the <see cref="KinesisEngine"/>.</param>
-    /// <remarks>Remarks: If the state wasn't set, then the <see cref="JobSystem.Run"/> throws <see cref="InvalidOperationException"/> in the first run.</remarks>
+    /// <remarks>Remarks: If the state wasn't set, then the <see cref="JobSystem.Run"/> throws <see cref="InvalidOperationException"/> at the first run.</remarks>
     public void AddRenderSync(RenderSyncContext sync) => m_renderSync ??= sync;
 
     /// <summary>
@@ -109,7 +105,7 @@ internal sealed class JobSystem: IDynamicSystem {
         bool firstRun = true;
         
         while(true) {
-            if (m_renderSync.Value != WorkerSystemState.OPEN_FOR_PROCESSING) {
+            if (m_renderSync.Value != JobSystemState.OPEN_FOR_PROCESSING) {
                 Thread.Sleep(millisecondsTimeout: POOLING_TIME);
                 continue;
             }
@@ -118,12 +114,13 @@ internal sealed class JobSystem: IDynamicSystem {
             m_renderHandler.Process();
 
             // Search for the first focusable element from the UI
-            if (firstRun) {
+            if (firstRun && m_inputHandler.Targets.Count > 0) {
                 m_focus.Next();
                 firstRun = false;
             }
 
-            m_renderSync.Value = WorkerSystemState.WAIT_FOR_RENDERER;
+            m_focus.Set();
+            m_renderSync.Value = JobSystemState.WAIT_FOR_RENDERER;
         }
     }
 
@@ -140,7 +137,7 @@ internal sealed class JobSystem: IDynamicSystem {
 /// <summary>
 /// Simple state representation between the <see cref="Renderer"/> and <see cref="JobSystem"/>.
 /// </summary>
-public enum WorkerSystemState: byte {
+public enum JobSystemState: byte {
     /// <summary>
     /// Indicates the <see cref="JobSystem"/> can process one message from the queue.
     /// </summary>

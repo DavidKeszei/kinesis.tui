@@ -19,19 +19,21 @@ internal sealed class FocusManager {
     public FocusManager(IReadOnlyList<InputJob> reference) => m_jobs = reference;
 
     /// <summary>
+    /// Update the current focused state to "focused". 
+    /// </summary>
+    public void Set() 
+        => m_jobs[m_currentFocus].IsFocused = true;
+
+    /// <summary>
     /// Go to the next focusable job in the queue.
     /// </summary>
     public void Next() {
         int index = (m_currentFocus + 1) % m_jobs.Count;
 
-        while (index != m_currentFocus && (m_jobs[index].IsFocused || m_jobs[index].IsGlobal)) {
+        while (index != m_currentFocus && (m_jobs[index].IsFocused || m_jobs[index].IsGlobal))
             index = ++index % m_jobs.Count;
-        }
 
-        if(m_currentFocus >= 0)
-            m_jobs[m_currentFocus].IsFocused = false;
-
-        m_jobs[index].IsFocused = true;
+        if (m_currentFocus >= 0)m_jobs[m_currentFocus].IsFocused = false;
         m_currentFocus = index;
     }
 }
