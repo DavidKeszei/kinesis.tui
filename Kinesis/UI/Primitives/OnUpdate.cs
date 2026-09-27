@@ -50,7 +50,7 @@ public sealed class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessa
     public JobRequestIntent Status { get => Get<JobComponent>()!.Status; }
 
     /// <summary>
-    /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message.
+    /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message. (Default: true)
     /// </summary>
     /// <remarks>This proprety only works, if the message type is <see cref="InputMessage"/>. Otherwise ignored by the library.</remarks>
     public bool IsFocusBased { get => m_inputFocus; init => m_inputFocus = value; }

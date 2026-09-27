@@ -35,12 +35,12 @@ public sealed class AnimatedArea<T, U>: Island, IContentable<Entity> where T: no
     /// <summary>
     /// Selector function, which helps querying the specific value.
     /// </summary>
-    public Func<U, T> Selector { init => m_selector = value; }
+    public Func<U, T> Getter { init => m_selector = value; }
 
     /// <summary>
     /// Applier/InheritStyle function, which applying the animated value back to the <see cref="Entity"/>.
     /// </summary>
-    public Action<U, T> Applier { init => m_applier = value; }
+    public Action<U, T> Setter { init => m_applier = value; }
 
     /// <summary>
     /// Duration of the animation.

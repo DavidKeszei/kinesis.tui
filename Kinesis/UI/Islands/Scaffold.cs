@@ -29,7 +29,6 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
             this.Get<Hierarchy>(Hierarchy.ChildrenStart)!.Attached = scaffold;
 
             Get<RebuildContent>()!.Content = scaffold;
-            Rebuild();
         }
     }
 
@@ -53,7 +52,6 @@ public sealed class Scaffold: Island, IContentable<Entity>, ICopyable<BuildConte
         _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static(x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)));
 
         _ = Attach<Style>(component: ComponentPool<Style>.Shared.Rent(static (x) => x.As<TextDecoration>(name: Style.FONT_ATTR, tag: StyleDataType.FONT_ATTR, value: TextDecoration.NONE)));
-        _ = Attach<RebuildContent>(component: ComponentPool<RebuildContent>.Shared.Rent(), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {

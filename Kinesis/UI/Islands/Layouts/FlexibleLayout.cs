@@ -65,14 +65,14 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     /// Weigths/Ratios of the elements for the dividing.
     /// </summary>
     /// <remarks>
-    /// If given list less than the content count, then remained content weigths is equals with 1.
+    /// If given list less than the content count, then remained content weigths per slot is equals with 1.
     /// </remarks>
     public List<uint> Ratios {
         set {
             if (value == null) return;
             m_ratios ??= new List<uint>();
 
-            for (int i = 0; i < m_childCount; ++i) {
+            for (int i = 0; i < value.Count; ++i) {
                 uint ratio = i >= value.Count ? 1 : uint.Max(1, value[i]);
 
                 if (i >= m_ratios.Count) m_ratios.Add(ratio);
@@ -99,7 +99,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        if (m_ratios == null || m_ratios.Count == 0) CreateDefaultRatios();
+        if (m_ratios == null || m_ratios.Count == 0 || m_ratios.Count < m_childCount)
+            CreateDefaultRatios();
 
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
@@ -175,11 +176,12 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private void CreateDefaultRatios() {
         if (m_childCount == 0) return;
 
-        m_ratios = new List<uint>(capacity: m_childCount - 1);
-        for (int i = 0; i < m_childCount; ++i)
-            m_ratios.Add(1);
+        m_ratios ??= new List<uint>(capacity: m_childCount - 1);
 
-        m_sumOfRatios = m_childCount;
+        for (int i = m_ratios.Count; i < m_childCount; ++i) {
+            m_ratios.Add(1);
+            m_sumOfRatios += 1;
+        }
     }
 }
 

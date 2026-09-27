@@ -112,22 +112,28 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                     case '\b': {
                         RemoveChar(text);
 
-                        if(m_charCount == 0)
-                            ShowPlaceholder(text, inputAdded: false);
+                        if(m_charCount == 0) ShowPlaceholder(text, inputAdded: false);
                         break;
                     }
                     default: {
                         AddChar(text, message.Key);
 
-                        if(m_charCount == 1)
-                            ShowPlaceholder(text, inputAdded: true);
+                        if(m_charCount == 1) ShowPlaceholder(text, inputAdded: true);
                         break;
                     }
                 }
             },
             Content = new OnUpdate<RenderMessage>(context) {
                 On = (message, ref readonly tree) => {
-                    /* At the first run, we set the inherited color to the cursor & placeholder/text */
+
+                    /* Setting up inherited foreground to the placeholder & cursor.
+                     * 
+                     * Reason:
+                     *  The style system is static at "build time" (the UI is builded at runtime at once [if not rebuilded by the user];
+                     *                                              the colors copied instead referencing to the parent colors).
+                     *                                              
+                     *  This ensure the determenistic behavior for the foreground color. Little quirky, but works.
+                     */
                     if (m_charCount == -1) {
                         m_charCount = 0;
 
@@ -150,27 +156,27 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
                 Content = new Stack {
                     Content = [
                         new Text {
-                            Name       = m_textIdentifier,
-                            Content       = m_placeholder,
+                            Name = m_textIdentifier,
+                            Content = m_placeholder,
 
                             Decoration = TextDecoration.ITALIC,
-                            Foreground = Get<Style>()!.AsRGB with { A = PLACEHOLDER_ALPHA },
                         },
                         new AnimatedArea<RGB, Box> {
-                            Name       = m_animatedAreaIdentifier,
+                            Name = m_animatedAreaIdentifier,
 
-                            Selector   = static(box)        => box.Background,
-                            Applier    = static(box, color) => box.Background = color,
+                            Getter = static(box) => box.Background,
+                            Setter = static(box, color) => box.Background = color,
 
-                            To         = RGB.White,
-                            Duration   = TimeSpan.FromSeconds(value: m_blinkTime),
+                            To = RGB.White,
+                            Duration = TimeSpan.FromSeconds(value: m_blinkTime),
 
                             IsPeriodic = true,
                             Content = new Box {
-                                Name       = m_cursorIdentifier,
-                                Scale      = Vec2.One,
-                                
-                                Background = RGB.Transparent with { A = 1 },
+
+                                Name = m_cursorIdentifier,
+                                Scale = Vec2.One,
+
+                                Background = RGB.White with { A = 1 }
                             }
                         }
                     ]
@@ -199,7 +205,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
     }
 
     private void AddChar(Text text, char letter) {
-        if (m_headPosition >= m_maxLen) return;
+        if (m_charCount >= m_maxLen) return;
         int len = text.Content.Length;
 
         Span<char> left = stackalloc char[m_headPosition + 1];
@@ -238,7 +244,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
     private void ShowPlaceholder(Text text, bool inputAdded) {
         if (inputAdded) {
 
-            //[0][...] -> First: Real input; From the seocnd: Placeholder
+            //[0][...] -> First: Real input; From the second: Placeholder
             text.Write(text: [], from: 1);
 
             text.Decoration = TextDecoration.NONE;

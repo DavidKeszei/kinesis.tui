@@ -25,7 +25,7 @@ public sealed class KinesisEngine: ISystemProvider {
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<WorkerSystemState> m_workSyncState = null!;
+    private readonly State<JobSystemState> m_workSyncState = null!;
 
     private readonly PlatformConsoleInfo m_consoleSourceInfoProvider = default!;
     private readonly string m_title = string.Empty;
@@ -43,7 +43,7 @@ public sealed class KinesisEngine: ISystemProvider {
         m_consoleSourceInfoProvider = new PlatformConsoleInfo();
 
         m_layoutInfo = new RefState<LayoutInfo>();
-        m_workSyncState = new ValueState<WorkerSystemState>(@default: WorkerSystemState.WAIT_FOR_RENDERER);
+        m_workSyncState = new ValueState<JobSystemState>(@default: JobSystemState.WAIT_FOR_RENDERER);
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -114,7 +114,7 @@ public sealed class KinesisEngine: ISystemProvider {
 
             if (!firstRun) {
                 Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
-                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                m_worker.AddMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
             }
             else {
                 Console.Out.Write(m_title);
