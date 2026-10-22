@@ -21,8 +21,10 @@ internal sealed class FocusManager {
     /// <summary>
     /// Update the current focused state to "focused". 
     /// </summary>
-    public void Set() 
-        => m_jobs[m_currentFocus].IsFocused = true;
+    public void Set() {
+        if (m_currentFocus < 0) return;
+        m_jobs[m_currentFocus].IsFocused = true;
+    }
 
     /// <summary>
     /// Go to the next focusable job in the queue.

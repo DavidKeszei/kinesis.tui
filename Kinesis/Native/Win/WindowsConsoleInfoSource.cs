@@ -17,16 +17,16 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
 
     private const int QUEUE_COUNT = 16;
     private const int WAIT = 5;
-
     private const uint READ_COUNT = 1;
+
+    private const int TRUE = 1;
 
     #endregion
     #region NATIVE
 
     [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "ReadConsoleInputW")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool Read(nint handle, ref WindowsConsoleEventMsg message, uint count, out uint _);
+    private static partial int Read(nint handle, ref WindowsConsoleEventMsg message, uint count, out uint _);
 
     #endregion
 
@@ -72,7 +72,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
         WindowsConsoleEventMsg message = default!;
 
         while (true) {
-            if (Read(handle: StdHandle.Input, ref message, count: READ_COUNT, out _)) {
+            if (Read(handle: StdHandle.Input, ref message, count: READ_COUNT, out _) == TRUE) {
                 while (Interlocked.CompareExchange<bool>(ref m_isLocked, true, false) != false)
                     await Task.Delay(millisecondsDelay: WAIT);
 

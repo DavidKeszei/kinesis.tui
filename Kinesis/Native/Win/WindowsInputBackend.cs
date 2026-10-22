@@ -21,17 +21,16 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     private const uint ENABLE_PROCESSED_INPUT = 0x0004;
 
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread::windows";
+    private const int TRUE = 1;
 
     #endregion
     #region P/INVOKE
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool SetMode(nint handle, uint flags);
+    private static partial int SetMode(nint handle, uint flags);
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetConsoleMode")]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool GetMode(nint handle, out uint flags);
+    private static partial int GetMode(nint handle, out uint flags);
 
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
@@ -56,13 +55,13 @@ internal sealed partial class WindowsInputBackend: IInputBackend {
     public static IInputBackend Init(WindowsConsoleInfoProvider source) {
         WindowsInputBackend backend = new WindowsInputBackend(source);
 
-        if (!GetMode(handle: StdHandle.Input, out uint flags))
+        if (GetMode(handle: StdHandle.Input, out uint flags) != TRUE)
             return IInputBackend.ERR;
 
         flags &= ~ENABLE_ECHO_INPUT;
         flags &= ~ENABLE_PROCESSED_INPUT;
 
-        if(!SetMode(handle: StdHandle.Input, flags))
+        if(SetMode(handle: StdHandle.Input, flags) != TRUE)
             return IInputBackend.ERR;
 
         return backend;

@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 
-using RenderSyncContext = Kinesis.Core.State<Kinesis.Core.JobSystemState>;
+using RenderSyncContext = Kinesis.Core.ValueState<Kinesis.Core.JobSystemState>;
 using Kinesis.Core.Processing;
 
 namespace Kinesis.Core;
@@ -24,7 +24,7 @@ internal sealed class JobSystem: IDynamicSystem {
 
     private static JobSystem s_instance = null!;
 
-    private readonly JobHandler<InputMessage, InputJob> m_inputHandler = null!;
+    private readonly JobHandler<KeyboardMessage, InputJob> m_inputHandler = null!;
     private readonly JobHandler<RenderMessage, RenderJob> m_renderHandler = null!;
 
     private readonly FocusManager m_focus = null!;
@@ -42,7 +42,7 @@ internal sealed class JobSystem: IDynamicSystem {
 
     private JobSystem() {
         m_renderHandler = new JobHandler<RenderMessage, RenderJob>(capacity: 1);
-        m_inputHandler = new JobHandler<InputMessage, InputJob>(capacity: 32);
+        m_inputHandler = new JobHandler<KeyboardMessage, InputJob>(capacity: 32);
 
         m_focus = new FocusManager(reference: m_inputHandler.Targets);
     }
@@ -62,7 +62,7 @@ internal sealed class JobSystem: IDynamicSystem {
     public void AddMessage<T>(T message) where T: IJobMessage {
         if (T.Target == JobTag.INPUT) {
 
-            ref InputMessage input = ref Unsafe.As<T, InputMessage>(ref message);
+            ref KeyboardMessage input = ref Unsafe.As<T, KeyboardMessage>(ref message);
             if (MoveFocusIndex(input)) return;
 
             m_inputHandler.AddMessage(input);
@@ -85,7 +85,7 @@ internal sealed class JobSystem: IDynamicSystem {
         State<JobRequestIntent> state = new ValueState<JobRequestIntent>(@default: JobRequestIntent.ACTIVE);
         if (T.Target == JobTag.INPUT) {
 
-            InputJob input = new InputJob(island, Unsafe.As<Action<T>, Action<InputMessage>>(ref work), state, !isFocusBased);
+            InputJob input = new InputJob(island, Unsafe.As<Action<T>, Action<KeyboardMessage>>(ref work), state, !isFocusBased);
             m_inputHandler.AddQueue.Enqueue(input);
 
             return state;
@@ -124,7 +124,7 @@ internal sealed class JobSystem: IDynamicSystem {
         }
     }
 
-    private bool MoveFocusIndex(InputMessage input) {
+    private bool MoveFocusIndex(KeyboardMessage input) {
         if (input.IsPressed && input.Key == '\t' && input.Modifiers == InputModifier.L_SHIFT) {
             m_focus.Next();
             return true;

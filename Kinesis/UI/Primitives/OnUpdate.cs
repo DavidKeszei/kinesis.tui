@@ -36,7 +36,7 @@ public sealed class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessa
             if (interaction == null) {
                 interaction = T.Target switch {
                     JobTag.RENDERING => new JobComponent(onRender: (message) => SetCallback(value, Unsafe.As<RenderMessage, T>(ref message)), m_island),
-                    JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<InputMessage, T>(ref message)), m_island, m_inputFocus),
+                    JobTag.INPUT => new JobComponent(onInput: (message) => SetCallback(value, Unsafe.As<KeyboardMessage, T>(ref message)), m_island, m_inputFocus),
                     _ => null!
                 };
                 _ = base.Attach<JobComponent>(interaction, isUnique: true);
@@ -52,7 +52,7 @@ public sealed class OnUpdate<T>: Entity, IContentable<Entity> where T: IJobMessa
     /// <summary>
     /// Indicates the callback is focus-based. If this value equals with <see langword="false"/>, then the callback fired every message. (Default: true)
     /// </summary>
-    /// <remarks>This proprety only works, if the message type is <see cref="InputMessage"/>. Otherwise ignored by the library.</remarks>
+    /// <remarks>This proprety only works, if the message type is <see cref="KeyboardMessage"/>. Otherwise ignored by the library.</remarks>
     public bool IsFocusBased { get => m_inputFocus; init => m_inputFocus = value; }
     
     /// <summary>

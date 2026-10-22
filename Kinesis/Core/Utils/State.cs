@@ -45,7 +45,6 @@ public abstract class State<T> {
 /// <param name="update">Update logic of state.</param>
 public sealed class ValueState<T>(StateUpdate<T> update = default!, T @default = default): State<T>(update ?? (static(ref from, to) => from = to), @default) where T: struct;
 
-
 /// <summary>
 /// Represent a state holder, which only allows class/reference-type.
 /// </summary>

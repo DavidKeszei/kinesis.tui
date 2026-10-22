@@ -16,17 +16,21 @@ internal sealed class Renderer {
     #region PREDEFINES
 
     private const int STRING_BUILDER_STACK_SPACE = 16_384;
-    private const float FRAME_TIME_LIMIT         = 8f;
+    private const float FRAME_TIME_LIMIT         = 1 / 60f * FPS_CONVERT;
     private const float FPS_CONVERT              = 1000f;
-    private const float NS_TO_MS                 = 1000f;
+
+    /// <summary>
+    /// Value of  one tick in milliseconds. (10'000 tick = 1ms)
+    /// </summary>
+    private const float TICK_TO_MS = 10_000f;
 
     #endregion
 
     private ConsoleBuffer m_backbuffer  = default;
     private ConsoleBuffer m_frontbuffer = default;
 
-    private readonly State<LayoutInfo> m_layoutState       = null!;
-    private readonly State<JobSystemState> m_workState = null!;
+    private readonly RefState<LayoutInfo> m_layoutState       = null!;
+    private readonly ValueState<JobSystemState> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
     private float m_delta = .0f;
@@ -41,7 +45,7 @@ internal sealed class Renderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public Renderer(State<JobSystemState> workState, State<LayoutInfo> layoutState) {
+    public Renderer(ValueState<JobSystemState> workState, RefState<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -66,7 +70,7 @@ internal sealed class Renderer {
                 Vec2 scale    = call.Get<Scale>()!.Value;
                 Vec2 position = call.Get<Position>()!.Absolute;
 
-                if (!InBuffer(position: position, scale: scale)) continue;
+                if(!InBuffer(position: position, scale: scale)) continue;
 
                 RenderComponent renderLogic = call.Get<RenderComponent>()!;
                 Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
@@ -79,10 +83,13 @@ internal sealed class Renderer {
             m_workState.Value = JobSystemState.OPEN_FOR_PROCESSING;
         }
 
-        float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
+        long end = Stopwatch.GetTimestamp();
+        float delta = (end - start) / TICK_TO_MS;
 
-        if (delta <= FRAME_TIME_LIMIT)
+        if (delta <= FRAME_TIME_LIMIT) {
             Thread.Sleep(millisecondsTimeout: (int)(FRAME_TIME_LIMIT - delta));
+            delta = FRAME_TIME_LIMIT;
+        }
 
         m_delta = float.Lerp(m_delta, delta, amount: .1f);
     }

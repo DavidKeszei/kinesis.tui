@@ -66,7 +66,6 @@ public ref struct BuildContext {
     /// <param name="default">If store not have any inheritable component, then this value was written. This can't be <see langword="null"/>.</param>
     /// <param name="index">Index of the component.</param>
     public void InheritStyle(Entity target, Style @default, int index = 0) {
-        /* TODO(2026-06-30T23:44:28): Change Inhetit<T> to InheritStyle for copy/inherit styles. (Status: Done✅)*/ 	
         if (target == null || @default == null) return;
 
         Style? component = target.Get<Style>(index);
@@ -155,9 +154,9 @@ public ref struct BuildContext {
                 Style.FOREGROUND => (int)BuildSnapshotComponents.FOREGROUND,
                 Style.FONT_ATTR  => (int)BuildSnapshotComponents.FONT_STYLE,
                 Style.PADDING    => (int)BuildSnapshotComponents.PADDING,
-                _                   => -1
+                _                => -1
             },
-            _        => -1,
+            _ => -1,
         };
     }
 }

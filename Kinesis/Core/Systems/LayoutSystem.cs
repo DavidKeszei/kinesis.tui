@@ -21,7 +21,7 @@ internal partial class LayoutSystem: IDynamicSystem {
     private const int POOLING_TIME = 1;
     #endregion
 
-    private readonly State<LayoutInfo> m_info = null!;
+    private readonly RefState<LayoutInfo> m_info = null!;
 
 #if WIN_NT
     private readonly ConsoleReader<WindowsConsoleInfoProvider, ConsoleScaleInfo> m_source = default!;
@@ -38,7 +38,7 @@ internal partial class LayoutSystem: IDynamicSystem {
     /// Create a new <see cref="LayoutSystem"/> with <paramref name="scale"/>.
     /// </summary>
     /// <param name="scale">Start scale of the application. This is going be the pivot point of the observing.</param>
-    public LayoutSystem(PlatformConsoleInfo provider, State<LayoutInfo> state, Vec2 scale) {
+    public LayoutSystem(PlatformConsoleInfo provider, RefState<LayoutInfo> state, Vec2 scale) {
         m_info = state;
 
 #if WIN_NT

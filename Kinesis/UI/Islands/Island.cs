@@ -151,8 +151,8 @@ public abstract class Island: Entity {
             if (child.Attached != null) {
                 BuildTree(context: context with {
                     IsTop = false,
-                    ChangeStyleFlag = 0,
-                    Current = child.Attached,
+                    ChangeStyleFlag = default,
+                    Current = child.Attached
                 });
             }
         }

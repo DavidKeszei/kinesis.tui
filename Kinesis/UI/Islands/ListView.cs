@@ -85,7 +85,7 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        return new OnUpdate<InputMessage>(context) {
+        return new OnUpdate<KeyboardMessage>(context) {
             On = HandleArrowKeys,
             Content = new OnUpdate<RenderMessage>(context) {
                 Pivot = this,
@@ -95,7 +95,7 @@ public sealed class ListView<TEntity, TData>: Island, ICopyable<BuildContext>, I
         };
     }
 
-    private void HandleArrowKeys(InputMessage message, ref readonly Visitor tree) {
+    private void HandleArrowKeys(KeyboardMessage message, ref readonly Visitor tree) {
         if (m_contentSource.Count < 1) return;
         if (HandleEnter(message.Key, tree)) return;
 

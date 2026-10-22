@@ -89,7 +89,7 @@ public sealed class InputField: Island, ICopyable<BuildContext> {
             m_placeholder = m_placeholder[..m_maxLen];
         }
 
-        return new OnUpdate<InputMessage>(context) {
+        return new OnUpdate<KeyboardMessage>(context) {
             On = (message, ref readonly tree) => {
                 if (!message.IsPressed || (message.Key != '\b' && message.Key < LAST_UNPRINTABLE_CHR)) return;
 

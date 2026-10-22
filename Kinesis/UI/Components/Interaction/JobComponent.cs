@@ -30,8 +30,8 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
     /// <param name="onInput">Callback for the inputs.</param>
     /// <param name="island">Root island instance of the callback.</param>
     /// <param name="focusBased">Indcates the current callback globally listening input messages or not.</param>
-    public JobComponent(Action<InputMessage> onInput, Island island, bool focusBased): this()
-        => m_status = JobSystem.Current.AddCallback(onInput, island, focusBased);
+    public JobComponent(Action<KeyboardMessage> onInput, Island island, bool focusBased): this()
+        => m_status = JobSystem.Current.AddCallback(onInput, island, focusBased)!;
 
     /// <summary>
     /// Create a new <see cref="JobComponent"/>, which fires every render frame ends.
@@ -39,7 +39,7 @@ public sealed class JobComponent(): Component(id: ComponentRegistry.QueryCompone
     /// <param name="onRender">Callback for the end of the frame.</param>
     /// <param name="island">Root island instance of the callback.</param>
     public JobComponent(Action<RenderMessage> onRender, Island island): this()
-        => m_status = JobSystem.Current.AddCallback(onRender, island, false);
+        => m_status = JobSystem.Current.AddCallback(onRender, island, false)!;
 
     /// <summary>
     /// Request a intent to the <see cref="JobSystem"/>.

@@ -1,10 +1,6 @@
 ﻿using Kinesis.Core;
 using Kinesis.Core.Rendering;
-using Kinesis.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
+using System.Collections.ObjectModel;
 
 namespace Kinesis.UI.Components;
 
@@ -20,7 +16,7 @@ internal class DrawCalls: Component, IStaticType, IResetable {
     /// <summary>
     /// Internal chunks of the draw-calls.
     /// </summary>
-    internal IReadOnlyList<Island> ChunkHolders { get => m_islands; } 
+    internal ReadOnlyCollection<Island> ChunkHolders { get => m_islands.AsReadOnly(); } 
 
     public DrawCalls(): base(id: ComponentRegistry.QueryComponent(name: TYPE))
         => m_islands = new List<Island>(capacity: 16);

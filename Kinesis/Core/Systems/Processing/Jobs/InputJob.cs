@@ -6,13 +6,13 @@ using System.Text;
 namespace Kinesis.Core.Processing;
 
 /// <summary>
-/// Represents a job target for handling  <see cref="InputMessage"/>s.
+/// Represents a job target for handling  <see cref="KeyboardMessage"/>s.
 /// </summary>
 /// <param name="Root">Owner of the job.</param>
 /// <param name="Callback">Attached method to the job.</param>
 /// <param name="State">State information of the job.</param>
 /// <param name="IsGlobal">Indicates the current job can be called without focus managment.</param>
-internal sealed record InputJob(Island Root, Action<InputMessage> Callback, State<JobRequestIntent> State, bool IsGlobal): IJob<InputMessage> {
+internal sealed record InputJob(Island Root, Action<KeyboardMessage> Callback, State<JobRequestIntent> State, bool IsGlobal): IJob<KeyboardMessage> {
     private bool m_isFocused = false;
 
     /// <summary>
