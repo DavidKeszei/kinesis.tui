@@ -9,7 +9,7 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent connection information between two <see cref="Entity"/> instances.
 /// </summary>
-public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IPoolable {
+public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: TYPE_NAME)), IStaticType, IResetable {
     private const string TYPE_NAME = nameof(Hierarchy);
     private const int PARENT_INDEX = 0;
 
@@ -19,9 +19,9 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
     private ConnectionDirection m_direction = ConnectionDirection.DOWN;
 
     /// <summary>
-    /// Name of the component.
+    /// Name of the component type.
     /// </summary>
-    public static string Name { get => TYPE_NAME; }
+    public static string TypeName { get => TYPE_NAME; }
 
     /// <summary>
     /// Index of the parent on every <see cref="Entity"/> instance.
@@ -32,12 +32,6 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
     /// Start index of the children on every <see cref="Entity"/> instance.
     /// </summary>
     public static int ChildrenStart { get => CHILDREN_START_INDEX; }
-
-    /// <summary>
-    /// Simply implicit cast between <see cref="Hierarchy"/> and <see cref="Entity"/> classes.
-    /// </summary>
-    /// <param name="hierarchy">Holder of the child <see cref="Entity"/> instance. This can be <see langword="null"/>.</param>
-    public static implicit operator Entity(Hierarchy hierarchy) => hierarchy.Attached;
 
     /// <summary>
     /// Next <see cref="Entity"/> instance from this <see cref="Entity"/>.
@@ -53,7 +47,7 @@ public class Hierarchy(): Component(id: ComponentRegistry.QueryComponent(name: T
         m_child = null!;
         m_direction = ConnectionDirection.DOWN;
 
-        ComponentPool<Hierarchy>.Instance.Return(this);
+        ComponentPool<Hierarchy>.Shared.Return(this);
     }
 }
 

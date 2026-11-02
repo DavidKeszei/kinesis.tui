@@ -7,13 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Kinesis.Native;
-
-/* TODO(2026-06-16T01:50:54): Change implementation of the input at Windows side.
- * 
- * INSPECTIONS:
- * 	- Your inspections goes here...
- */ 	
+namespace Kinesis.Native;	
 
 /// <summary>
 /// Represents a Windows specific console information source.
@@ -23,38 +17,29 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
 
     private const int QUEUE_COUNT = 16;
     private const int WAIT = 5;
-
     private const uint READ_COUNT = 1;
 
+    private const int TRUE = 1;
+
     #endregion
-    #region P/INVOKE
+    #region NATIVE
 
     [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "ReadConsoleInputW")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool Read(nint handle, ref WindowsConsoleEventMsg message, uint count, out uint _);
-
-    [LibraryImport(libraryName: "kernel32.dll", EntryPoint = "PeekConsoleInputW")]
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool Peek(nint handle, ref WindowsConsoleEventMsg message, uint count, out uint _);
+    private static partial int Read(nint handle, ref WindowsConsoleEventMsg message, uint count, out uint _);
 
     #endregion
 
     private readonly Queue<InputKeyEventInfo> m_inputs = null!;
     private readonly Queue<ConsoleScaleInfo> m_layouts = null!;
 
-    private readonly Task m_watchman = null!;
-    private readonly WindowsConsoleMsgTag[] m_tags = null!;
-
-    private volatile bool m_isLocked = false;
+    private bool m_isLocked = false;
 
     public WindowsConsoleInfoProvider() {
-        m_inputs = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);
+        m_inputs  = new Queue<InputKeyEventInfo>(capacity: QUEUE_COUNT);
         m_layouts = new Queue<ConsoleScaleInfo>(capacity: QUEUE_COUNT);
 
-        m_tags = Enum.GetValues<WindowsConsoleMsgTag>();
-        m_watchman = Task.Run(async() => await Watch());
+        _ = Task.Run(async() => await Watch());
     }
 
     public bool Read(out ConsoleScaleInfo result) {
@@ -87,9 +72,7 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
         WindowsConsoleEventMsg message = default!;
 
         while (true) {
-            bool success = Peek(handle: StdHandle.Input, ref message, count: READ_COUNT, out uint _) && CheckIfSupported(tag: message.Tag);
-
-            if (success && Read(handle: StdHandle.Input, ref message, count: READ_COUNT, out _)) {
+            if (Read(handle: StdHandle.Input, ref message, count: READ_COUNT, out _) == TRUE) {
                 while (Interlocked.CompareExchange<bool>(ref m_isLocked, true, false) != false)
                     await Task.Delay(millisecondsDelay: WAIT);
 
@@ -101,22 +84,14 @@ internal sealed partial class WindowsConsoleInfoProvider: IConsoleSource<Console
                     case WindowsConsoleMsgTag.LAYOUT:
                         m_layouts.Enqueue(message.ConsoleWindowScale);
                         break;
+
+                    default:
+                        break;
                 }
 
                 Interlocked.Exchange<bool>(ref m_isLocked, false);
                 continue;
             }
-
-            /* Reads out the unsupported messages */
-            _ = Read(handle: StdHandle.Input, ref message, count: READ_COUNT, out _);
         }
-    }
-
-    private bool CheckIfSupported(WindowsConsoleMsgTag tag) {
-        for (int i = 0; i < m_tags.Length; ++i)
-            if (m_tags[i] == tag)
-                return true;
-
-        return false;
     }
 }

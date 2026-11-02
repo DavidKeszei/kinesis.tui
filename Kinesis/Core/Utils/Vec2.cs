@@ -2,14 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Kinesis;
+namespace Kinesis.Core;
 
 /// <summary>
 /// Represent a vector in the 2D space.
 /// </summary>
-public struct Vec2: IInterpolatable<Vec2> {
+[StructLayout(layoutKind: LayoutKind.Sequential, Pack = 4)]
+public struct Vec2: IInterpolatable<Vec2, Vec2, Vec2> {
     private float m_x = 0;
     private float m_y = 0;
 
@@ -82,7 +84,7 @@ public struct Vec2: IInterpolatable<Vec2> {
     /// <summary>
     /// Correcting the given <see cref="Vec2"/> instance to the terminal display.
     /// </summary>
-    /// <param name="scale">Source vector of the correction.</param>
+    /// <param name="scale">Content vector of the correction.</param>
     /// <param name="ratio">Scale ratio of the X axis.</param>
     /// <returns>Returns a new <see cref="Vec2"/> instance, which corrected to the terminal display.</returns>
     public static Vec2 AsSquare(Vec2 scale, float ratio = 2f) {

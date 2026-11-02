@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a simple loading indicator on the screen.
 /// </summary>
 public sealed class Spinner: Island, ICopyable<BuildContext> {
-    #region PREDEFINES
+    #region __PRESETS__
 
     private readonly static char[][] s_spinnerFrames = [
         ['|', '/', '-', '\\'],
@@ -38,7 +38,7 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     private int m_index = 0;
 
     /// <summary>
-    /// (Foreground) color of the <see cref="Spinner"/>.
+    /// Foreground color of the <see cref="Spinner"/>.
     /// </summary>
     public RGB Foreground { get => Get<Style>()!.AsRGB; set => Get<Style>()!.AsRGB = value; }
 
@@ -53,12 +53,19 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
     public TimeSpan Duration { init => m_changeTime = value.Ticks; }
 
     public Spinner(): base(count: 3) {
-        _ = Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.One), isUnique: true);
+        _ = Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static (x) => x.Value = Vec2.One), isUnique: true);
 
-        _ = Attach<Style>(ComponentPool<Style>.Instance.Rent<Style>(static (x) => x.As<RGB?>(tag: StyleTag.FOREGROUND, value: null!)), isUnique: true);
+        _ = Attach<Style>(ComponentPool<Style>.Shared.Rent(static (x) => x.As<RGB?>(name: Style.FOREGROUND, tag: StyleDataType.COLOR, value: null!)), isUnique: true);
     }
 
+    /// <summary>
+    /// Create a spinner based on the predefined constansts.
+    /// </summary>
+    /// <param name="preset">Enumeration value of the preset.</param>
+    /// <param name="durationPerCycle">Duration of a cycle.</param>
+    /// <param name="color">Foreground color of the <see cref="Spinner"/>.</param>
+    /// <returns>Returns a new <see cref="Spinner"/> instance.</returns>
     public static Spinner Create(SpinnerPreset preset, TimeSpan durationPerCycle, RGB? color = null) {
         if (!Enum.IsDefined<SpinnerPreset>(preset))
             return null!;
@@ -77,17 +84,42 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
         };
     }
 
+    /// <summary>
+    /// Create a spinner from <paramref name="states"/>.
+    /// </summary>
+    /// <param name="states">Simple collection of states as <see langword="char"/>s.</param>
+    /// <param name="durationPerCycle">Duration of a cycle.</param>
+    /// <param name="color">Foreground color of the <see cref="Spinner"/>.</param>
+    /// <returns>Returns a new <see cref="Spinner"/> instance.</returns>
+    public static Spinner Create(ReadOnlySpan<char> states, TimeSpan durationPerCycle, RGB? color = null!) {
+        char[] copy = new char[states.Length];
+        states.CopyTo(destination: copy);
+
+        if (color != null) {
+            return new Spinner() {
+                States     = copy,
+                Duration   = durationPerCycle,
+                Foreground = color.Value 
+            };
+        }
+
+        return new Spinner() {
+            States   = copy,
+            Duration = durationPerCycle,
+        };
+    }
+
     public void Copy(ref BuildContext from) {
-        from.Inherit<Style>(this, @default: Style.CreateFromRGB(tag: StyleTag.FOREGROUND, color: RGB.White));
+        from.InheritStyle(this, @default: Style.CreateFromRGB(name: Style.FOREGROUND, tag: StyleDataType.COLOR, color: RGB.White));
 
         from.SetPivot<Position>(this);
         from.SetPivot<Scale>(this);
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        return new AnimatedArea<AnimatedNumber<int>>() {
-            Selector = (text) => m_index,
-            Applier = (text, value) => {
+        return new AnimatedArea<AnimatedNumber<int>, Text>() {
+            Getter = (_) => m_index,
+            Setter = (text, value) => {
                 m_index = value;
                 text.Get<TextRenderer>()!.Write(text: [ m_spinnerStates[m_index % m_spinnerStates.Length] ]);
             },
@@ -96,9 +128,9 @@ public sealed class Spinner: Island, ICopyable<BuildContext> {
             To = m_spinnerStates.Length,
 
             IsPeriodic = true,
-            Content = new UIText {
+            Content = new Text {
                 Name = $"__{nameof(Spinner)}__{Guid.CreateVersion7()}__",
-                Text = $"{m_spinnerStates[m_index]}"
+                Content = $"{m_spinnerStates[m_index]}"
             }
         };
     }

@@ -20,6 +20,11 @@ public class Entity: IDisposable {
     private readonly Dictionary<int, int> m_uniqueComponents = null!;
     private readonly Queue<int> m_emptySpaces = null!;
 
+    /* TODO(2026-07-16T23:44:03): Create a flexible storage for components, which can be dynamic & fixed buffer. (Status: Planned⚠️)
+     * 
+     * INSPECTIONS:
+     * 	- The fixed array MUST be rented from the ArrayPool<T> for minimizing the garbage, when an entity disposed (by the user or .Rebuild())
+     */ 	
     private readonly Component[] m_components = null!;
     private readonly string m_name = string.Empty;
 
@@ -41,9 +46,8 @@ public class Entity: IDisposable {
     /// <summary>
     /// Create a new <see cref="Entity"/> instance.
     /// </summary>
-    public Entity(int count = MAX_COMPONENT_COUNT): this() {
-        m_components = ArrayPool<Component>.Shared.Rent(minimumLength: count);
-    }
+    public Entity(int count = MAX_COMPONENT_COUNT): this() 
+        => m_components = ArrayPool<Component>.Shared.Rent(minimumLength: count);
 
     protected Entity() {
         m_version = 0;
@@ -65,8 +69,8 @@ public class Entity: IDisposable {
         if (component == null) return false;
         bool hasEmptySlot = m_emptySpaces.TryDequeue(out int slot);
 
-        if(isUnique || component.TypeOf(type: RenderComponent.Name)) {
-            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.Name), !hasEmptySlot ? m_lastEntityIndex : slot))
+        if(isUnique || component.TypeOf(type: RenderComponent.TypeName)) {
+            if(!m_uniqueComponents.TryAdd(ComponentRegistry.QueryComponent(name: T.TypeName), !hasEmptySlot ? m_lastEntityIndex : slot))
                 return false;
         }
 
@@ -90,14 +94,14 @@ public class Entity: IDisposable {
     public T? Get<T>(int index = 0) where T: Component, IStaticType {
         if (index < 0) return null!;
 
-        if (m_uniqueComponents.TryGetValue(ComponentRegistry.QueryComponent(T.Name), out int i))
+        if (m_uniqueComponents.TryGetValue(ComponentRegistry.QueryComponent(T.TypeName), out int i))
             return (T)m_components[i];
 
         int current = 0;
         for(; i < m_lastEntityIndex; ++i) {
             if (m_components[i] == null) continue;
 
-            if (m_components[i].TypeOf(T.Name) && current++ == index)
+            if (m_components[i].TypeOf(T.TypeName) && current++ == index)
                 return (T)m_components[i];
         }
 
@@ -112,12 +116,12 @@ public class Entity: IDisposable {
     public void Remove<T>(int index = 0) where T: Component, IStaticType {
         if (index < 0) return;
 
-        if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.Name), out int i)) {
-            if (m_components[i] is IPoolable reset) 
+        if (m_uniqueComponents.TryGetValue(key: ComponentRegistry.QueryComponent(name: T.TypeName), out int i)) {
+            if (m_components[i] is IResetable reset) 
                 reset.Reset();
 
             m_components[i] = null!;
-            m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.Name));
+            m_uniqueComponents.Remove(key: ComponentRegistry.QueryComponent(name: T.TypeName));
 
             m_emptySpaces.Enqueue(i);
             ++m_version;
@@ -128,9 +132,9 @@ public class Entity: IDisposable {
         for (; i < m_lastEntityIndex; ++i) {
             if (m_components[i] == null) continue;
 
-            if (m_components[i].TypeOf(type: T.Name) && indexOf++ == index) {
+            if (m_components[i].TypeOf(type: T.TypeName) && indexOf++ == index) {
 
-                if (m_components[i] is IPoolable reset) reset.Reset();
+                if (m_components[i] is IResetable reset) reset.Reset();
                 m_components[i] = null!;
 
                 m_emptySpaces.Enqueue(i);
@@ -152,12 +156,12 @@ public class Entity: IDisposable {
     /// Initialize the current <see cref="Entity"/> instance with some basic render properties.
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="RenderComponent"/>.</typeparam>
-    protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IPoolable, new() {
-        _ = this.Attach<Position>(ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = this.Attach<Scale>(ComponentPool<Scale>.Instance.Rent<Scale>(static(x) => x.Value = Vec2.Auto), isUnique: true);
+    protected void InitRenderEntityWith<T>() where T: RenderComponent, IStaticType, IResetable, new() {
+        _ = this.Attach<Position>(ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Scale>(ComponentPool<Scale>.Shared.Rent(static(x) => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = this.Attach<T>(ComponentPool<T>.Instance.Rent<T>(), isUnique: true);
-        _ = this.Attach<Hierarchy>(ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static(x) => x.Direction = ConnectionDirection.UP));
+        _ = this.Attach<T>(ComponentPool<T>.Shared.Rent(), isUnique: true);
+        _ = this.Attach<Hierarchy>(ComponentPool<Hierarchy>.Shared.Rent(static(x) => x.Direction = ConnectionDirection.UP));
     }
 
     private void ReturnRendtedComponents() {
@@ -165,7 +169,7 @@ public class Entity: IDisposable {
 
         m_disposed = true;
         foreach (Component comp in m_components) {
-            if (comp is IPoolable rent)
+            if (comp is IResetable rent)
                 rent.Reset();
         }
 

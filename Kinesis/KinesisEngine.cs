@@ -1,25 +1,16 @@
 ﻿using Kinesis.Core;
-using Kinesis.Native;
 using Kinesis.Core.Rendering;
+using Kinesis.Core.Utils;
+using Kinesis.Native;
 using Kinesis.UI;
 using Kinesis.UI.Components;
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
-using Kinesis.Core.Utils;
 
 namespace Kinesis;
 
 /// <summary>
-/// Represent the heart of the library: This connects all systems to one class.
+/// Represent the heart of the library: this connects all systems to one class.
 /// </summary>
-public sealed partial class KinesisEngine: ISystemProvider {
-    #region PREDEFINES
-    private const string USE_ALTERNATE_BUFFER = $"\e[?1049h";
-    private const string UNUSE_ALTERNATE_BUFFER = "\e[?1049l";
-    #endregion
-
+public sealed class KinesisEngine : ISystemProvider {
     private readonly Renderer m_renderer = null!;
     private readonly InputSystem m_input = null!;
 
@@ -29,25 +20,26 @@ public sealed partial class KinesisEngine: ISystemProvider {
     private readonly LayoutSystem m_layoutSystem = null!;
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
-    private readonly State<LayoutInfo> m_layoutInfo = null!;
-    private readonly State<JobSystemStateInfo> m_workSyncState = null!;
+    private readonly RefState<LayoutInfo> m_layoutInfo = null!;
+    private readonly ValueState<(JobSystemState State, float ProcessTime)> m_workSyncState = null!;
 
-    private readonly ConsoleSourceInfo m_consoleSourceInfoProvider = default!;
+    private readonly PlatformConsoleInfo m_consoleSourceInfoProvider = default;
     private readonly string m_title = string.Empty;
 
     /// <summary>
     /// Create a new <see cref="KinesisEngine"/> instance.
     /// </summary>
+    /// <param name="title">Title of the window.</param>
     /// <exception cref="PlatformNotSupportedException"/>
     public KinesisEngine(string? title = null!, int x = -1, int y = -1) {
         Console.Out.Write(value: AnsiCommand.EnableAlternateBuffering);
         Console.Out.Write(value: AnsiCommand.WrapDisable);
 
-        m_title = $"\e]0;{title}\a" ?? $"\e]0;Untitled\a";
-        m_consoleSourceInfoProvider = new ConsoleSourceInfo();
+        m_title = m_title == null ? $"\e]0;Untitled\a" : $"\e]0;{title}\a";
+        m_consoleSourceInfoProvider = new PlatformConsoleInfo();
 
-        m_layoutInfo = new ValueState<LayoutInfo>();
-        m_workSyncState = new RefState<JobSystemStateInfo>(@default: new JobSystemStateInfo());
+        m_layoutInfo = new RefState<LayoutInfo>();
+        m_workSyncState = new ValueState<(JobSystemState State, float ProcessTime)>(@default: (JobSystemState.WAIT_FOR_RENDERER, .0f));
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -56,13 +48,14 @@ public sealed partial class KinesisEngine: ISystemProvider {
         m_navigator = new NavigationSystem(provider: this);
 
         m_renderer = new Renderer(workState: m_workSyncState, layoutState: m_layoutInfo);
-        m_customSystems = new List<SystemInvocationInfo>();
+        m_customSystems = new List<SystemInvocationInfo>() {
+            new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL)
+        };
 
-        m_customSystems.Add(new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL));
         RegisterBuiltInComponents();
     }
 
-    public T? GetSystem<T>() where T: class, ISystem {
+    public T? GetSystem<T>() where T : class, ISystem {
         for (int i = 0; i < m_customSystems.Count; ++i) {
             if (m_customSystems[i].When == SystemInvocationTime.ON_CALL && m_customSystems[i].System is T) {
 
@@ -76,8 +69,19 @@ public sealed partial class KinesisEngine: ISystemProvider {
         return default!;
     }
 
-    public bool RegisterComponent<T>() where T: Component, IStaticType
-        => ComponentRegistry.RegisterComponent<T>(name: T.Name);
+    /// <summary>
+    /// Setting up a limit to the rendering.
+    /// </summary>
+    /// <param name="fps">Maximum value of the fps.</param>
+    public void LimitFPS(uint fps) => m_renderer.FPSLimit = fps;
+
+    /// <summary>
+    /// Register a custom component to the engine.
+    /// </summary>
+    /// <typeparam name="T">Type of the component.</typeparam>
+    /// <returns>Returns <see langword="true"/>, if the registration was sucessful. Otherwise returns <see langword="false"/>.</returns>
+    public bool RegisterComponent<T>() where T : Component, IStaticType
+        => ComponentRegistry.RegisterComponent<T>(name: T.TypeName);
 
     /// <summary>
     /// Add a system to the engine.
@@ -92,8 +96,8 @@ public sealed partial class KinesisEngine: ISystemProvider {
     /// </summary>
     /// <param name="name">Name of the route.</param>
     /// <param name="onCreate">Creation method of the <see cref="Island"/>.</param>
-    /// <returns>Return <see langword="true"/>, if the route is successfully registered. Otherwise return <see langword="false"/>.</returns>
-    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T: Island
+    /// <returns>Returns <see langword="true"/>, if the route is successfully registered, otherwise returns <see langword="false"/>.</returns>
+    public bool RegisterIsland<T>(string name, Func<ISystemProvider, T> onCreate) where T : Island
         => m_navigator.Register(name, onCreate);
 
     /// <summary>
@@ -107,18 +111,17 @@ public sealed partial class KinesisEngine: ISystemProvider {
         JobSystem.Current.AddRenderSync(sync: m_workSyncState);
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
-        _ = Task.Run(action: () => m_worker.Run(), token);
-        _ = Task.Run(action: () => m_input.Run(), token);
+        _ = Task.Run(action: m_worker.Run, token);
+        _ = Task.Run(action: m_input.Run, token);
 
-        _ = Task.Run(action: () => m_layoutSystem.Run(), token);
-        while(!token.IsCancellationRequested) {
-
+        _ = Task.Run(action: m_layoutSystem.Run, token);
+        while (!token.IsCancellationRequested) {
             /* Render the frame to the screen/terminal window. */
             m_renderer.Run(calls: m_navigator.Current.Get<DrawCalls>()!);
 
             if (!firstRun) {
                 Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
-                m_worker.AddRenderMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                m_worker.AddMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea, m_renderer.FrameCount));
             }
             else {
                 Console.Out.Write(m_title);
@@ -128,14 +131,12 @@ public sealed partial class KinesisEngine: ISystemProvider {
 
         /* Run the shutdown systems. */
         await Run(invocation: SystemInvocationTime.ON_END);
-        Console.Out.Write(UNUSE_ALTERNATE_BUFFER);
+        Console.Out.Write(AnsiCommand.DisableAlternateBuffering);
     }
 
     private Task Run(SystemInvocationTime invocation) {
-        ISystem system = null!;
-
         foreach (SystemInvocationInfo systemInfo in m_customSystems.Where(x => x.When == invocation)) {
-            system = systemInfo.System ?? systemInfo.Creation(this);
+            ISystem system = systemInfo.System ?? systemInfo.Creation(this);
 
             if (system.Behavior == SystemBehavior.DYNAMIC && systemInfo.System is IDynamicSystem dynamic)
                 dynamic.Run();
@@ -155,6 +156,6 @@ public sealed partial class KinesisEngine: ISystemProvider {
         this.RegisterComponent<Style>();
 
         this.RegisterComponent<JobComponent>();
-        this.RegisterComponent<ContentComponent>();
+        this.RegisterComponent<RebuildContent>();
     }
 }

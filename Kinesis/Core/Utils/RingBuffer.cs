@@ -7,7 +7,7 @@ namespace Kinesis.Utils;
 /// <summary>
 /// Represent a circular buffer for <typeparamref name="T"/> instances.
 /// </summary>
-internal class RingBuffer<T> {
+internal sealed class RingBuffer<T> {
     #region PREDEFINES
 
     private const byte TRUE = 1;

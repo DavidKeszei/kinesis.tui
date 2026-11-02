@@ -1,26 +1,22 @@
 ﻿using Kinesis.Core;
 using Kinesis.Core.Rendering;
-using Kinesis.UI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
+using System.Collections.ObjectModel;
 
 namespace Kinesis.UI.Components;
 
 /// <summary>
 /// Represent a collection of "draw-calls" as separated <see cref="Island"/>s.
 /// </summary>
-internal class DrawCalls: Component, IStaticType, IPoolable {
+internal class DrawCalls: Component, IStaticType, IResetable {
     private const string TYPE = nameof(DrawCalls);
     private readonly List<Island> m_islands = null!;
 
-    public static string Name { get => TYPE; }
+    public static string TypeName { get => TYPE; }
 
     /// <summary>
     /// Internal chunks of the draw-calls.
     /// </summary>
-    internal IReadOnlyList<Island> ChunkHolders { get => m_islands; } 
+    internal ReadOnlyCollection<Island> ChunkHolders { get => m_islands.AsReadOnly(); } 
 
     public DrawCalls(): base(id: ComponentRegistry.QueryComponent(name: TYPE))
         => m_islands = new List<Island>(capacity: 16);
@@ -35,7 +31,7 @@ internal class DrawCalls: Component, IStaticType, IPoolable {
 
     public void Reset() {
         m_islands.Clear();
-        ComponentPool<DrawCalls>.Instance.Return(this);
+        ComponentPool<DrawCalls>.Shared.Return(this);
     }
 
     /// <summary>

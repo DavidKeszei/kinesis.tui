@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Kinesis.UI;
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Kinesis.UI;
 
 namespace Kinesis.Core;
 
 /// <summary>
 /// Represent a stack-based navigator in the library.
 /// </summary>
-public class NavigationSystem: INavigator {
+public sealed class NavigationSystem: INavigator {
     private readonly Dictionary<string, NavigationTarget> m_routes = null!;
     private readonly Stack<Island> m_navigationFrame = null!;
 
@@ -24,7 +25,12 @@ public class NavigationSystem: INavigator {
             if (!m_navigationFrame.TryPeek(out Island? page))
                 return null!;
 
-            if (!page.IsBuilt)
+            /* TODO(2026-07-09T20:30:17): Multiple (re)build occurs, when the "root" Island setted to isBuilt := false. (Status: Done✅)
+             * 
+             * INSPECTIONS:
+             * 	- The Rebuild() & BuildTree() runs parallel, when the Island.m_isBuilt setted false
+             */ 	
+            if (!page.IsBuilt && page.BuiltCount == 0)
                 page.BuildTree(context: new BuildContext(current: page) { Root = page });
 
             return page;
@@ -64,6 +70,9 @@ public class NavigationSystem: INavigator {
     public void NavigateTo(Func<ISystemProvider, Island> page) {
         Island target = page(m_provider);
         target.IsActive = true;
+
+        if (target is INavigationHandler handler)
+            handler.OnNavigation(isBack: false);
 
         m_navigationFrame.Push(target);
     }

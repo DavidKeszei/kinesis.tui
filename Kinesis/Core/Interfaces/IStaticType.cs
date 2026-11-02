@@ -12,5 +12,5 @@ public interface IStaticType {
     /// <summary>
     /// Name of the "type".
     /// </summary>
-    public abstract static string Name { get; }
+    public abstract static string TypeName { get; }
 }

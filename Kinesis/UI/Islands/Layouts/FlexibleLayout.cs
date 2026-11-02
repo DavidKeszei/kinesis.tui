@@ -12,7 +12,7 @@ namespace Kinesis.UI;
 /// Represents a flex-like space-managert on one direction.
 /// </summary>
 public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLayout<List<uint>> {
-    private string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
+    private readonly string m_list = $"__flexLayout__{Guid.CreateVersion7()}__";
 
     private List<string> m_childIds = null!;
     private List<uint> m_ratios = null!;
@@ -23,7 +23,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private int m_childCount = 0;
     private int m_sumOfRatios = 0;
 
-    private Axis m_direction = Axis.X;
+    private readonly Axis m_direction = Axis.X;
 
     public List<Entity> Content {
         set {
@@ -37,8 +37,6 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
             m_childCount = value.Count;
 
             for (int i = 0; i < value.Count; ++i) {
-                Scale? scale = value[i].Get<Scale>();
-
                 if (m_childIds.Count <= i) m_childIds.Add(item: $"__flexItem{i}__{Guid.CreateVersion7()}__");
                 else m_childIds[i] = $"__flexItem{i}__{Guid.CreateVersion7()}__";
 
@@ -48,13 +46,13 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
                 });
 
                 float max = m_direction == Axis.X ? 
-                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.X:
-                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.Y;
+                                value[i].Get<Scale>()?.Value.Y ?? Vec2.Auto.Y:
+                                value[i].Get<Scale>()?.Value.X ?? Vec2.Auto.X;
 
                 if (max > m_maxCrossAxisValue) m_maxCrossAxisValue = max;
             }
 
-            Get<ContentComponent>()!.Content = new UIStack {
+            Get<RebuildContent>()!.Content = new Stack {
                 Name = m_list,
                 Content = boxes
             };
@@ -67,14 +65,14 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     /// Weigths/Ratios of the elements for the dividing.
     /// </summary>
     /// <remarks>
-    /// Remark: If given list less than the content count, then remained content weigths is equals with 1.
+    /// If given list less than the content count, then remained content weigths per slot is equals with 1.
     /// </remarks>
     public List<uint> Ratios {
         set {
             if (value == null) return;
             m_ratios ??= new List<uint>();
 
-            for (int i = 0; i < m_childCount; ++i) {
+            for (int i = 0; i < value.Count; ++i) {
                 uint ratio = i >= value.Count ? 1 : uint.Max(1, value[i]);
 
                 if (i >= m_ratios.Count) m_ratios.Add(ratio);
@@ -91,8 +89,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     public Axis Direction { get => m_direction; init => m_direction = value; }
 
     public FlexibleLayout(): base(count: 3) {
-        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static (x) => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static (x) => x.Value = Vec2.Auto), isUnique: true);
     }
 
     public void Copy(ref BuildContext context) {
@@ -101,7 +99,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     }
 
     protected override Entity? Build(ref readonly BuildContext context) {
-        if (m_ratios == null || m_ratios.Count == 0) CreateDefaultRatios();
+        if (m_ratios == null || m_ratios.Count == 0 || m_ratios.Count < m_childCount)
+            CreateDefaultRatios();
 
         return new OnUpdate<RenderMessage>(context) {
             On = (message, ref readonly tree) => {
@@ -124,7 +123,7 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
                 m_previousScale = message.Scale;
             },
-            Content = Get<ContentComponent>()!.Content ?? null!
+            Content = Get<RebuildContent>()!.Content ?? null!
         };
     }
 
@@ -152,8 +151,8 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
 
     private float CalculateRatio(Vec2 scale) {
         float divideAxisValue = m_direction switch {
-            Axis.Y => scale!.Y,
-            Axis.X => scale!.X,
+            Axis.Y => scale.Y,
+            Axis.X => scale.X,
             _ => .0f
         };
 
@@ -177,11 +176,12 @@ public sealed class FlexibleLayout: Island, ICopyable<BuildContext>, IAdaptiveLa
     private void CreateDefaultRatios() {
         if (m_childCount == 0) return;
 
-        m_ratios = new List<uint>(capacity: m_childCount - 1);
-        for (int i = 0; i < m_childCount; ++i)
-            m_ratios.Add(1);
+        m_ratios ??= new List<uint>(capacity: m_childCount - 1);
 
-        m_sumOfRatios = m_childCount;
+        for (int i = m_ratios.Count; i < m_childCount; ++i) {
+            m_ratios.Add(1);
+            m_sumOfRatios += 1;
+        }
     }
 }
 

@@ -12,7 +12,9 @@ namespace Kinesis.UI.Components;
 /// <summary>
 /// Represent a text renderer component.
 /// </summary>
-public class TextRenderer(): RenderComponent, IPoolable {
+public class TextRenderer(): RenderComponent, IResetable {
+    private const string POINT_CLIP = "...";
+
     private char[] m_buffer = null!;
     private int m_len = 0;
 
@@ -25,11 +27,16 @@ public class TextRenderer(): RenderComponent, IPoolable {
     }
 
     /// <summary>
+    /// Length of the current rendered text as <see cref="int"/>,
+    /// </summary>
+    public int Length { get => m_len; }
+
+    /// <summary>
     /// Remove characters from internal buffer.
     /// </summary>
     /// <param name="count">Amount of the remove.</param>
     public void Remove(int count) {
-        if (count > m_len) {
+        if (count > m_len || m_len - count < 0) {
             m_len = 0;
             return;
         }
@@ -41,20 +48,42 @@ public class TextRenderer(): RenderComponent, IPoolable {
     /// Write into the internal buffer a specific <paramref name="text"/>.
     /// </summary>
     /// <param name="text">New value of the internal buffer.</param>
-    public void Write(ReadOnlySpan<char> text) {
-        if ((m_buffer?.Length ?? m_len) < text.Length) {
-            m_len = text.Length;
+    /// <param name="from">Starting point of the write. (If you want replace the text, then leave it at zero.)</param>
+    /// <returns>Returns the write count of the call. This <b>always</b> equals with length of the <see cref="text"/>.</returns>
+    public int Write(ReadOnlySpan<char> text, int from = 0) {
+        if ((m_buffer?.Length ?? m_len) < from + text.Length) {
+            Span<char> temp = stackalloc char[from];
+            Span<char> bufferView = m_buffer;
+
+            bufferView[..from].CopyTo(destination: temp);
+            m_len = text.Length + from;
 
             if(m_buffer != null) ArrayPool<char>.Shared.Return(m_buffer, true);
             m_buffer = ArrayPool<char>.Shared.Rent(minimumLength: m_len);
+
+            bufferView = m_buffer;
+            if (from != 0)
+                temp.CopyTo(destination: bufferView[..from]);
         }
 
-        for (int i = 0; i < m_len; ++i) {
-            if (text.Length <= i) break;
-            else m_buffer![i] = text[i];
+        m_len = text.Length + (int)from;
+
+        for (int i = (int)from; i < m_len; ++i) {
+            if (text.Length + from <= i) break;
+            else m_buffer![i] = text[i - (int)from];
         }
 
-        m_len = text.Length;
+        return text.Length;
+    }
+
+    public int Read(Span<char> destination, int from = 0) {
+        if (from > m_len || from < 0) return -1;
+        int len = m_len > destination.Length ? destination.Length : m_len;
+
+        for (int i = from; i < from + len; ++i)
+            destination[i - from] = m_buffer[i];
+
+        return len - from;
     }
 
     public override void Reset() {
@@ -66,7 +95,7 @@ public class TextRenderer(): RenderComponent, IPoolable {
             m_buffer = null!;
         }
 
-        ComponentPool<TextRenderer>.Instance.Return(this);
+        ComponentPool<TextRenderer>.Shared.Return(this);
     }
 
     internal protected override void Render(in Canvas buffer, int version, StyleEnumerator styles) {
@@ -82,33 +111,37 @@ public class TextRenderer(): RenderComponent, IPoolable {
         Style? fg = null!;
         Style? attr = null!;
 
-        bool isMissing = (!m_cache.TryGetValue(key: StyleTag.BACKGROUND, out bg) && !bg!.TypeOf(Style.Name)) ||
-                         (!m_cache.TryGetValue(key: StyleTag.FOREGROUND, out fg) && !fg!.TypeOf(Style.Name));
+        bool isMissing = (!m_cache.TryGetValue(key: Style.BACKGROUND, out bg) && !bg!.TypeOf(Style.TypeName)) ||
+                         (!m_cache.TryGetValue(key: Style.FOREGROUND, out fg) && !fg!.TypeOf(Style.TypeName));
 
-        _ = m_cache.TryGetValue(key: StyleTag.FONT_ATTR, out attr);
+        _ = m_cache.TryGetValue(key: Style.FONT_ATTR, out attr);
         Vec2 requiredScale = new Vec2(x: m_len / buffer.Scale.Y, y: m_len % buffer.Scale.Y);
 
         for(int x = 0; x < buffer.Scale.X && x <= requiredScale.X; ++x) {
-            for(int y = 0; y < buffer.Scale.Y && y <= requiredScale.Y; ++y) {
+            ref ANSIChar ch = ref buffer[x, 0];
 
-                ref ANSIChar ch = ref buffer[x, y];
+            if (isMissing) {
+                if (x % 2 == 0) ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
+                else ch.Background = x % 2 != 0 ? RGB.Black : RGB.Purple;
 
-                if(isMissing) {
-                    if(y % 2 == 0) ch.Background = x % 2 == 0 ? RGB.Purple : RGB.Black;
-                    else ch.Background = x % 2 != 0 ? RGB.Black : RGB.Purple;
-
-                    ch.Character = ' ';
-                }
-                else {
-                    ch.Character = m_buffer[x + (int)buffer.Start.X];
-
-                    ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
-                    ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
-
-                    if (attr == null) ch.Styles = TextDecoration.NONE;
-                    else ch.Styles = ((Style)attr).AsAttribute;
-                }
+                ch.Character = ' ';
             }
+            else {
+                ch.Character = m_buffer[x + (int)buffer.Start.X];
+                ch.Background = RGB.Blend(bg.AsRGB, ch.Background);
+
+                ch.Foreground = RGB.Blend(fg.AsRGB, ch.Foreground);
+
+                if (attr == null) ch.Styles = TextDecoration.NONE;
+                else ch.Styles = ((Style)attr).AsAttribute;
+            }
+        }
+
+        if (requiredScale.X > buffer.Scale.X) {
+            int len = int.Clamp((int)(requiredScale.X - buffer.Scale.X), 0, int.Min(POINT_CLIP.Length, (int)(buffer.Scale.X)));
+
+            for (int i = 0; i < len; ++i)
+                buffer[(int)buffer.Scale.X - 1 - i, 0].Character = POINT_CLIP[len - 1 - i];
         }
     }
 
@@ -116,17 +149,17 @@ public class TextRenderer(): RenderComponent, IPoolable {
         m_cache.Clear();
         foreach(Style style in styles) {
             
-            switch(style.Tag) {
-                case StyleTag.FOREGROUND:
-                    m_cache.Add(StyleTag.FOREGROUND, style);
+            switch(style.Name) {
+                case Style.FOREGROUND:
+                    m_cache.Add(Style.FOREGROUND, style);
                     break;
 
-                case StyleTag.BACKGROUND:
-                    m_cache.Add(StyleTag.BACKGROUND, style);
+                case Style.BACKGROUND:
+                    m_cache.Add(Style.BACKGROUND, style);
                     break;
 
-                case StyleTag.FONT_ATTR:
-                    m_cache.Add(StyleTag.FONT_ATTR, style);
+                case Style.FONT_ATTR:
+                    m_cache.Add(Style.FONT_ATTR, style);
                     break;
             }
         }

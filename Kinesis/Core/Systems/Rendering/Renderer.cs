@@ -10,27 +10,37 @@ using System.Text;
 namespace Kinesis.Core.Rendering;
 
 /// <summary>
-/// Represent a IMGUI/immediate-mode based renderer.
+/// Represents a IMGUI/immediate-mode based renderer.
 /// </summary>
 internal sealed class Renderer {
     #region PREDEFINES
-    private const float NS_TO_MS = 1000f;
-    private const float LIMIT = 1f;
+    
+    /// <summary>
+    /// Stack allocation size for creating VT100/Ansi escape literals.
+    /// </summary>
+    private const int STRING_BUILDER_STACK_SPACE = 1 << 13;
+    private const float FPS_CONVERT              = 1000;
 
-    private const float FPS_CONVERT = 1000f;
-    private const int STRING_BUILDER_STACK_SPACE = 16_384;
+    /// <summary>
+    /// Value of  one tick in milliseconds. (10'000 tick = 1ms)
+    /// </summary>
+    private const float TICK_TO_MS = 10_000f;
 
-    private static readonly Vec2 USE_FULLSCREEN_AS_LIMIT = Vec2.One * float.MinValue;
     #endregion
 
-    private ConsoleBuffer m_backbuffer = default;
+    private ConsoleBuffer m_backbuffer  = default;
     private ConsoleBuffer m_frontbuffer = default;
 
-    private readonly State<LayoutInfo> m_layoutState = null!;
-    private readonly State<JobSystemStateInfo> m_workState = null!;
+    private readonly RefState<LayoutInfo> m_layoutState       = null!;
+    private readonly ValueState<(JobSystemState State, float ProcessTime)> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
+    private SpinWait m_spinWait = new SpinWait();
+
+    private float m_frameCount = 0;
     private float m_delta = .0f;
+
+    private float m_targetFPS = 1 / 60f;
 
     /// <summary>
     /// Current frame generation time in ms.
@@ -42,7 +52,17 @@ internal sealed class Renderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public Renderer(State<JobSystemStateInfo> workState, State<LayoutInfo> layoutState) {
+    /// <summary>
+    /// Maximum value of the FPS (frame per second) by the <see cref="Renderer"/> instance.
+    /// </summary>
+    public uint FPSLimit { get => (uint)(m_targetFPS / FPS_CONVERT); set => m_targetFPS = 1f / value * FPS_CONVERT; }
+    
+    /// <summary>
+    /// Count of the frames from begin of the rendering.
+    /// </summary>
+    public float FrameCount { get => m_frameCount; }
+
+    public Renderer(ValueState<(JobSystemState State, float ProcessTime)> workState, RefState<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -58,47 +78,59 @@ internal sealed class Renderer {
     }
         
     public void Run(DrawCalls calls) {
+        if(m_workState.Value.State != JobSystemState.WAIT_FOR_RENDERER) return;
         long start = Stopwatch.GetTimestamp();
 
-        if (m_workState.Value.State == WorkerSystemState.WAIT_FOR_RENDERER) {
-            bool fullRedrawRequested = OnLayoutChange();
+        bool fullRedrawRequested = OnLayoutChange();
+        foreach (Entity call in calls) {
+            Vec2 scale = call.Get<Scale>()!.Value;
+            Vec2 position = call.Get<Position>()!.Absolute;
 
-            foreach(Entity call in calls) {
-                Vec2 scale = call.Get<Scale>()!.Value;
-                Vec2 position = call.Get<Position>()!.Absolute;
+            if (!InBuffer(position: position, scale: scale))
+                continue;
 
-                if (!InBuffer(position: position, scale: scale)) 
-                    continue;
+            RenderComponent renderLogic = call.Get<RenderComponent>()!;
+            Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
-                RenderComponent renderLogic = call.Get<RenderComponent>()!;
-                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
-
-                using StyleEnumerator style = new StyleEnumerator(entity: call);
-                renderLogic.Render(buffer: in canvas, version: call.Version, style);
-            }
-
-            Diffing(fullRedrawRequested);
+            using StyleEnumerator style = new StyleEnumerator(entity: call);
+            renderLogic.Render(buffer: in canvas, version: call.Version, style);
         }
 
-        m_workState.Value.State = WorkerSystemState.OPEN_FOR_PROCESSING;
-        float delta = (Stopwatch.GetTimestamp() - start) / NS_TO_MS;
+        Diffing(fullRedrawRequested);
+        m_frameCount++;
 
-        if (delta <= LIMIT)
-            Thread.Sleep(millisecondsTimeout: (int)(LIMIT - delta));
+        long end = Stopwatch.GetTimestamp();
+        float delta = (end / TICK_TO_MS) - (start / TICK_TO_MS) + m_workState.Value.ProcessTime;
 
-        m_delta = float.Lerp(m_delta, delta, .1f);
+        m_workState.Value = m_workState.Value with { State = JobSystemState.OPEN_FOR_PROCESSING };
+
+        if (delta <= m_targetFPS) {
+            float waitTime = m_targetFPS - delta;
+            start = Stopwatch.GetTimestamp();
+
+            float time = (Stopwatch.GetTimestamp() - start) / TICK_TO_MS;
+
+            while (time <= waitTime) {
+                m_spinWait.SpinOnce();
+                time = (Stopwatch.GetTimestamp() - start) / TICK_TO_MS;
+            };
+
+            delta = m_targetFPS;
+        }
+
+        m_delta = float.Lerp(m_delta, delta, amount: .1f);
     }
 
     public void Diffing(bool full) {
-        Console.Out.Write(value: AnsiCommand.StartBufferLoad);
+        Console.Out.Write(value: AnsiCommand.StartBufferLoad); //This fixing the vertical sync of the terminal
         ANSIStringBuilder builder = new ANSIStringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {
             for (int x = 0; x < m_backbuffer.Scale.X; ++x) {
-                ref ANSIChar backChar = ref m_backbuffer[x, y];
-                ref ANSIChar frontChar = ref m_frontbuffer[x, y];
+                ref vtchar_t backChar = ref m_backbuffer[x, y];
+                ref vtchar_t frontChar = ref m_frontbuffer[x, y];
 
-                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new ANSIChar()))) {
+                if (!frontChar.Equals(backChar) || (full && !backChar.Equals(new vtchar_t()))) {
                     builder.WritePosition(x, y)
                            .WriteFontStyles(backChar.Styles)
                                 .WriteColor(color: backChar.Background.A == 0 ? null : backChar.Background, isBackground: true)
@@ -132,6 +164,7 @@ internal sealed class Renderer {
         if (!m_layoutState.Value.IsChanged)
             return false;
 
+        // Save the current scale to temp Vect2 struct (can be changed at the moment by the LayoutSystem)
         Vec2 scale = m_layoutState.Value.Scale;
 
         m_backbuffer = ConsoleBuffer.Reallocate(buffer: ref m_backbuffer, scale);
@@ -142,6 +175,8 @@ internal sealed class Renderer {
     }
 
     private bool InBuffer(Vec2 position, Vec2 scale) {
+        if (scale.X <= 0 || scale.Y <= 0) return false;
+
         return (m_backbuffer.Scale.X > position.X && m_backbuffer.Scale.Y > position.Y) &&
                (position.X + scale.X >= 0 && position.Y + scale.Y >= 0);
     }

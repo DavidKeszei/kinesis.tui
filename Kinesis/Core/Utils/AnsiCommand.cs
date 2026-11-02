@@ -38,6 +38,8 @@ internal static class AnsiCommand {
     /// Request a empty, non-scrollable screen from the emulator.
     /// </summary>
     public static string EnableAlternateBuffering { get; } = "\e[?1049h";
+    
+    public static string DisableAlternateBuffering { get; } = "\e[?1049l";
 
     /// <summary>
     /// Indicates to the terminal emulator for not rendering the current buffer to the screen.

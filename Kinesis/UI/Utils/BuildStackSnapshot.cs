@@ -11,5 +11,5 @@ namespace Kinesis.UI;
 /// </summary>
 /// <param name="Scale">Closest <see cref="Components.Scale"/> instance.</param>
 /// <param name="Position">Closest <see cref="Components.Position"/> instance.</param>
-/// <param name="Styles">Styles of the of the <see cref="BuildContext"/>.</param>
+/// <param name="Styles">Styles of the <see cref="BuildContext"/>.</param>
 internal record class BuildStackSnapshot(Scale Scale, Position Position, Style[] Styles);

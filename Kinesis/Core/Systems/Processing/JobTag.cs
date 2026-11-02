@@ -6,6 +6,5 @@ namespace Kinesis.Core;
 
 public enum JobTag : byte {
     INPUT,
-    RENDERING,
-    LAYOUT
+    RENDERING
 }

@@ -27,11 +27,11 @@ public sealed class Viewport: Entity, IContentable<Entity>, ICopyable<BuildConte
     public Vec2 Scale { get => Get<Scale>()!.Value; set => Get<Scale>()!.Value = value; }
 
     public Viewport(): base(count: MAX_COMPONENT_COUNT) {
-        _ = Attach<Position>(component: ComponentPool<Position>.Instance.Rent<Position>(), isUnique: true);
-        _ = Attach<Scale>(component: ComponentPool<Scale>.Instance.Rent<Scale>(static x => x.Value = Vec2.Auto), isUnique: true);
+        _ = Attach<Position>(component: ComponentPool<Position>.Shared.Rent(), isUnique: true);
+        _ = Attach<Scale>(component: ComponentPool<Scale>.Shared.Rent(static x => x.Value = Vec2.Auto), isUnique: true);
 
-        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static x => x.Direction = ConnectionDirection.UP));
-        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Instance.Rent<Hierarchy>(static x => x.Direction = ConnectionDirection.DOWN));
+        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static x => x.Direction = ConnectionDirection.UP));
+        _ = Attach<Hierarchy>(component: ComponentPool<Hierarchy>.Shared.Rent(static x => x.Direction = ConnectionDirection.DOWN));
     }
 
     public void Copy(ref BuildContext from) {

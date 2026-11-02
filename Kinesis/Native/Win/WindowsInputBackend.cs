@@ -5,63 +5,65 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text;
 
 namespace Kinesis.Native;
 
 /// <summary>
 /// Represent a standard input on the Windows platform. 
 /// </summary>
-internal partial class WindowsInputBackend: IInputBackend {
+internal sealed partial class WindowsInputBackend: IInputBackend {
     #region DEFINES
 
     private const string KERNEL32_LIB = "kernel32.dll";
-    private const string USER32_LIB = "user32.dll";
+    private const string USER32_LIB   = "user32.dll";
 
-    private const uint MANUAL_PROCESSING = 0x0001;
-    private const string DEDICATED_THREAD_NAME = "Input->Native";
+    private const uint ENABLE_ECHO_INPUT      = 0x0004;
+    private const uint ENABLE_PROCESSED_INPUT = 0x0004;
+
+    private const string DEDICATED_THREAD_NAME = "kinesis.tui::input_thread::windows";
+    private const int TRUE = 1;
 
     #endregion
     #region P/INVOKE
 
     [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "SetConsoleMode")]
-    [return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    private static partial bool SetMode(nint handle, uint flags);
+    private static partial int SetMode(nint handle, uint flags);
+
+    [LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "GetConsoleMode")]
+    private static partial int GetMode(nint handle, out uint flags);
 
     [LibraryImport(libraryName: USER32_LIB, EntryPoint = "GetAsyncKeyState")]
     private static partial short GetKeyState(int modifier);
 
-    //[LibraryImport(libraryName: KERNEL32_LIB, EntryPoint = "ReadConsoleInputW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
-    //[return: MarshalAs(unmanagedType: UnmanagedType.Bool)]
-    //private static partial bool ReadConsole(nint hnd, ref WindowsConsoleEventMsg buffer, uint length, out uint _);
-
     #endregion
 
     private readonly RingBuffer<InputInfo> m_infoBuffer = null!;
-    private IConsoleSource<InputKeyEventInfo> m_source = null!;
+    private readonly ConsoleReader<WindowsConsoleInfoProvider, InputKeyEventInfo> m_source = default!;
 
-    private InputInfo m_lastInput = default;
-    private bool m_isPressed = false;
+    private InputInfo m_info = default;
+    private bool m_isPressedLastTime = false;
 
-    /// <summary>
-    /// Indicates the user pressed/pressing some key currently.
-    /// </summary>
-    public bool HasInput { get => m_infoBuffer.Count > 0; }
-
-    public WindowsInputBackend()
-        => m_infoBuffer = new RingBuffer<InputInfo>(capacity: 64);
+    private WindowsInputBackend(WindowsConsoleInfoProvider source) {
+        m_infoBuffer = new RingBuffer<InputInfo>(capacity: 64);
+        m_source = new ConsoleReader<WindowsConsoleInfoProvider, InputKeyEventInfo>(source);
+    }
 
     /// <summary>
     /// Create new <see cref="WindowsInputBackend"/> instance.
     /// </summary>
     /// <returns>Return a fresh <see cref="WindowsInputBackend"/> instance. If something goes wrong, then return <see cref="IInputBackend.ERR"/>.</returns>
-    public static WindowsInputBackend Init(IConsoleSource<InputKeyEventInfo> source) {
-        WindowsInputBackend backend = new WindowsInputBackend();
-        if(!SetMode(handle: StdHandle.Input, flags: MANUAL_PROCESSING))
-            return null!;
+    public static IInputBackend Init(WindowsConsoleInfoProvider source) {
+        WindowsInputBackend backend = new WindowsInputBackend(source);
 
-        backend.m_source = source;
+        if (GetMode(handle: StdHandle.Input, out uint flags) != TRUE)
+            return IInputBackend.ERR;
+
+        flags &= ~ENABLE_ECHO_INPUT;
+        flags &= ~ENABLE_PROCESSED_INPUT;
+
+        if(SetMode(handle: StdHandle.Input, flags) != TRUE)
+            return IInputBackend.ERR;
+
         return backend;
     }
 
@@ -75,29 +77,25 @@ internal partial class WindowsInputBackend: IInputBackend {
             0x12,
         };
 
-        char character = '\0';
-        bool isPressed = false;
-
         InputModifier modifiers = QueryModifiers(modifiersCodes);
         InputKeyEventInfo info = default!;
-
-        bool success = m_source.Read(out info) && info.IsPressed != m_isPressed;
+        
+        bool success = m_source.Read(out info);
 
         if (success) {
-            character = info.Value;
-            isPressed = m_isPressed = info.IsPressed;
+            input = new InputInfo(modifiers, info.Value, info.IsPressed);
 
-            m_lastInput = input = new InputInfo(modifiers, info.Value, info.IsPressed);
+            m_isPressedLastTime = info.IsPressed;
+            m_info = input;
             return true;
         }
 
-        // If the read was unsuccessfull, but we don't detected any key up, then we think the user holding the specific key
-        if (m_isPressed) {
-            input = m_lastInput;
+        if (m_isPressedLastTime) {
+            input = m_info;
             return true;
         }
 
-        m_lastInput = default;
+        m_info = default;
         return false;
     }
 

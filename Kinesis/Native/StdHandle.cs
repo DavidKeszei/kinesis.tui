@@ -74,9 +74,9 @@ internal readonly partial struct StdHandle {
         /* If we are on Linux or any Unix like system */
         m_typeOf = type;
         m_handle = type switch {
-            StdType.INPUT => UNIX_STDIN_FILENO,
+            StdType.INPUT  => UNIX_STDIN_FILENO,
             StdType.OUTPUT => UNIX_STDOUT_FILENO,
-            StdType.ERROR => UNIX_STDERR_FILENO,
+            StdType.ERROR  => UNIX_STDERR_FILENO,
             _ => -1
         };
     }
