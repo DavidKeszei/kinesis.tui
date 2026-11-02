@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kinesis.Core;
@@ -9,6 +10,7 @@ namespace Kinesis.Core;
 /// <summary>
 /// Represent a vector in the 2D space.
 /// </summary>
+[StructLayout(layoutKind: LayoutKind.Sequential, Pack = 4)]
 public struct Vec2: IInterpolatable<Vec2, Vec2, Vec2> {
     private float m_x = 0;
     private float m_y = 0;

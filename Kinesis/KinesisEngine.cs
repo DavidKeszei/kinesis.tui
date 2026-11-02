@@ -21,7 +21,7 @@ public sealed class KinesisEngine : ISystemProvider {
     private readonly List<SystemInvocationInfo> m_customSystems = null!;
 
     private readonly RefState<LayoutInfo> m_layoutInfo = null!;
-    private readonly ValueState<JobSystemState> m_workSyncState = null!;
+    private readonly ValueState<(JobSystemState State, float ProcessTime)> m_workSyncState = null!;
 
     private readonly PlatformConsoleInfo m_consoleSourceInfoProvider = default;
     private readonly string m_title = string.Empty;
@@ -39,7 +39,7 @@ public sealed class KinesisEngine : ISystemProvider {
         m_consoleSourceInfoProvider = new PlatformConsoleInfo();
 
         m_layoutInfo = new RefState<LayoutInfo>();
-        m_workSyncState = new ValueState<JobSystemState>(@default: JobSystemState.WAIT_FOR_RENDERER);
+        m_workSyncState = new ValueState<(JobSystemState State, float ProcessTime)>(@default: (JobSystemState.WAIT_FOR_RENDERER, .0f));
 
         m_input = new InputSystem(provider: m_consoleSourceInfoProvider);
         m_layoutSystem = new LayoutSystem(provider: m_consoleSourceInfoProvider, state: m_layoutInfo, scale: new Vec2(x == -1 ? Console.BufferWidth : x, y == -1 ? Console.BufferHeight : y));
@@ -49,8 +49,8 @@ public sealed class KinesisEngine : ISystemProvider {
 
         m_renderer = new Renderer(workState: m_workSyncState, layoutState: m_layoutInfo);
         m_customSystems = new List<SystemInvocationInfo>() {
-        new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL)
-    };
+            new SystemInvocationInfo(null!, m_navigator, SystemInvocationTime.ON_CALL)
+        };
 
         RegisterBuiltInComponents();
     }
@@ -69,6 +69,17 @@ public sealed class KinesisEngine : ISystemProvider {
         return default!;
     }
 
+    /// <summary>
+    /// Setting up a limit to the rendering.
+    /// </summary>
+    /// <param name="fps">Maximum value of the fps.</param>
+    public void LimitFPS(uint fps) => m_renderer.FPSLimit = fps;
+
+    /// <summary>
+    /// Register a custom component to the engine.
+    /// </summary>
+    /// <typeparam name="T">Type of the component.</typeparam>
+    /// <returns>Returns <see langword="true"/>, if the registration was sucessful. Otherwise returns <see langword="false"/>.</returns>
     public bool RegisterComponent<T>() where T : Component, IStaticType
         => ComponentRegistry.RegisterComponent<T>(name: T.TypeName);
 
@@ -100,18 +111,17 @@ public sealed class KinesisEngine : ISystemProvider {
         JobSystem.Current.AddRenderSync(sync: m_workSyncState);
 
         /* Start main parts of the engine on different threads. (Input, Workers) */
-        _ = Task.Run(action: () => m_worker.Run(), token);
-        _ = Task.Run(action: () => m_input.Run(), token);
+        _ = Task.Run(action: m_worker.Run, token);
+        _ = Task.Run(action: m_input.Run, token);
 
-        _ = Task.Run(action: () => m_layoutSystem.Run(), token);
+        _ = Task.Run(action: m_layoutSystem.Run, token);
         while (!token.IsCancellationRequested) {
-
             /* Render the frame to the screen/terminal window. */
             m_renderer.Run(calls: m_navigator.Current.Get<DrawCalls>()!);
 
             if (!firstRun) {
                 Vec2 safeArea = m_layoutInfo.Value.Scale - 1; // This helps the outer entities for calculate transforms in the good dimension
-                m_worker.AddMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea));
+                m_worker.AddMessage(message: new RenderMessage(m_renderer.Time, (int)m_renderer.FPS, safeArea, m_renderer.FrameCount));
             }
             else {
                 Console.Out.Write(m_title);

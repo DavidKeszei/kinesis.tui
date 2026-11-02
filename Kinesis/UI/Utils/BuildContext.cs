@@ -16,6 +16,8 @@ namespace Kinesis.UI;
 /// Represent a state in the UI building process.
 /// </summary>
 public ref struct BuildContext {
+    private const int INVALID_TYPE_MATCH = -1;
+
     private readonly Island m_root = null!;
     private Island m_currentIsland = null!;
 
@@ -59,7 +61,7 @@ public ref struct BuildContext {
     }
 
     /// <summary>
-    /// Inherit from an most-closes component on the build-tree.
+    /// Inherit from an most-closest style component on the build-tree.
     /// </summary>
     /// <typeparam name="T">Type of the component.</typeparam>
     /// <param name="target">Target of the <see cref="InheritStyle"/>.</param>
@@ -72,7 +74,7 @@ public ref struct BuildContext {
         if (component == null) return;
 
         int type = MatchId(@default);
-        if (type == -1) return;
+        if (type == INVALID_TYPE_MATCH) return;
 
         if (Style.IsDefault(component)) {
             Style copy = m_inheritanceTargets[type].TryPeek(out Component? _) ? ((Style)m_inheritanceTargets[type].Peek()) : @default;

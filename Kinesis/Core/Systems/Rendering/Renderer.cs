@@ -14,10 +14,12 @@ namespace Kinesis.Core.Rendering;
 /// </summary>
 internal sealed class Renderer {
     #region PREDEFINES
-
-    private const int STRING_BUILDER_STACK_SPACE = 16_384;
-    private const float FRAME_TIME_LIMIT         = 1 / 60f * FPS_CONVERT;
-    private const float FPS_CONVERT              = 1000f;
+    
+    /// <summary>
+    /// Stack allocation size for creating VT100/Ansi escape literals.
+    /// </summary>
+    private const int STRING_BUILDER_STACK_SPACE = 1 << 13;
+    private const float FPS_CONVERT              = 1000;
 
     /// <summary>
     /// Value of  one tick in milliseconds. (10'000 tick = 1ms)
@@ -30,10 +32,15 @@ internal sealed class Renderer {
     private ConsoleBuffer m_frontbuffer = default;
 
     private readonly RefState<LayoutInfo> m_layoutState       = null!;
-    private readonly ValueState<JobSystemState> m_workState = null!;
+    private readonly ValueState<(JobSystemState State, float ProcessTime)> m_workState = null!;
 
     private readonly StreamWriter m_out = null!;
+    private SpinWait m_spinWait = new SpinWait();
+
+    private float m_frameCount = 0;
     private float m_delta = .0f;
+
+    private float m_targetFPS = 1 / 60f;
 
     /// <summary>
     /// Current frame generation time in ms.
@@ -45,7 +52,17 @@ internal sealed class Renderer {
     /// </summary>
     public float FPS { get => FPS_CONVERT / m_delta; }
 
-    public Renderer(ValueState<JobSystemState> workState, RefState<LayoutInfo> layoutState) {
+    /// <summary>
+    /// Maximum value of the FPS (frame per second) by the <see cref="Renderer"/> instance.
+    /// </summary>
+    public uint FPSLimit { get => (uint)(m_targetFPS / FPS_CONVERT); set => m_targetFPS = 1f / value * FPS_CONVERT; }
+    
+    /// <summary>
+    /// Count of the frames from begin of the rendering.
+    /// </summary>
+    public float FrameCount { get => m_frameCount; }
+
+    public Renderer(ValueState<(JobSystemState State, float ProcessTime)> workState, RefState<LayoutInfo> layoutState) {
         m_workState = workState;
         m_layoutState = layoutState;
 
@@ -61,41 +78,51 @@ internal sealed class Renderer {
     }
         
     public void Run(DrawCalls calls) {
+        if(m_workState.Value.State != JobSystemState.WAIT_FOR_RENDERER) return;
         long start = Stopwatch.GetTimestamp();
 
-        if (m_workState.Value == JobSystemState.WAIT_FOR_RENDERER) {
-            bool fullRedrawRequested = OnLayoutChange();
+        bool fullRedrawRequested = OnLayoutChange();
+        foreach (Entity call in calls) {
+            Vec2 scale = call.Get<Scale>()!.Value;
+            Vec2 position = call.Get<Position>()!.Absolute;
 
-            foreach(Entity call in calls) {
-                Vec2 scale    = call.Get<Scale>()!.Value;
-                Vec2 position = call.Get<Position>()!.Absolute;
+            if (!InBuffer(position: position, scale: scale))
+                continue;
 
-                if(!InBuffer(position: position, scale: scale)) continue;
+            RenderComponent renderLogic = call.Get<RenderComponent>()!;
+            Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
 
-                RenderComponent renderLogic = call.Get<RenderComponent>()!;
-                Canvas canvas = ConsoleBuffer.Slice(buffer: ref m_backbuffer, from: position, scale: SetSafeArea(scale, position));
-
-                using StyleEnumerator style = new StyleEnumerator(entity: call);
-                renderLogic.Render(buffer: in canvas, version: call.Version, style);
-            }
-
-            Diffing(fullRedrawRequested);
-            m_workState.Value = JobSystemState.OPEN_FOR_PROCESSING;
+            using StyleEnumerator style = new StyleEnumerator(entity: call);
+            renderLogic.Render(buffer: in canvas, version: call.Version, style);
         }
 
-        long end = Stopwatch.GetTimestamp();
-        float delta = (end - start) / TICK_TO_MS;
+        Diffing(fullRedrawRequested);
+        m_frameCount++;
 
-        if (delta <= FRAME_TIME_LIMIT) {
-            Thread.Sleep(millisecondsTimeout: (int)(FRAME_TIME_LIMIT - delta));
-            delta = FRAME_TIME_LIMIT;
+        long end = Stopwatch.GetTimestamp();
+        float delta = (end / TICK_TO_MS) - (start / TICK_TO_MS) + m_workState.Value.ProcessTime;
+
+        m_workState.Value = m_workState.Value with { State = JobSystemState.OPEN_FOR_PROCESSING };
+
+        if (delta <= m_targetFPS) {
+            float waitTime = m_targetFPS - delta;
+            start = Stopwatch.GetTimestamp();
+
+            float time = (Stopwatch.GetTimestamp() - start) / TICK_TO_MS;
+
+            while (time <= waitTime) {
+                m_spinWait.SpinOnce();
+                time = (Stopwatch.GetTimestamp() - start) / TICK_TO_MS;
+            };
+
+            delta = m_targetFPS;
         }
 
         m_delta = float.Lerp(m_delta, delta, amount: .1f);
     }
 
     public void Diffing(bool full) {
-        Console.Out.Write(value: AnsiCommand.StartBufferLoad);
+        Console.Out.Write(value: AnsiCommand.StartBufferLoad); //This fixing the vertical sync of the terminal
         ANSIStringBuilder builder = new ANSIStringBuilder(buffer: stackalloc char[STRING_BUILDER_STACK_SPACE]);
 
         for (int y = 0; y < m_backbuffer.Scale.Y; ++y) {

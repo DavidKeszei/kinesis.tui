@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
-
-using RenderSyncContext = Kinesis.Core.ValueState<Kinesis.Core.JobSystemState>;
 using Kinesis.Core.Processing;
+
+using RenderSyncContext = Kinesis.Core.ValueState<(Kinesis.Core.JobSystemState State, float ProcessTime)>;
 
 namespace Kinesis.Core;
 
@@ -19,7 +19,7 @@ internal sealed class JobSystem: IDynamicSystem {
     private const string DEDICATED_THREAD_NAME = "kinesis.tui::job_thread";
     private const string ERR_SYNC_NOT_FOUND    = "The synchronization context/state wasn't found.";
 
-    private const int POOLING_TIME = 8;
+    private const float TICK_TO_MS = 10_000f; 
     #endregion
 
     private static JobSystem s_instance = null!;
@@ -28,6 +28,8 @@ internal sealed class JobSystem: IDynamicSystem {
     private readonly JobHandler<RenderMessage, RenderJob> m_renderHandler = null!;
 
     private readonly FocusManager m_focus = null!;
+    private SpinWait m_spin = new SpinWait();
+
     private RenderSyncContext m_renderSync = null!;
 
     /// <summary>
@@ -105,13 +107,18 @@ internal sealed class JobSystem: IDynamicSystem {
         bool firstRun = true;
         
         while(true) {
-            if (m_renderSync.Value != JobSystemState.OPEN_FOR_PROCESSING) {
-                Thread.Sleep(millisecondsTimeout: POOLING_TIME);
+            if (m_renderSync.Value.State != JobSystemState.OPEN_FOR_PROCESSING) {
+                m_spin.SpinOnce();
                 continue;
             }
 
+            float time = Stopwatch.GetTimestamp();
+
             m_inputHandler.Process();
             m_renderHandler.Process();
+
+            time = (Stopwatch.GetTimestamp() / TICK_TO_MS) - (time / TICK_TO_MS);
+            m_renderSync.Value = m_renderSync.Value with { State = JobSystemState.WAIT_FOR_RENDERER, ProcessTime = time };
 
             // Search for the first focusable element from the UI
             if (firstRun && m_inputHandler.Targets.Count > 0) {
@@ -120,7 +127,6 @@ internal sealed class JobSystem: IDynamicSystem {
             }
 
             m_focus.Set();
-            m_renderSync.Value = JobSystemState.WAIT_FOR_RENDERER;
         }
     }
 

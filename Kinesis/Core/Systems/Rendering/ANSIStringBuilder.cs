@@ -56,7 +56,7 @@ internal ref struct ANSIStringBuilder {
         ++x;
         ++y;
 
-        /* We use the automatic cursor moving of the reminal in the X direction */
+        /* We use the automatic cursor moving of the tereminal in the X direction */
         if (m_lastWritePosition.Y == y && x - m_lastWritePosition.X == 1) {
             m_lastWritePosition.X = x;
             m_lastWritePosition.Y = y;
@@ -189,23 +189,13 @@ internal ref struct ANSIStringBuilder {
         return ref this;
     }
 
-    [UnscopedRef]
-    public ref ANSIStringBuilder WriteRaw(ReadOnlySpan<char> sequence) {
-        sequence.TryCopyTo(m_stack[m_position..]);
-        m_position += sequence.Length;
-
-        return ref this;
-    }
-
     /// <summary>
     /// Build the underlying buffer and send to the <paramref name="destination"/>.
     /// </summary>
     /// <param name="destination">Destination of console screen.</param>
     /// <returns>Return the command length as <see cref="int"/>.</returns>
     public void Build(StreamWriter destination) {
-        for (int i = 0; i < m_position; ++i)
-            destination.Write(value: m_stack[i]);
-
+        destination.Write(m_stack[..m_position]);
         m_position = 0;
     }
 }
